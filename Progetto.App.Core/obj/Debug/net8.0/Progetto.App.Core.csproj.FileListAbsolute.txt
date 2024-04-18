@@ -1,0 +1,12 @@
+/home/dragonessa/Projects/aa23-24-gruppo05/Pissir.Progetto/Progetto.App.Core/bin/Debug/net8.0/Progetto.App.Core.deps.json
+/home/dragonessa/Projects/aa23-24-gruppo05/Pissir.Progetto/Progetto.App.Core/bin/Debug/net8.0/Progetto.App.Core.dll
+/home/dragonessa/Projects/aa23-24-gruppo05/Pissir.Progetto/Progetto.App.Core/bin/Debug/net8.0/Progetto.App.Core.pdb
+/home/dragonessa/Projects/aa23-24-gruppo05/Pissir.Progetto/Progetto.App.Core/obj/Debug/net8.0/Progetto.App.Core.csproj.AssemblyReference.cache
+/home/dragonessa/Projects/aa23-24-gruppo05/Pissir.Progetto/Progetto.App.Core/obj/Debug/net8.0/Progetto.App.Core.GeneratedMSBuildEditorConfig.editorconfig
+/home/dragonessa/Projects/aa23-24-gruppo05/Pissir.Progetto/Progetto.App.Core/obj/Debug/net8.0/Progetto.App.Core.AssemblyInfoInputs.cache
+/home/dragonessa/Projects/aa23-24-gruppo05/Pissir.Progetto/Progetto.App.Core/obj/Debug/net8.0/Progetto.App.Core.AssemblyInfo.cs
+/home/dragonessa/Projects/aa23-24-gruppo05/Pissir.Progetto/Progetto.App.Core/obj/Debug/net8.0/Progetto.App.Core.csproj.CoreCompileInputs.cache
+/home/dragonessa/Projects/aa23-24-gruppo05/Pissir.Progetto/Progetto.App.Core/obj/Debug/net8.0/Progetto.App.Core.dll
+/home/dragonessa/Projects/aa23-24-gruppo05/Pissir.Progetto/Progetto.App.Core/obj/Debug/net8.0/refint/Progetto.App.Core.dll
+/home/dragonessa/Projects/aa23-24-gruppo05/Pissir.Progetto/Progetto.App.Core/obj/Debug/net8.0/Progetto.App.Core.pdb
+/home/dragonessa/Projects/aa23-24-gruppo05/Pissir.Progetto/Progetto.App.Core/obj/Debug/net8.0/ref/Progetto.App.Core.dll
