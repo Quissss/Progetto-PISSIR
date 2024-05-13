@@ -11,7 +11,7 @@ services.AddLogging(loggingBuilder =>
     loggingBuilder.AddSerilog(
         dispose: true,
         logger: new LoggerConfiguration()
-            .WriteTo.File(@$"{DateTime.Now:yyyyMMdd-HHmm}.log")
+            .WriteTo.File(@$"Logs\{DateTime.Now:yyyyMMdd-HHmm}.log")
             .CreateLogger()
     ));
 
