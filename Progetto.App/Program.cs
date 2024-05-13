@@ -1,10 +1,19 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Progetto.App.Core.Data;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
+
+services.AddLogging(loggingBuilder =>
+    loggingBuilder.AddSerilog(
+        dispose: true,
+        logger: new LoggerConfiguration()
+            .WriteTo.File(@$"{DateTime.Now:yyyyMMdd-HHmm}.log")
+            .CreateLogger()
+    ));
 
 // External authentication
 services.AddAuthentication().AddGoogle(googleOptions =>
