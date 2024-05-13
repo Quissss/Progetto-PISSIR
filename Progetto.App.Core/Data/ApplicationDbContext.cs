@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Progetto.App.Core.Models;
 using System.Reflection;
 
 namespace Progetto.App.Core.Data;
@@ -29,4 +30,12 @@ public class ApplicationDbContext : IdentityDbContext
         }
         base.OnConfiguring(optionsBuilder);
     }
+
+    public DbSet<Car> Cars { get; set; }
+    public DbSet<MWBot> MWBots { get; set; }
+    public DbSet<Parking> Parkings { get; set; }
+    public DbSet<ParkingSlot> ParkingSlots { get; set; }
+    public DbSet<Reservation> Reservations { get; set; }
+    public DbSet<ChargeHistory> ChargeHistory { get; set; }
+
 }

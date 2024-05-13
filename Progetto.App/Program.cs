@@ -9,8 +9,8 @@ var configuration = builder.Configuration;
 // External authentication
 services.AddAuthentication().AddGoogle(googleOptions =>
     {
-        googleOptions.ClientId = configuration["Authentication:Google:ClientId"];
-        googleOptions.ClientSecret = configuration["Authentication:Google:ClientSecret"];
+        googleOptions.ClientId = configuration["Authentication:Google:ClientId"]!;
+        googleOptions.ClientSecret = configuration["Authentication:Google:ClientSecret"]!;
     });
 
 // Add services to the container.
