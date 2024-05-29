@@ -1,6 +1,9 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Progetto.App.Core.Data;
+using Progetto.App.Core.Security;
+using Progetto.App.Core.Security.Policies;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -21,6 +24,15 @@ services.AddDatabaseDeveloperPageExceptionFilter();
 services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<ApplicationDbContext>();
 services.AddRazorPages();
+
+services.AddAuthorization(option =>
+{
+    option.AddPolicy(PolicyNames.IsAdmin, policy=>policy.AddRequirements(new IsAdmin()));
+    option.AddPolicy(PolicyNames.IsPremiumUser, policy => policy.AddRequirements(new IsPremiumUser()));
+});
+
+services.AddSingleton<IAuthorizationHandler, IsAdminAuthorizationHandler>();
+services.AddSingleton<IAuthorizationHandler, IsPremiumUserAuthorizationHandler>();
 
 var app = builder.Build();
 
