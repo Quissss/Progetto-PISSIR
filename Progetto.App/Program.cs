@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Progetto.App.Core.Data;
+using Progetto.App.Core.Services.Mqtt;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +22,9 @@ services.AddAuthentication().AddGoogle(googleOptions =>
         googleOptions.ClientId = configuration["Authentication:Google:ClientId"]!;
         googleOptions.ClientSecret = configuration["Authentication:Google:ClientSecret"]!;
     });
+
+// Mqtt server init
+services.AddHostedService<MqttHostedService>();
 
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
