@@ -1,0 +1,21 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Progetto.App.Core.Models;
+
+public enum ParkSlotStatus
+{
+    Free,
+    Occupied,
+    Reserved,
+    OutOfService
+}
+
+public class ParkingSlot
+{
+    public int Id { get; set; }
+    public ParkSlotStatus Status { get; set; }
+}

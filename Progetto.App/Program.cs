@@ -2,19 +2,32 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Progetto.App.Core.Data;
+using Progetto.App.Core.Services.Mqtt;
 using Progetto.App.Core.Security;
 using Progetto.App.Core.Security.Policies;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
 
+services.AddLogging(loggingBuilder =>
+    loggingBuilder.AddSerilog(
+        dispose: true,
+        logger: new LoggerConfiguration()
+            .WriteTo.File(@$"Logs\{DateTime.Now:yyyyMMdd-HHmm}.log")
+            .CreateLogger()
+    ));
+
 // External authentication
 services.AddAuthentication().AddGoogle(googleOptions =>
     {
-        googleOptions.ClientId = configuration["Authentication:Google:ClientId"];
-        googleOptions.ClientSecret = configuration["Authentication:Google:ClientSecret"];
+        googleOptions.ClientId = configuration["Authentication:Google:ClientId"]!;
+        googleOptions.ClientSecret = configuration["Authentication:Google:ClientSecret"]!;
     });
+
+// Mqtt server init
+services.AddHostedService<MqttHostedService>();
 
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -53,6 +66,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapRazorPages();
