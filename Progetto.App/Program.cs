@@ -1,7 +1,10 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Progetto.App.Core.Data;
 using Progetto.App.Core.Services.Mqtt;
+using Progetto.App.Core.Security;
+using Progetto.App.Core.Security.Policies;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,6 +38,15 @@ services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfi
     .AddEntityFrameworkStores<ApplicationDbContext>();
 services.AddRazorPages();
 
+services.AddAuthorization(option =>
+{
+    option.AddPolicy(PolicyNames.IsAdmin, policy=>policy.AddRequirements(new IsAdmin()));
+    option.AddPolicy(PolicyNames.IsPremiumUser, policy => policy.AddRequirements(new IsPremiumUser()));
+});
+
+services.AddSingleton<IAuthorizationHandler, IsAdminAuthorizationHandler>();
+services.AddSingleton<IAuthorizationHandler, IsPremiumUserAuthorizationHandler>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -54,6 +66,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapRazorPages();
