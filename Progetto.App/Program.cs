@@ -7,6 +7,7 @@ using Progetto.App.Core.Security;
 using Progetto.App.Core.Security.Policies;
 using Serilog;
 using Progetto.App.Core.ModelConfigurations;
+using Progetto.App.Core.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -38,8 +39,8 @@ services.AddDatabaseDeveloperPageExceptionFilter();
 services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
-services.AddScoped<ParkingSlotConfiguration>();
-services.AddScoped<ParkingConfiguration>();
+services.AddScoped<ParkingSlotRepository>();
+services.AddScoped<ParkingRepository>();
 
 services.AddControllers();
 services.AddRazorPages();
