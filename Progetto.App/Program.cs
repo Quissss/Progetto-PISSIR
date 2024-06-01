@@ -6,6 +6,7 @@ using Progetto.App.Core.Services.Mqtt;
 using Progetto.App.Core.Security;
 using Progetto.App.Core.Security.Policies;
 using Serilog;
+using Progetto.App.Core.ModelConfigurations;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -36,6 +37,11 @@ services.AddDatabaseDeveloperPageExceptionFilter();
 
 services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<ApplicationDbContext>();
+
+services.AddScoped<ParkingSlotConfiguration>();
+services.AddScoped<ParkingConfiguration>();
+
+services.AddControllers();
 services.AddRazorPages();
 
 services.AddAuthorization(option =>
@@ -69,6 +75,7 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapControllers();
 app.MapRazorPages();
 
 app.Run();
