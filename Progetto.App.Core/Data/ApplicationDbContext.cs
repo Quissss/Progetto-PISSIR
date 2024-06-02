@@ -37,5 +37,4 @@ public class ApplicationDbContext : IdentityDbContext
     public DbSet<ParkingSlot> ParkingSlots { get; set; }
     public DbSet<Reservation> Reservations { get; set; }
     public DbSet<ChargeHistory> ChargeHistory { get; set; }
-
 }
