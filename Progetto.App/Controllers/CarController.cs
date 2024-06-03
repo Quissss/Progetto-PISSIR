@@ -23,6 +23,7 @@ public class CarController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<Car>> Add([FromBody] Car car)
     {
         if (!ModelState.IsValid)
@@ -31,6 +32,13 @@ public class CarController : ControllerBase
         try
         {
             _logger.LogDebug("Creating car with licence plate {licencePlate}", car.LicencePlate);
+
+            var existingCar = await _repository.GetCarByLicencePlate(car.LicencePlate);
+            if (existingCar != null)
+            {
+                _logger.LogWarning("Car with licence plate {licencePlate} already exists", car.LicencePlate);
+                return BadRequest();
+            }
 
             await _repository.AddAsync(car);
             await _repository.SaveAsync();
@@ -47,15 +55,22 @@ public class CarController : ControllerBase
     }
 
     [HttpDelete]
+    [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult> Delete([FromBody] string licencePlate)
     {
+        if (string.IsNullOrEmpty(licencePlate))
+            return BadRequest();
+
         try
         {
             _logger.LogDebug("Deleting car with licence plate {licencePlate}", licencePlate);
 
-            var car = await _repository.GetCarByLicencePlate(licencePlate);
-            if (car == null)
-                return NotFound();
+            var existingCar = await _repository.GetCarByLicencePlate(licencePlate);
+            if (existingCar == null)
+            {
+                _logger.LogWarning("Reservation with plate {licencePlate} doesn't exist", licencePlate);
+                return BadRequest();
+            }
 
             await _repository.DeleteAsync(c => c.LicencePlate == licencePlate && c.OwnerId == User.Identity.Name);
             await _repository.SaveAsync();
@@ -73,6 +88,7 @@ public class CarController : ControllerBase
     }
 
     [HttpPut]
+    [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<Car>> Update([FromBody] Car car)
     {
         if (!ModelState.IsValid)
@@ -104,6 +120,7 @@ public class CarController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<IEnumerable<Car>>> GetAll()
     {
         try
@@ -129,43 +146,99 @@ public class CarController : ControllerBase
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<Car>> GetByLicencePlate([FromBody] string licencePlate)
     {
-        var car = await _repository.GetCarByLicencePlate(licencePlate);
-        if (car == null)
-            return NotFound();
+        if (string.IsNullOrEmpty(licencePlate))
+            return BadRequest();
 
-        return Ok(car);
+        try
+        {
+            _logger.LogDebug("Getting car with licence plate {licencePlate}", licencePlate);
+
+            var car = await _repository.GetCarByLicencePlate(licencePlate);
+            if (car == null)
+                return NotFound();
+
+            return Ok(car);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while getting car with licence plate {licencePlate}", licencePlate);
+        }
+
+        return BadRequest();
     }
 
     [HttpGet("my-cars")]
     public async Task<ActionResult<IEnumerable<Car>>> GetMyCars()
     {
-        var car = await _repository.GetCarsByOwner(User.Identity.Name);
-        if (car == null)
-            return NotFound();
+        if (string.IsNullOrEmpty(User.Identity.Name))
+            return BadRequest();
+        
+        try
+        {
+            _logger.LogDebug("Getting cars of user {user}", User.Identity.Name);
 
-        return Ok(car);
+            var car = await _repository.GetCarsByOwner(User.Identity.Name);
+            if (car == null)
+                return NotFound();
+
+            return Ok(car);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while getting cars of user {user}", User.Identity.Name);
+        }
+
+        return BadRequest();
     }
 
     [HttpGet("my-cars/{licencePlate}")]
     public async Task<ActionResult<IEnumerable<Car>>> GetMyCar([FromBody] string licencePlate)
     {
-        var myCars = await _repository.GetCarsByOwner(User.Identity.Name);
+        if (string.IsNullOrEmpty(licencePlate))
+            return BadRequest();
 
-        var car = myCars.Where(c => c.LicencePlate == licencePlate).FirstOrDefault();
-        if (car == null)
-            return NotFound();
+        try
+        {
+            _logger.LogDebug("Getting car with licence plate {licencePlate} of user {user}", licencePlate, User.Identity.Name);
 
-        return Ok(car);
+            var myCars = await _repository.GetCarsByOwner(User.Identity.Name);
+
+            var car = myCars.Where(c => c.LicencePlate == licencePlate).FirstOrDefault();
+            if (car == null)
+                return NotFound();
+
+            return Ok(car);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while getting car with licence plate {licencePlate} of user {user}", licencePlate, User.Identity.Name);
+        }
+
+        return BadRequest();
     }
 
     [HttpGet("owner/{ownerId}")]
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<IEnumerable<Car>>> GetByOwner([FromBody] string ownerId)
     {
-        var car = await _repository.GetCarsByOwner(ownerId);
-        if (car == null)
-            return NotFound();
+        if (string.IsNullOrEmpty(ownerId))
+            return BadRequest();
 
-        return Ok(car);
+        try
+        {
+            _logger.LogDebug("Getting cars of user {ownerId}", ownerId);
+
+            var car = await _repository.GetCarsByOwner(ownerId);
+            if (car == null)
+                return NotFound();
+
+            return Ok(car);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while getting cars of user {ownerId}", ownerId);
+        }
+
+        return BadRequest();
     }
 }
