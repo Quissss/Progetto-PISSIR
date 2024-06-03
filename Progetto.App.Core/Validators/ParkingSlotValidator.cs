@@ -12,6 +12,11 @@ public class ParkingSlotValidator : AbstractValidator<ParkingSlot>
 {
     public ParkingSlotValidator()
     {
-        RuleFor(slot => slot.Status).IsInEnum().WithMessage("Status must be a valid ParkSlotStatus.");
+        RuleFor(slot => slot.Number)
+            .NotEmpty().WithMessage("Number is required.");
+        RuleFor(slot => slot.Status)
+            .IsInEnum().WithMessage("Status must be a valid ParkSlotStatus.");
+        RuleFor(slot => slot.ParkingId)
+            .NotEmpty().WithMessage("ParkingId is required.");
     }
 }
