@@ -54,20 +54,18 @@ public class MqttHostedService : IHostedService, IDisposable
         return Task.CompletedTask;
     }
 
-    public Task StartAsync(CancellationToken cancellationToken)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
-        _mqttServer.StartAsync();
-        return Task.CompletedTask;
+        await _mqttServer.StartAsync();
     }
 
-    public Task StopAsync(CancellationToken cancellationToken)
+    public async Task StopAsync(CancellationToken cancellationToken)
     {
-        _mqttServer.StopAsync();
-        return Task.CompletedTask;
+        await _mqttServer.StopAsync();
     }
 
     public void Dispose()
     {
-        _mqttServer.Dispose();
+        _mqttServer?.Dispose();
     }
 }

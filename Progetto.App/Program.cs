@@ -52,7 +52,7 @@ services.AddValidatorsFromAssemblyContaining<CarValidator>();
 
 services.AddScoped<CarRepository>();
 services.AddScoped<ChargeHistoryRepository>();
-services.AddScoped<MWBotRepository>();
+services.AddScoped<MwBotRepository>();
 services.AddScoped<ParkingRepository>();
 services.AddScoped<ParkingSlotRepository>();
 services.AddScoped<ReservationRepository>();
