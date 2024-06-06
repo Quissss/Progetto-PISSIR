@@ -3,79 +3,179 @@ using Microsoft.AspNetCore.Mvc;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Security;
-using System.Diagnostics.Metrics;
-using System.Net;
-using System.Xml.Linq;
 
 namespace Progetto.App.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize]
+[Authorize(Policy = PolicyNames.IsAdmin)]
 public class ParkingController : ControllerBase
 {
     private readonly ILogger<ParkingController> _logger;
     private readonly ParkingRepository _parkingRepository;
 
-    public ParkingController(ILogger<ParkingController> logger,ParkingRepository parkingRepository)
+    public ParkingController(ILogger<ParkingController> logger, ParkingRepository repository)
     {
         _logger = logger;
-        _parkingRepository = parkingRepository;
+        _parkingRepository = repository;
     }
 
-    // Method for creating a parking
-    [HttpPost("/create")]
-    [Authorize(Policy = PolicyNames.IsAdmin)]
-    public async Task<ActionResult<Parking>> AddParking([FromForm] Parking park  )
+    [HttpPost]
+    public async Task<ActionResult<Parking>> AddParking([FromBody] Parking parking)
     {
+        if (!ModelState.IsValid)
+        {
+            _logger.LogWarning("Invalid model state while creating parking with name {name}", parking.Name);
+            return BadRequest();
+        }
 
         try
         {
-            var createdParkingSlot = await _parkingRepository.AddAsync(park);
-            return Ok(createdParkingSlot);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error while adding parking.");
-            return StatusCode(500, "Internal server error while adding parking.");
-        }
-    }
+            _logger.LogDebug("Creating parking with name {name}", parking.Name);
 
-    // Method for deleting a parking
-    [HttpDelete("/delete/{parkId}")]
-    [Authorize(Policy = PolicyNames.IsAdmin)]
-    public async Task<ActionResult> DeleteParking(int parkId)
-    {
+            var existingParking = await _parkingRepository.GetParkingByName(parking.Name);
+            if (existingParking != null)
+            {
+                _logger.LogWarning("Parking with name {name} already exists", parking.Name);
+                return BadRequest();
+            }
 
-        try
-        {
-            await _parkingRepository.DeleteAsync(p => p.Id == parkId);
+            await _parkingRepository.AddAsync(parking);
             await _parkingRepository.SaveAsync();
+
+            _logger.LogDebug("Parking with {name} created", parking.Name);
             return Ok();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error while deleting parking.");
-            return StatusCode(500, "Internal server error while deleting parking.");
+            _logger.LogError(ex, "Error while creating parking with name {name}", parking.Name);
         }
+
+        return BadRequest();
     }
 
-    // Method to get all the parking
-    [HttpGet("/listParking")]
-    public async Task<ActionResult<Parking>> GetAllParking()
+    [HttpDelete]
+    public async Task<ActionResult> DeleteParking([FromBody] string name)
     {
+        if (string.IsNullOrEmpty(name))
+        {
+            _logger.LogWarning("Invalid name {name}", name);
+            return BadRequest();
+        }
+
         try
         {
-            var allParking = await _parkingRepository.GetAllAsync();
-            return Ok(allParking);
+            _logger.LogDebug("Deleting parking with name {name}", name);
+
+            var parking = await _parkingRepository.GetParkingByName(name);
+            if (parking == null)
+            {
+                _logger.LogWarning("Parking with name {name} not found", name);
+                return NotFound();
+            }
+
+            await _parkingRepository.DeleteAsync(p => p.Name == name);
+            await _parkingRepository.SaveAsync();
+
+            _logger.LogDebug("Parking with name {name} deleted", name);
+            return Ok();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error while retrieving all parking.");
-            return StatusCode(500, "Internal server error while retrieving all parking.");
+            _logger.LogError(ex, "Error while deleting parking with name {name}", name);
         }
+
+        return BadRequest();
     }
 
+    [HttpPut]
+    public async Task<ActionResult> UpdateParking([FromBody] Parking parking)
+    {
+        if (!ModelState.IsValid)
+        {
+            _logger.LogWarning("Invalid model state while updating parking with name {name}", parking.Name);
+            return BadRequest();
+        }
 
+        try
+        {
+            var name = parking.Name;
+            _logger.LogDebug("Updating parking with name {name}", name);
 
+            var existingParking = await _parkingRepository.GetParkingByName(name);
+            if (existingParking == null)
+            {
+                _logger.LogWarning("Parking with name {name} not found", name);
+                return NotFound();
+            }
+
+            await _parkingRepository.UpdateAsync(parking);
+            await _parkingRepository.SaveAsync();
+
+            _logger.LogDebug("Parking with name {name} updated", name);
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while updating parking with name {name}", parking.Name);
+        }
+
+        return BadRequest();
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<Parking>>> GetAllParkings()
+    {
+        try
+        {
+            _logger.LogDebug("Getting all parkings");
+
+            var parkings = await _parkingRepository.GetAllAsync();
+            if (parkings == null)
+            {
+                _logger.LogWarning("No parkings found");
+                return NotFound();
+            }
+
+            _logger.LogDebug("Returning {count} parkings", parkings.Count());
+            return Ok(parkings);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while getting all parkings");
+        }
+
+        return BadRequest();
+    }
+
+    [HttpGet("parking/{name}")]
+    public async Task<ActionResult<Parking>> GetParkingByName(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            _logger.LogWarning("Invalid name {name}", name);
+            return BadRequest();
+        }
+
+        try
+        {
+            _logger.LogDebug("Getting parking {name}", name);
+
+            var parking = await _parkingRepository.GetParkingByName(name);
+            if (parking == null)
+            {
+                _logger.LogWarning("No parkings found with name {name}", name);
+                return NotFound();
+            }
+
+            _logger.LogDebug("Returning parking {name}", name);
+            return Ok(parking);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while getting parking {name}", name);
+        }
+
+        return BadRequest();
+    }
 }

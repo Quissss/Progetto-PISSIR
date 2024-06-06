@@ -17,5 +17,8 @@ public enum ParkSlotStatus
 public class ParkingSlot
 {
     public int Id { get; set; }
+    public int Number { get; set; }
     public ParkSlotStatus Status { get; set; }
+    public int ParkingId { get; set; }
+    public Parking Parking { get; set; }
 }

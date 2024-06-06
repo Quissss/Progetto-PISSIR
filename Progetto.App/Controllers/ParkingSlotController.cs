@@ -1,69 +1,250 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
+using Progetto.App.Core.Security;
 
+namespace Progetto.App.Controllers;
 
-namespace Progetto.App.Controllers
+[Route("api/[controller]")]
+[ApiController]
+[Authorize]
+public class ParkingSlotController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    [Authorize]
-    public class ParkingSlotController : ControllerBase
+    private readonly ILogger<ParkingSlotController> _logger;
+    private readonly ParkingSlotRepository _parkingSlotRepository;
+
+    public ParkingSlotController(ILogger<ParkingSlotController> logger, ParkingSlotRepository repository)
     {
-        private readonly ILogger<ParkingSlotController> _logger;
-        private readonly ParkingSlotRepository _parkingSlotRepository;
+        _logger = logger;
+        _parkingSlotRepository = repository;
+    }
 
-        public ParkingSlotController(ILogger<ParkingSlotController> logger,ParkingSlotRepository parkingRepository)
+    [HttpPost]
+    [Authorize(Policy = PolicyNames.IsAdmin)]
+    public async Task<ActionResult<ParkingSlot>> AddParkingSlot([FromBody] ParkingSlot parkingSlot)
+    {
+        if (!ModelState.IsValid)
         {
-            _logger = logger;
-            _parkingSlotRepository = parkingRepository;
+            _logger.LogWarning("Invalid model state while creating parking slot with id {id}", parkingSlot.Id);
+            return BadRequest();
         }
 
-        // Method to get parking occupancy status
-        [HttpGet("{parkingId}/occupancy")]
-        public async Task<ActionResult<ParkingSlot>> GetParkingStatus(int parkingId)
+        try
         {
-            try
+            _logger.LogDebug("Creating parking slot with id {id}", parkingSlot.Id);
+
+            var existingParkingSlot = await _parkingSlotRepository.GetByIdAsync(parkingSlot.Id);
+            if (existingParkingSlot != null)
             {
-                var parkingSlot = await _parkingSlotRepository.GetByIdAsync(parkingId);
-                if (parkingSlot == null)
-                {
-                    return NotFound("Parking slot not found.");
-                }
-                return Ok(parkingSlot.Status);
+                _logger.LogWarning("Parking slot with id {id} already exists", parkingSlot.Id);
+                return BadRequest();
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while retrieving parking status.");
-                return StatusCode(500, "Internal server error while retrieving parking status.");
-            }
+
+            await _parkingSlotRepository.AddAsync(parkingSlot);
+            await _parkingSlotRepository.SaveAsync();
+
+            _logger.LogDebug("Parking slot created with {id}", parkingSlot.Id);
+            return Ok(existingParkingSlot);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while creating parking slot with id {id}", parkingSlot.Id);
         }
 
-        // Method to update parking slot occupancy status
-        [HttpPut("slot/{slotId}/occupancy")]
-        public async Task<ActionResult<ParkingSlot>> UpdateParkingSlotOccupancy(int slotId, [FromBody] ParkSlotStatus status)
+        return BadRequest();
+    }
+
+    [HttpDelete]
+    [Authorize(Policy = PolicyNames.IsAdmin)]
+    public async Task<ActionResult> DeleteParkingSlot([FromBody] int id)
+    {
+        if (id <= 0)
         {
-            try
-            {
-                var parkingSlot = await _parkingSlotRepository.GetByIdAsync(slotId);
-
-                if (parkingSlot == null)
-                {
-                    return NotFound("Parking slot not found.");
-                }
-
-                parkingSlot.Status = status;
-                await _parkingSlotRepository.UpdateAsync(parkingSlot);
-
-                return Ok(parkingSlot);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while updating parking slot occupancy.");
-                return StatusCode(500, "Internal server error while updating parking slot occupancy.");
-            }
+            _logger.LogWarning("Invalid id while deleting parking slot with id {id}", id);
+            return BadRequest();
         }
 
+        try
+        {
+            _logger.LogDebug("Deleting parking slot with id {id}", id);
+
+            var existingParkingSlot = await _parkingSlotRepository.GetByIdAsync(id);
+            if (existingParkingSlot == null)
+            {
+                _logger.LogWarning("Parking slot with id {id} does not exist", id);
+                return NotFound();
+            }
+
+            await _parkingSlotRepository.DeleteAsync(p => p.Id == id);
+            await _parkingSlotRepository.SaveAsync();
+
+            _logger.LogDebug("Parking slot with id {id} deleted", id);
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while deleting parking slot with id {id}", id);
+        }
+
+        return BadRequest();
+    }
+
+    [HttpPut]
+    [Authorize(Policy = PolicyNames.IsAdmin)]
+    public async Task<ActionResult<ParkingSlot>> UpdateParkingSlot([FromBody] ParkingSlot parkingSlot)
+    {
+        if (!ModelState.IsValid)
+        {
+            _logger.LogWarning("Invalid model state while updating parking slot with id {id}", parkingSlot.Id);
+            return BadRequest();
+        }
+
+        try
+        {
+            _logger.LogDebug("Updating parking slot with id {id}", parkingSlot.Id);
+
+            var existingParkingSlot = await _parkingSlotRepository.GetByIdAsync(parkingSlot.Id);
+            if (existingParkingSlot == null)
+            {
+                _logger.LogWarning("Parking slot with id {id} does not exist", parkingSlot.Id);
+                return NotFound();
+            }
+
+            await _parkingSlotRepository.UpdateAsync(parkingSlot);
+            await _parkingSlotRepository.SaveAsync();
+
+            _logger.LogDebug("Parking slot with id {id} updated", parkingSlot.Id);
+            return Ok(existingParkingSlot);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while updating parking slot with id {id}", parkingSlot.Id);
+        }
+
+        return BadRequest();
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<ParkingSlot>>> GetParkingSlots()
+    {
+        try
+        {
+            _logger.LogDebug("Getting all parking slots");
+
+            var parkingSlots = await _parkingSlotRepository.GetAllAsync();
+            _logger.LogDebug("Returning {count} parking slots", parkingSlots.Count());
+
+            return Ok(parkingSlots);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while getting all parking slots");
+        }
+
+        return BadRequest();
+    }
+
+    [HttpGet("parking-slot/{id}")]
+    public async Task<ActionResult<ParkingSlot>> GetParkingSlot(int id)
+    {
+        if (id <= 0)
+        {
+            _logger.LogWarning("Invalid id while getting parking slot with id {id}", id);
+            return BadRequest();
+        }
+
+        try
+        {
+            _logger.LogDebug("Getting parking slot with id {id}", id);
+
+            var parkingSlot = await _parkingSlotRepository.GetByIdAsync(id);
+            if (parkingSlot == null)
+            {
+                _logger.LogWarning("Parking slot with id {id} not found", id);
+                return NotFound();
+            }
+
+            _logger.LogDebug("Returning parking slot with id {id}", id);
+            return Ok(parkingSlot);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while getting parking slot with id {id}", id);
+        }
+
+        return BadRequest();
+    }
+
+    [HttpGet("parking-slot/name/{name}")]
+    public async Task<ActionResult<ParkingSlot>> GetParkingSlotByName(int name)
+    {
+        if (name <= 0)
+        {
+            _logger.LogWarning("Invalid name while getting parking slot with name {name}", name);
+            return BadRequest();
+        }
+
+        try
+        {
+            _logger.LogDebug("Getting parking slot with name {name}", name);
+
+            var parkingSlot = await _parkingSlotRepository.GetByIdAsync(name);
+            if (parkingSlot == null)
+            {
+                _logger.LogWarning("Parking slot with name {name} not found", name);
+                return NotFound();
+            }
+
+            _logger.LogDebug("Returning parking slot {name}", name);
+            return Ok(parkingSlot);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while getting parking slot with name {name}", name);
+        }
+
+        return BadRequest();
+    }
+
+    [HttpGet("free-parking-slots")]
+    public async Task<ActionResult<IEnumerable<ParkingSlot>>> GetFreeParkingSlots()
+    {
+        try
+        {
+            _logger.LogDebug("Getting all free parking slots");
+
+            var parkingSlots = await _parkingSlotRepository.GetFreeParkingSlots();
+            _logger.LogDebug("Returning {count} free parking slots", parkingSlots.Count());
+
+            return Ok(parkingSlots);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while getting all free parking slots");
+        }
+
+        return BadRequest();
+    }
+
+    [HttpGet("occupied-parking-slots")]
+    public async Task<ActionResult<IEnumerable<ParkingSlot>>> GetOccupiedParkingSlots()
+    {
+        try
+        {
+            _logger.LogDebug("Getting all occupied parking slots");
+
+            var parkingSlots = await _parkingSlotRepository.GetOccupiedParkingSlots();
+            _logger.LogDebug("Returning {count} occupied parking slots", parkingSlots.Count());
+
+            return Ok(parkingSlots);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while getting all occupied parking slots");
+        }
+
+        return BadRequest();
     }
 }

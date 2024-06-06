@@ -9,9 +9,9 @@ using System.Threading.Tasks;
 
 namespace Progetto.App.Core.ModelConfigurations;
 
-public class MWBotConfiguration : IEntityTypeConfiguration<MWBot>
+public class MwBotConfiguration : IEntityTypeConfiguration<MwBot>
 {
-    public void Configure(EntityTypeBuilder<MWBot> builder)
+    public void Configure(EntityTypeBuilder<MwBot> builder)
     {
         builder.ToTable("MWBots");
         builder.HasKey(b => b.Id);
@@ -19,7 +19,7 @@ public class MWBotConfiguration : IEntityTypeConfiguration<MWBot>
         builder.Property(b => b.Status).IsRequired()
             .HasConversion(
                 value => (int)value,
-                value => Enum.Parse<MWBotStatus>(value.ToString())
+                value => Enum.Parse<MwBotStatus>(value.ToString())
             );
     }
 }

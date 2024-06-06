@@ -6,8 +6,10 @@ using Progetto.App.Core.Services.Mqtt;
 using Progetto.App.Core.Security;
 using Progetto.App.Core.Security.Policies;
 using Serilog;
-using Progetto.App.Core.ModelConfigurations;
 using Progetto.App.Core.Repositories;
+using Progetto.App.Core.Validators;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -38,11 +40,6 @@ services.AddDatabaseDeveloperPageExceptionFilter();
 
 services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<ApplicationDbContext>();
-
-services.AddScoped<ParkingSlotRepository>();
-services.AddScoped<ParkingRepository>();
-
-services.AddControllers();
 services.AddRazorPages();
 
 services.AddAuthorization(option =>
@@ -50,6 +47,15 @@ services.AddAuthorization(option =>
     option.AddPolicy(PolicyNames.IsAdmin, policy=>policy.AddRequirements(new IsAdmin()));
     option.AddPolicy(PolicyNames.IsPremiumUser, policy => policy.AddRequirements(new IsPremiumUser()));
 });
+
+services.AddValidatorsFromAssemblyContaining<CarValidator>();
+
+services.AddScoped<CarRepository>();
+services.AddScoped<ChargeHistoryRepository>();
+services.AddScoped<MwBotRepository>();
+services.AddScoped<ParkingRepository>();
+services.AddScoped<ParkingSlotRepository>();
+services.AddScoped<ReservationRepository>();
 
 services.AddSingleton<IAuthorizationHandler, IsAdminAuthorizationHandler>();
 services.AddSingleton<IAuthorizationHandler, IsPremiumUserAuthorizationHandler>();
