@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Models;
@@ -20,5 +21,5 @@ public class ParkingSlot
     public int Number { get; set; }
     public ParkSlotStatus Status { get; set; }
     public int ParkingId { get; set; }
-    public Parking Parking { get; set; }
+    public Parking? Parking { get; set; }
 }

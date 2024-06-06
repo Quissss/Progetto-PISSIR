@@ -1,0 +1,59 @@
+﻿@page
+@model Progetto.App.Pages.Pages_DashParking
+@{
+    ViewData["Title"] = "Dashboard parking";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<div id="parkingGrid"></div>
+@section Scripts {
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.js"></script>
+    <script>
+
+                
+        const url = "/api/ParkingSlot";
+        let ajax = function (item, verb, json = true) {
+        return $.ajax({
+            type: verb,
+            url: url,
+            data: json ? JSON.stringify(item) : item,
+            dataType: "json",
+            contentType: json ? "application/json" : "text/plain",
+        });
+    }
+
+        $(document).ready(function () {
+            $("#parkingGrid").jsGrid({
+                width: "100%",
+                height: "400px",
+                autoload: true, 
+                filtering: true,
+                inserting: true,
+                editing: true,
+                sorting: true,
+                paging: true,
+                controller: {
+            loadData: filter => ajax(filter, "GET", json = false),
+            updateItem: item => ajax(item, "PUT"),
+            insertItem: item => ajax(item, "POST"),
+            deleteItem: item => ajax(item, "DELETE"),
+            },
+                fields: [
+                    { name: "number", type: "number", width: 50, title: "Parcheggio N" },
+                    { name: "parkingId", type: "number", width: 100, title: "Dove" },
+                    { name: "status", type: "number", width: 100, title: "Status" },
+                    {
+                        type: "control",
+                        editButton: true,
+                        deleteButton: true,
+                        
+                    }
+                ]
+            });
+
+    
+        });
+    </script>
+}
+
