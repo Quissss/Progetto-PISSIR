@@ -12,6 +12,7 @@ public class MqttHostedService : IHostedService, IDisposable
 {
     private readonly MqttServer _mqttServer;
     private readonly ILogger<MqttHostedService> _logger;
+    private readonly MqttServerOptions _options;
 
     public MqttHostedService(ILogger<MqttHostedService> logger)
     {
