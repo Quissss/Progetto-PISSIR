@@ -28,4 +28,8 @@
     <ProjectReference Include="..\Progetto.App.Core\Progetto.App.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Logs\" />
+  </ItemGroup>
+
 </Project>
