@@ -42,9 +42,9 @@
                         deleteItem: item => ajax(item, "DELETE"),
                     },
                     fields: [
-                        { name: "number", type: "number", width: 50, title: "Parcheggio N" },
+                        { name: "number", type: "number", width: 50, title: "Slot Number " },
                         {
-                            name: "parkingId", type: "select", width: 100, title: "Dove", items: parkings, valueField: "value", textField: "text",
+                            name: "parkingId", type: "select", width: 100, title: "Location", items: parkings, valueField: "value", textField: "text",
                             itemTemplate: function (value, item) {
                                 let result = $.grep(parkings, function (parking) {
                                     return parking.value === value.toString();
