@@ -247,4 +247,18 @@ public class ParkingSlotController : ControllerBase
 
         return BadRequest();
     }
+
+
+    [HttpGet("statuses")]
+    public IActionResult GetStatuses()
+    {
+        var statuses = Enum.GetValues(typeof(ParkSlotStatus))
+                           .Cast<ParkSlotStatus>()
+                           .Select(e => new { Id = (int)e, Name = e.ToString() })
+                           .ToList();
+
+        return Ok(statuses);
+    }
+
+
 }
