@@ -21,6 +21,6 @@ public class MwBotConfiguration : IEntityTypeConfiguration<MwBot>
                 value => (int)value,
                 value => Enum.Parse<MwBotStatus>(value.ToString())
             );
-        builder.Property(b => b.WebToken).IsRequired();
+        builder.Property(b => b.MqttTopic).IsRequired();
     }
 }

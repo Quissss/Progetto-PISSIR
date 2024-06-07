@@ -31,7 +31,7 @@ services.AddAuthentication().AddGoogle(googleOptions =>
     });
 
 // Mqtt server init
-services.AddHostedService<MqttHostedService>();
+services.AddHostedService<MqttBroker>();
 
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -65,7 +65,7 @@ services.AddSingleton<IAuthorizationHandler, IsPremiumUserAuthorizationHandler>(
 
 // Mqtt services
 services.AddSingleton<MqttClient>();
-services.AddSingleton<MqttHostedService>();
+services.AddSingleton<MqttBroker>();
 
 var app = builder.Build();
 

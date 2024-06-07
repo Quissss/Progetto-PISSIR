@@ -1,12 +1,14 @@
 ﻿using Microsoft.Extensions.Logging;
 using MQTTnet;
 using MQTTnet.Client;
+using MQTTnet.Server;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
 using Serilog.Formatting.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.ConstrainedExecution;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -21,12 +23,15 @@ public class MqttClient
     private readonly MwBotRepository _mwBotRepository;
     private MwBot _mwBot;
 
-    public MqttClient(ILogger<MqttClient> logger, MwBotRepository mwBotRepository, string webToken)
+    public MqttClient(ILogger<MqttClient> logger, MwBotRepository mwBotRepository, string topic)
     {
         _options = new MqttClientOptionsBuilder()
             .WithClientId(Guid.NewGuid().ToString())
             .WithTcpServer("localhost")
-            .WithCredentials("username", "password")
+            .WithTlsOptions(new MqttClientTlsOptions
+            {
+                UseTls = true
+            })
             .WithCleanSession()
             .Build();
 
@@ -34,46 +39,69 @@ public class MqttClient
         _mwBotRepository = mwBotRepository;
         _mqttClient = new MqttFactory().CreateMqttClient();
 
-        InitializeMwBot(webToken).Wait();
+        InitializeMwBot(topic).Wait();
         _mqttClient.ApplicationMessageReceivedAsync += HandleReceivedApplicationMessage;
+
+        ConnectAsync(CancellationToken.None).Wait();
     }
 
-    private async Task InitializeMwBot(string webToken)
+    private async Task InitializeMwBot(string topic)
     {
-        _mwBot = await _mwBotRepository.SelectAsync(b => b.WebToken == webToken);
-
-        if (_mwBot == null)
+        try
         {
-            _mwBot = new MwBot
+            _mwBot = await _mwBotRepository.SelectAsync(b => b.MqttTopic == topic);
+
+            if (_mwBot == null) // Create new MwBot if not found
             {
-                WebToken = webToken,
-                BatteryPercentage = 100,
-                Status = MwBotStatus.StandBy
-            };
-            await _mwBotRepository.AddAsync(_mwBot);
-            await _mwBotRepository.SaveAsync();
-            _logger.LogInformation($"Created new MwBot with WebToken: {webToken}");
+                _mwBot = new MwBot
+                {
+                    MqttTopic = topic,
+                    BatteryPercentage = 100,
+                    Status = MwBotStatus.StandBy
+                };
+                await _mwBotRepository.AddAsync(_mwBot);
+                await _mwBotRepository.SaveAsync();
+                _logger.LogInformation($"Created new MwBot with WebToken: {topic}");
+            }
+            else // Use existing MwBot
+            {
+                _logger.LogInformation($"Found existing MwBot with WebToken: {topic}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while initializing MwBot with WebToken: {webToken}", topic);
+        }
+    }
+
+    // Publish message to MQTT server
+    public async Task PublishAsync(string topic, string payload)
+    {
+        var message = new MqttApplicationMessageBuilder()
+            .WithTopic(topic)
+            .WithPayload(payload)
+            .Build();
+
+        if (_mqttClient.IsConnected)
+        {
+            await _mqttClient.PublishAsync(message);
+            _logger.LogInformation($"Published message to topic: {topic}");
         }
         else
         {
-            _logger.LogInformation($"Found existing MwBot with WebToken: {webToken}");
+            _logger.LogWarning("Client is not connected, cannot publish message");
         }
     }
 
+    // Handle received message
     private async Task HandleReceivedApplicationMessage(MqttApplicationMessageReceivedEventArgs message)
     {
-        if (message.ApplicationMessage.Payload == null)
-        {
-            _logger.LogWarning("Received message with no payload");
-            return;
-        }
-
         var payload = Encoding.UTF8.GetString(message.ApplicationMessage.Payload);
         _logger.LogInformation($"Received message: {payload} from topic: {message.ApplicationMessage.Topic}");
 
         var mwBotUpdate = JsonSerializer.Deserialize<MwBot>(payload);
 
-        if (mwBotUpdate != null && mwBotUpdate.WebToken == _mwBot.WebToken)
+        if (mwBotUpdate != null && mwBotUpdate.MqttTopic == _mwBot.MqttTopic)
         {
             try
             {
@@ -85,7 +113,10 @@ public class MqttClient
                 await _mwBotRepository.SaveAsync();
                 _logger.LogInformation("MwBot updated successfully");
             }
-            catch
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating MwBot");
+            }
         }
     }
 
@@ -94,14 +125,15 @@ public class MqttClient
         try
         {
             _logger.BeginScope("Connecting to MQTT server");
-
-            await _mqttClient.ConnectAsync(_options, cancellationToken);
-
+            using (var timeoutToken = new CancellationTokenSource(TimeSpan.FromSeconds(1)))
+            {
+                await _mqttClient.ConnectAsync(_options, timeoutToken.Token);
+            }
             _logger.LogInformation("Connected to MQTT server");
         }
         catch (OperationCanceledException)
         {
-            _logger.LogWarning("Connection to MQTT server cancelled");
+            _logger.LogWarning("Timeout while connecting.");
         }
         catch (Exception ex)
         {
@@ -111,17 +143,35 @@ public class MqttClient
 
     public async Task DisconnectAsync()
     {
-        _logger.BeginScope("Disconnecting from MQTT server");
-        await _mqttClient.DisconnectAsync();
-        _logger.LogInformation("Disconnected from MQTT server");
+        try
+        {
+            _logger.BeginScope("Disconnecting from MQTT server");
+
+            // Set bot status to offline
+            _mwBot.Status = MwBotStatus.Offline;
+            await _mwBotRepository.UpdateAsync(_mwBot);
+            await _mwBotRepository.SaveAsync();
+
+            await _mqttClient.DisconnectAsync();
+            _logger.LogInformation("Disconnected from MQTT server");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error disconnecting from MQTT server");
+        }
     }
 
     public async Task PingServer()
     {
-        _logger.BeginScope("Pinging MQTT server");
-        await _mqttClient.PingAsync();
-        _logger.LogInformation("Pinged MQTT server");
+        try
+        {
+            _logger.BeginScope("Pinging MQTT server");
+            await _mqttClient.PingAsync();
+            _logger.LogInformation("Ping sent to MQTT server");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending ping to MQTT server");
+        }
     }
-
-    // TODO : Implement reconnect using timer
 }

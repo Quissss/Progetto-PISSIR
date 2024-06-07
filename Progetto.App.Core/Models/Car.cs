@@ -7,11 +7,20 @@ using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Models;
 
+public enum CarStatus
+{
+    InCharge,
+    Waiting,
+    Charged
+}
+
 public class Car
 {
     public string LicencePlate { get; set; }
     public string Brand { get; set; }
     public string Model { get; set; }
+    public decimal BatteryPercentage { get; set; }
+    public CarStatus Status { get; set; }
     public int? ParkingSlotId { get; set; }
     public ParkingSlot? ParkingSlot { get; set; }
     public string OwnerId { get; set; }

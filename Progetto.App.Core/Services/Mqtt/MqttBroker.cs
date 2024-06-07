@@ -8,13 +8,13 @@ using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Services.Mqtt;
 
-public class MqttHostedService : IHostedService, IDisposable
+public class MqttBroker : IHostedService, IDisposable
 {
     private readonly MqttServer _mqttServer;
-    private readonly ILogger<MqttHostedService> _logger;
+    private readonly ILogger<MqttBroker> _logger;
     private readonly MqttServerOptions _options;
 
-    public MqttHostedService(ILogger<MqttHostedService> logger)
+    public MqttBroker(ILogger<MqttBroker> logger)
     {
         var options = new MqttServerOptionsBuilder()
             .WithDefaultEndpoint()
