@@ -9,7 +9,7 @@ using Serilog;
 using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Validators;
 using FluentValidation;
-using FluentValidation.AspNetCore;
+using Progetto.App.Core.Services.MQTT;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -48,8 +48,10 @@ services.AddAuthorization(option =>
     option.AddPolicy(PolicyNames.IsPremiumUser, policy => policy.AddRequirements(new IsPremiumUser()));
 });
 
+// Validators
 services.AddValidatorsFromAssemblyContaining<CarValidator>();
 
+// Repositories
 services.AddScoped<CarRepository>();
 services.AddScoped<ChargeHistoryRepository>();
 services.AddScoped<MwBotRepository>();
@@ -57,8 +59,13 @@ services.AddScoped<ParkingRepository>();
 services.AddScoped<ParkingSlotRepository>();
 services.AddScoped<ReservationRepository>();
 
+// Authorization handlers
 services.AddSingleton<IAuthorizationHandler, IsAdminAuthorizationHandler>();
 services.AddSingleton<IAuthorizationHandler, IsPremiumUserAuthorizationHandler>();
+
+// Mqtt services
+services.AddSingleton<MqttClient>();
+services.AddSingleton<MqttHostedService>();
 
 var app = builder.Build();
 
