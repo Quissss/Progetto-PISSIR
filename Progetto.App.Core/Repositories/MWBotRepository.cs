@@ -8,7 +8,12 @@ using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Repositories;
 
-public class MWBotRepository : GenericRepository<MWBot>
+public class MwBotRepository : GenericRepository<MwBot>
 {
-    public MWBotRepository(ApplicationDbContext context) : base(context) { }
+    private readonly ApplicationDbContext _context;
+
+    public MwBotRepository(ApplicationDbContext context) : base(context)
+    {
+        _context = context;
+    }
 }

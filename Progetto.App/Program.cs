@@ -6,6 +6,10 @@ using Progetto.App.Core.Services.Mqtt;
 using Progetto.App.Core.Security;
 using Progetto.App.Core.Security.Policies;
 using Serilog;
+using Progetto.App.Core.Repositories;
+using Progetto.App.Core.Validators;
+using FluentValidation;
+using Progetto.App.Core.Services.MQTT;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -27,7 +31,7 @@ services.AddAuthentication().AddGoogle(googleOptions =>
     });
 
 // Mqtt server init
-services.AddHostedService<MqttHostedService>();
+services.AddHostedService<MqttBroker>();
 
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -44,8 +48,24 @@ services.AddAuthorization(option =>
     option.AddPolicy(PolicyNames.IsPremiumUser, policy => policy.AddRequirements(new IsPremiumUser()));
 });
 
+// Validators
+services.AddValidatorsFromAssemblyContaining<CarValidator>();
+
+// Repositories
+services.AddScoped<CarRepository>();
+services.AddScoped<ChargeHistoryRepository>();
+services.AddScoped<MwBotRepository>();
+services.AddScoped<ParkingRepository>();
+services.AddScoped<ParkingSlotRepository>();
+services.AddScoped<ReservationRepository>();
+
+// Authorization handlers
 services.AddSingleton<IAuthorizationHandler, IsAdminAuthorizationHandler>();
 services.AddSingleton<IAuthorizationHandler, IsPremiumUserAuthorizationHandler>();
+
+// Mqtt services
+services.AddSingleton<MqttClient>();
+services.AddSingleton<MqttBroker>();
 
 var app = builder.Build();
 
@@ -69,6 +89,7 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapControllers();
 app.MapRazorPages();
 
 app.Run();

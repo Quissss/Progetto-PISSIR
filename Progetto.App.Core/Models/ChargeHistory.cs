@@ -15,7 +15,7 @@ public class ChargeHistory
     public decimal StartChargeLevel { get; set; }
     public decimal EndChargeLevel { get; set; }
     public int MWBotId { get; set; }
-    public MWBot MWBot { get; set; }
+    public MwBot MWBot { get; set; }
     public string UserId { get; set; }
     public IdentityUser User { get; set; }
 }

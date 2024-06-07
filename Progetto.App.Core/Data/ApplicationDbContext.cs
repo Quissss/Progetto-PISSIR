@@ -32,10 +32,9 @@ public class ApplicationDbContext : IdentityDbContext
     }
 
     public DbSet<Car> Cars { get; set; }
-    public DbSet<MWBot> MWBots { get; set; }
+    public DbSet<MwBot> MWBots { get; set; }
     public DbSet<Parking> Parkings { get; set; }
     public DbSet<ParkingSlot> ParkingSlots { get; set; }
     public DbSet<Reservation> Reservations { get; set; }
     public DbSet<ChargeHistory> ChargeHistory { get; set; }
-
 }

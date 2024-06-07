@@ -6,16 +6,18 @@ using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Models;
 
-public enum MWBotStatus
+public enum MwBotStatus
 {
     InCharge,
-    InUse,
-    StandBy
+    ChargingCar,
+    StandBy,
+    Offline // TODO : Add Offline as default status
 }
 
-public class MWBot
+public class MwBot
 {
     public int Id { get; set; }
     public decimal BatteryPercentage { get; set; }
-    public MWBotStatus Status { get; set; }
+    public MwBotStatus Status { get; set; }
+    public string? MqttTopic { get; set; }
 }
