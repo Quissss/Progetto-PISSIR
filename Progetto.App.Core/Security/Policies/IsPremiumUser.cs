@@ -14,7 +14,7 @@ namespace Progetto.App.Core.Security.Policies
     {
         protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, IsPremiumUser requirement)
         {
-            if (context.User.HasClaim(ClaimName.Role, $"{Role.PremiumUser}"))
+            if (context.User.HasClaim(ClaimName.Role, $"{((int)Role.PremiumUser)}"))
                 context.Succeed(requirement);
 
             return Task.FromResult(context);
