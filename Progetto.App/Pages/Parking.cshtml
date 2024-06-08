@@ -22,6 +22,19 @@
                 country = p.Country,
                 energyCostPerMinute = p.EnergyCostPerMinute
             })));
+        const url = "/api/Parking";
+
+        let ajax = function (item, verb, json = true) {
+            return $.ajax({
+                type: verb,
+                url: url + (item.id ? "/" + item.id : ""),
+                data: json ? JSON.stringify(item) : item,
+                dataType: "json",
+                contentType: json ? "application/json" : "text/plain",
+            });
+        };
+
+    
 
         $(function () {
             $("#parkingGrid").jsGrid({
@@ -33,7 +46,20 @@
                 editing: true,
                 sorting: true,
                 paging: true,
-
+                controller: {
+                    loadData: function (filter) {
+                        return ajax(filter, "GET", false);
+                    },
+                    updateItem: function (item) {
+                        return ajax(item, "PUT").done(function () {
+                            $("#parkingGrid").jsGrid("loadData");
+                        });
+                    },
+                    deleteItem: item => ajax(item, "DELETE"),
+                    
+                    insertItem: item => ajax(item, "POST"),
+                },
+           
                 data: parkings,
                 fields: [
                     { name: "name", type: "text", width: 150, title: "Name" },
@@ -43,7 +69,11 @@
                     { name: "postalCode", type: "text", width: 100, title: "Postal Code" },
                     { name: "country", type: "text", width: 100, title: "Country" },
                     { name: "energyCostPerMinute", type: "number", width: 100, title: "Energy Cost/Min" },
-                    { type: "control" }
+                    {
+                        type: "control",
+                        editButton: true,
+                        deleteButton: true,
+                    }
                 ]
             });
         });

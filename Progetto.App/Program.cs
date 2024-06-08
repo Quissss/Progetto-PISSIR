@@ -24,11 +24,11 @@ services.AddLogging(loggingBuilder =>
     ));
 
 // External authentication
-services.AddAuthentication().AddGoogle(googleOptions =>
-    {
-        googleOptions.ClientId = configuration["Authentication:Google:ClientId"]!;
-        googleOptions.ClientSecret = configuration["Authentication:Google:ClientSecret"]!;
-    });
+//services.AddAuthentication().AddGoogle(googleOptions =>
+//    {
+//        googleOptions.ClientId = configuration["Authentication:Google:ClientId"]!;
+//        googleOptions.ClientSecret = configuration["Authentication:Google:ClientSecret"]!;
+//    });
 
 // Mqtt server init
 services.AddHostedService<MqttBroker>();
@@ -44,7 +44,7 @@ services.AddRazorPages();
 
 services.AddAuthorization(option =>
 {
-    option.AddPolicy(PolicyNames.IsAdmin, policy=>policy.AddRequirements(new IsAdmin()));
+    option.AddPolicy(PolicyNames.IsAdmin, policy => policy.AddRequirements(new IsAdmin()));
     option.AddPolicy(PolicyNames.IsPremiumUser, policy => policy.AddRequirements(new IsPremiumUser()));
 });
 
@@ -64,8 +64,8 @@ services.AddSingleton<IAuthorizationHandler, IsAdminAuthorizationHandler>();
 services.AddSingleton<IAuthorizationHandler, IsPremiumUserAuthorizationHandler>();
 
 // Mqtt services
-services.AddSingleton<MqttClient>();
-services.AddSingleton<MqttBroker>();
+//services.AddSingleton<MqttClient>();
+//services.AddSingleton<MqttBroker>();
 
 var app = builder.Build();
 
