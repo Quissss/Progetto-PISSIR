@@ -142,7 +142,7 @@ public class ParkingSlotController : ControllerBase
         return BadRequest();
     }
 
-    [HttpGet("parking-slot/{id}")]
+    [HttpGet("{id}")]
     public async Task<ActionResult<ParkingSlot>> GetParkingSlot(int id)
     {
         if (id <= 0)
@@ -173,7 +173,7 @@ public class ParkingSlotController : ControllerBase
         return BadRequest();
     }
 
-    [HttpGet("parking-slot/name/{name}")]
+    [HttpGet("name/{name}")]
     public async Task<ActionResult<ParkingSlot>> GetParkingSlotByName(int name)
     {
         if (name <= 0)
@@ -204,7 +204,7 @@ public class ParkingSlotController : ControllerBase
         return BadRequest();
     }
 
-    [HttpGet("free-parking-slots")]
+    [HttpGet("free-slots")]
     public async Task<ActionResult<IEnumerable<ParkingSlot>>> GetFreeParkingSlots()
     {
         try
@@ -224,7 +224,7 @@ public class ParkingSlotController : ControllerBase
         return BadRequest();
     }
 
-    [HttpGet("occupied-parking-slots")]
+    [HttpGet("occupied-slots")]
     public async Task<ActionResult<IEnumerable<ParkingSlot>>> GetOccupiedParkingSlots()
     {
         try

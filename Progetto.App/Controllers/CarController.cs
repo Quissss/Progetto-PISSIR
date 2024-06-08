@@ -144,7 +144,7 @@ public class CarController : ControllerBase
         return BadRequest();
     }
 
-    [HttpGet("car/{licencePlate}")]
+    [HttpGet("{licencePlate}")]
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<Car>> GetCarByLicencePlate(string licencePlate)
     {
@@ -176,7 +176,7 @@ public class CarController : ControllerBase
         return BadRequest();
     }
 
-    [HttpGet("cars/owner/{ownerId}")]
+    [HttpGet("owner/{ownerId}")]
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<IEnumerable<Car>>> GetCarsByOwner(string ownerId)
     {

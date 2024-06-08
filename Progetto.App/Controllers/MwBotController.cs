@@ -15,9 +15,10 @@ public class MwBotController : ControllerBase
     private readonly MwBotRepository _repository;
     private readonly ChargeHistoryRepository _chargeHistoryRepository;
 
-    public MwBotController(ILogger<MwBotController> logger, MwBotRepository repository)
+    public MwBotController(ILogger<MwBotController> logger, MwBotRepository repository, ChargeHistoryRepository chargeHistoryRepository)
     {
         _logger = logger;
         _repository = repository;
+        _chargeHistoryRepository = chargeHistoryRepository;
     }
 }

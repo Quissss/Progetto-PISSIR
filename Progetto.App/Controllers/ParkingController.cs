@@ -137,7 +137,7 @@ public class ParkingController : ControllerBase
         return BadRequest();
     }
 
-    [HttpGet("parking/{name}")]
+    [HttpGet("{name}")]
     public async Task<ActionResult<Parking>> GetParkingByName(string name)
     {
         if (string.IsNullOrEmpty(name))

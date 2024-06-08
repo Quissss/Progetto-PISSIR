@@ -185,7 +185,7 @@ public class ReservationController : ControllerBase
         return BadRequest();
     }
 
-    [HttpGet("reservation/{id}")]
+    [HttpGet("{id}")]
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<Reservation>> GetReservationById(int id)
     {
@@ -213,7 +213,7 @@ public class ReservationController : ControllerBase
         return BadRequest();
     }
 
-    [HttpGet("reservations/user/{userId}")]
+    [HttpGet("user/{userId}")]
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<IEnumerable<Reservation>>> GetReservationsByUser(string userId)
     {
@@ -270,7 +270,7 @@ public class ReservationController : ControllerBase
         return BadRequest();
     }
 
-    [HttpGet("my-reservations/{id}")]
+    [HttpGet("my-reservation/{id}")]
     public async Task<ActionResult<IEnumerable<Reservation>>> GetMyReservation(int id)
     {
         if (string.IsNullOrEmpty(User.Identity.Name))
