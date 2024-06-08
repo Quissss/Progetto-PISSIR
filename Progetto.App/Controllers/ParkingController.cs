@@ -54,33 +54,33 @@ public class ParkingController : ControllerBase
         return BadRequest();
     }
 
-    [HttpDelete("{id}")]
-    public async Task<ActionResult> DeleteParking(int id)
+    [HttpDelete]
+    public async Task<ActionResult> DeleteParking([FromBody] Parking parking)
     {
-        if (id <= 0)
+        if (parking.Id <= 0)
         {
-            _logger.LogWarning("Invalid id {id}", id);
+            _logger.LogWarning("Invalid id {id}", parking.Id);
             return BadRequest();
         }
 
         try
         {
-            _logger.LogDebug("Deleting parking with id {id}", id);
+            _logger.LogDebug("Deleting parking with id {id}", parking.Id);
 
-            await _parkingRepository.DeleteAsync(p => p.Id == id);
+            await _parkingRepository.DeleteAsync(p => p.Id == parking.Id);
 
-            _logger.LogDebug("Parking with id {id} deleted", id);
+            _logger.LogDebug("Parking with id {id} deleted", parking.Id);
             return Ok();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error while deleting parking with id {id}", id);
+            _logger.LogError(ex, "Error while deleting parking with id {id}", parking.Id);
             return StatusCode(500, "Internal server error");
         }
     }
 
-    [HttpPut("{id}")]
-    public async Task<ActionResult> UpdateParking(int id, [FromBody] Parking parking)
+    [HttpPut]
+    public async Task<ActionResult> UpdateParking([FromBody] Parking parking)
     {
         if (!ModelState.IsValid)
         {
@@ -90,23 +90,23 @@ public class ParkingController : ControllerBase
 
         try
         {
-            _logger.LogDebug("Updating parking with id {id}", id);
+            _logger.LogDebug("Updating parking with id {id}", parking.Id);
 
-            var existingParking = await _parkingRepository.GetByIdAsync(id);
+            var existingParking = await _parkingRepository.GetByIdAsync(parking.Id);
             if (existingParking == null)
             {
-                _logger.LogWarning("Parking with id {id} not found", id);
+                _logger.LogWarning("Parking with id {id} not found", parking.Id);
                 return NotFound();
             }
 
             await _parkingRepository.UpdateAsync(parking);
 
-            _logger.LogDebug("Parking with id {id} updated", id);
+            _logger.LogDebug("Parking with id {id} updated", parking.Id);
             return Ok();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error while updating parking with id {id}", id);
+            _logger.LogError(ex, "Error while updating parking with id {id}", parking.Id);
         }
 
         return BadRequest();

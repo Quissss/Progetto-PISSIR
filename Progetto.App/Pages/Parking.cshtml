@@ -17,7 +17,7 @@
         let ajax = function (item, verb, json = true) {
             return $.ajax({
                 type: verb,
-                url: url + (item.id ? "/" + item.id : ""),
+                url: url,
                 data: json ? JSON.stringify(item) : item,
                 dataType: "json",
                 contentType: json ? "application/json" : "text/plain",

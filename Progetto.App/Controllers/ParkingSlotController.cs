@@ -45,7 +45,7 @@ public class ParkingSlotController : ControllerBase
             await _parkingSlotRepository.AddAsync(parkingSlot);
 
             _logger.LogDebug("Parking slot created with {id}", parkingSlot.Id);
-            return Ok(existingParkingSlot);
+            return Ok(parkingSlot);
         }
         catch (Exception ex)
         {
