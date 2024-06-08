@@ -31,7 +31,7 @@ services.AddLogging(loggingBuilder =>
 //    });
 
 // Mqtt server init
-services.AddHostedService<MqttBroker>();
+//services.AddHostedService<MqttBroker>();
 
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");

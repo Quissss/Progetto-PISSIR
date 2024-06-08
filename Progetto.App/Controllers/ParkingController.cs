@@ -70,7 +70,7 @@ public class ParkingController : ControllerBase
             await _parkingRepository.DeleteAsync(p => p.Id == parking.Id);
 
             _logger.LogDebug("Parking with id {id} deleted", parking.Id);
-            return Ok();
+            return Ok(parking);
         }
         catch (Exception ex)
         {
@@ -102,7 +102,7 @@ public class ParkingController : ControllerBase
             await _parkingRepository.UpdateAsync(parking);
 
             _logger.LogDebug("Parking with id {id} updated", parking.Id);
-            return Ok();
+            return Ok(parking);
         }
         catch (Exception ex)
         {
