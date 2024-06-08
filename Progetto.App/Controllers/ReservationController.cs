@@ -42,7 +42,6 @@ public class ReservationController : ControllerBase
             }
 
             await _reservationRepository.AddAsync(reservation);
-            await _reservationRepository.SaveAsync();
 
             _logger.LogDebug("Reservation created with {id}", reservation.Id);
             return Ok();
@@ -84,7 +83,6 @@ public class ReservationController : ControllerBase
             }
 
             await _reservationRepository.AddAsync(reservation);
-            await _reservationRepository.SaveAsync();
 
             _logger.LogDebug("Reservation created with {id}", reservation.Id);
             return Ok();
@@ -100,7 +98,7 @@ public class ReservationController : ControllerBase
 
     [HttpDelete]
     [Authorize(Policy = PolicyNames.IsAdmin)]
-    public async Task<ActionResult<Reservation>> DeleteReservation([FromBody] int id)
+    public async Task<ActionResult<Reservation>> DeleteReservation(int id)
     {
         try
         {
@@ -114,7 +112,6 @@ public class ReservationController : ControllerBase
             }
 
             await _reservationRepository.DeleteAsync(r => r.Id == id);
-            await _reservationRepository.SaveAsync();
 
             _logger.LogDebug("Reservation with id {id} deleted", id);
             return Ok();
@@ -150,7 +147,6 @@ public class ReservationController : ControllerBase
             }
 
             await _reservationRepository.UpdateAsync(reservation);
-            await _reservationRepository.SaveAsync();
 
             _logger.LogDebug("Reservation updated with values: {reservation}", reservation);
             return Ok();

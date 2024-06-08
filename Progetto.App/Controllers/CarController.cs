@@ -42,7 +42,6 @@ public class CarController : ControllerBase
             }
 
             await _carRepository.AddAsync(car);
-            await _carRepository.SaveAsync();
 
             _logger.LogDebug("Car with licence plate {licencePlate} created", car.LicencePlate);
             return Ok(existingCar);
@@ -77,7 +76,6 @@ public class CarController : ControllerBase
             }
 
             await _carRepository.DeleteAsync(c => c.LicencePlate == licencePlate);
-            await _carRepository.SaveAsync();
 
             _logger.LogDebug("Car with licence plate {licencePlate} deleted", licencePlate);
             return Ok();
@@ -113,7 +111,6 @@ public class CarController : ControllerBase
             }
 
             await _carRepository.UpdateAsync(car);
-            await _carRepository.SaveAsync();
 
             _logger.LogDebug("Updated car with values: {car}", car);
             return Ok(existingCar);

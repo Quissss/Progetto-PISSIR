@@ -43,7 +43,6 @@ public class ParkingSlotController : ControllerBase
             }
 
             await _parkingSlotRepository.AddAsync(parkingSlot);
-            await _parkingSlotRepository.SaveAsync();
 
             _logger.LogDebug("Parking slot created with {id}", parkingSlot.Id);
             return Ok(existingParkingSlot);
@@ -78,7 +77,6 @@ public class ParkingSlotController : ControllerBase
             }
 
             await _parkingSlotRepository.DeleteAsync(p => p.Id == id);
-            await _parkingSlotRepository.SaveAsync();
 
             _logger.LogDebug("Parking slot with id {id} deleted", id);
             return Ok();
@@ -113,7 +111,6 @@ public class ParkingSlotController : ControllerBase
             }
 
             await _parkingSlotRepository.UpdateAsync(parkingSlot);
-            await _parkingSlotRepository.SaveAsync();
 
             _logger.LogDebug("Parking slot with id {id} updated", parkingSlot.Id);
             return Ok(existingParkingSlot);

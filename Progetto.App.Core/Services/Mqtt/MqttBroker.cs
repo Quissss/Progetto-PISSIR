@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using MQTTnet;
 using MQTTnet.Server;
+using Progetto.App.Core.Repositories;
 using System;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,16 +14,18 @@ public class MqttBroker : IHostedService, IDisposable
     private readonly MqttServer _mqttServer;
     private readonly ILogger<MqttBroker> _logger;
     private readonly MqttServerOptions _options;
+    private readonly MwBotRepository _mwBotRepository;
 
-    public MqttBroker(ILogger<MqttBroker> logger)
+    public MqttBroker(ILogger<MqttBroker> logger, MwBotRepository mwBotRepository)
     {
-        var options = new MqttServerOptionsBuilder()
+        _options = new MqttServerOptionsBuilder()
             .WithDefaultEndpoint()
             .WithDefaultEndpointPort(1883)
             .Build();
 
         _logger = logger;
-        _mqttServer = new MqttFactory().CreateMqttServer(options);
+        _mqttServer = new MqttFactory().CreateMqttServer(_options);
+        _mwBotRepository = mwBotRepository;
 
         _mqttServer.ApplicationMessageEnqueuedOrDroppedAsync += MqttServer_ApplicationMessageEnqueuedOrDroppedAsync;
         _mqttServer.ClientConnectedAsync += MqttServer_ClientConnectedAsync;

@@ -21,7 +21,7 @@ public class MqttClient
     private readonly ILogger<MqttClient> _logger;
     private readonly IMqttClient _mqttClient;
     private readonly MwBotRepository _mwBotRepository;
-    private MwBot _mwBot;
+    private MwBot? _mwBot;
 
     public MqttClient(ILogger<MqttClient> logger, MwBotRepository mwBotRepository, string topic)
     {
