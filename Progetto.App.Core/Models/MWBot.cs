@@ -11,7 +11,7 @@ public enum MwBotStatus
     InCharge,
     ChargingCar,
     StandBy,
-    Offline // TODO : Add Offline as default status
+    Offline
 }
 
 public class MwBot
@@ -19,5 +19,4 @@ public class MwBot
     public int Id { get; set; }
     public decimal BatteryPercentage { get; set; }
     public MwBotStatus Status { get; set; }
-    public string? MqttTopic { get; set; }
 }

@@ -19,6 +19,7 @@ public class Car
     public string LicencePlate { get; set; }
     public string Brand { get; set; }
     public string Model { get; set; }
+    public bool IsElectric { get; set; }
     public decimal BatteryPercentage { get; set; }
     public CarStatus Status { get; set; }
     public int? ParkingSlotId { get; set; }

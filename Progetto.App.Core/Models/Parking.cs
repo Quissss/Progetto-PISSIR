@@ -9,7 +9,8 @@ namespace Progetto.App.Core.Models;
 public class Parking
 {
     public int Id { get; set; }
-    public decimal EnergyCostPerMinute { get; set; }
+    public decimal EnergyCostPerKw { get; set; }
+    public decimal StopCostPerMinute { get; set; }
     public string Name { get; set; }
     public string Address { get; set; }
     public string City { get; set; }

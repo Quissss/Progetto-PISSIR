@@ -30,7 +30,7 @@ public class ParkingValidator : AbstractValidator<Parking>
         RuleFor(p => p.Country)
             .NotEmpty().WithMessage("Country is required")
             .MaximumLength(50).WithMessage("Country must be less than 50 characters");
-        RuleFor(p => p.EnergyCostPerMinute)
+        RuleFor(p => p.EnergyCostPerKw)
             .NotEmpty().WithMessage("Energy cost is required")
             .GreaterThan(0).WithMessage("Energy cost must be greater than 0");
     }
