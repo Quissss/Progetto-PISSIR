@@ -11,17 +11,7 @@
 @section Scripts {
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.js"></script>
     <script>
-        const parkings = @Html.Raw(Json.Serialize(Model.Parkings.Select(p => new
-            {
-                id = p.Id,
-                name = p.Name,
-                address = p.Address,
-                city = p.City,
-                province = p.Province,
-                postalCode = p.PostalCode,
-                country = p.Country,
-                energyCostPerMinute = p.EnergyCostPerMinute
-            })));
+        const parkings = @Html.Raw(Json.Serialize(Model.Parkings));
         const url = "/api/Parking";
 
         let ajax = function (item, verb, json = true) {
@@ -34,7 +24,7 @@
             });
         };
 
-    
+
 
         $(function () {
             $("#parkingGrid").jsGrid({
@@ -47,21 +37,15 @@
                 sorting: true,
                 paging: true,
                 controller: {
-                    loadData: function (filter) {
-                        return ajax(filter, "GET", false);
-                    },
-                    updateItem: function (item) {
-                        return ajax(item, "PUT").done(function () {
-                            $("#parkingGrid").jsGrid("loadData");
-                        });
-                    },
+                    loadData: filter => ajax(filter, "GET", false),
+                    updateItem: item => ajax(item, "PUT"),
                     deleteItem: item => ajax(item, "DELETE"),
-                    
                     insertItem: item => ajax(item, "POST"),
                 },
-           
+
                 data: parkings,
                 fields: [
+                    { name: "id", visible: false },
                     { name: "name", type: "text", width: 150, title: "Name" },
                     { name: "address", type: "text", width: 200, title: "Address" },
                     { name: "city", type: "text", width: 100, title: "City" },

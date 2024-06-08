@@ -57,33 +57,32 @@ public class ParkingSlotController : ControllerBase
 
     [HttpDelete]
     [Authorize(Policy = PolicyNames.IsAdmin)]
-    public async Task<ActionResult> DeleteParkingSlot([FromBody] int id)
+    public async Task<ActionResult> DeleteParkingSlot([FromBody] ParkingSlot parkingSlot)
     {
-        if (id <= 0)
+        if (parkingSlot.Id <= 0)
         {
-            _logger.LogWarning("Invalid id while deleting parking slot with id {id}", id);
+            _logger.LogWarning("Invalid id while deleting parking slot with id {id}", parkingSlot.Id);
             return BadRequest();
         }
 
         try
         {
-            _logger.LogDebug("Deleting parking slot with id {id}", id);
+            _logger.LogDebug("Deleting parking slot with id {id}", parkingSlot.Id);
 
-            var existingParkingSlot = await _parkingSlotRepository.GetByIdAsync(id);
+            var existingParkingSlot = await _parkingSlotRepository.GetByIdAsync(parkingSlot.Id);
             if (existingParkingSlot == null)
             {
-                _logger.LogWarning("Parking slot with id {id} does not exist", id);
+                _logger.LogWarning("Parking slot with id {id} does not exist", parkingSlot.Id);
                 return NotFound();
             }
+            await _parkingSlotRepository.DeleteAsync(p => p.Id == parkingSlot.Id);
 
-            await _parkingSlotRepository.DeleteAsync(p => p.Id == id);
-
-            _logger.LogDebug("Parking slot with id {id} deleted", id);
+            _logger.LogDebug("Parking slot with id {id} deleted", parkingSlot.Id);
             return Ok();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error while deleting parking slot with id {id}", id);
+            _logger.LogError(ex, "Error while deleting parking slot with id {id}", parkingSlot.Id);
         }
 
         return BadRequest();
@@ -113,7 +112,7 @@ public class ParkingSlotController : ControllerBase
             await _parkingSlotRepository.UpdateAsync(parkingSlot);
 
             _logger.LogDebug("Parking slot with id {id} updated", parkingSlot.Id);
-            return Ok(existingParkingSlot);
+            return Ok(parkingSlot);
         }
         catch (Exception ex)
         {
