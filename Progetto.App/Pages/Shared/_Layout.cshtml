@@ -1,20 +1,23 @@
-﻿<!DOCTYPE html>
+﻿@using Progetto.App.Core.Models.Users
+@inject SignInManager<IdentityUser> SignInManager
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Progetto.App</title>
+    <title>@ViewData["Title"] - EcoPlug &amp; Go </title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Progetto.App.styles.css" asp-append-version="true" />
     <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.css" />
     <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid-theme.min.css" />
+    <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 </head>
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">Progetto.App</a>
+                <a class="navbar-brand" asp-area="" asp-page="/Index"> EcoPlug &amp; Go </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -27,6 +30,17 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
                         </li>
+                        @{ if ( SignInManager.IsSignedIn(User)){
+                        var role = User?.Claims?.First(x => x.Type == ClaimName.Role).Value;
+                        if ((int)Role.Admin == Convert.ToInt32(role) )
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-page="/parking">Parking</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-page="/dashparking">ParkingSlot</a>
+                            </li>
+                        }}}
                     </ul>
                     <partial name="_LoginPartial" />
                 </div>
@@ -39,10 +53,48 @@
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
+    <footer class=" border-top  text-muted">
         <div class="container">
-            &copy; 2024 - Progetto.App - <a asp-area="" asp-page="/Privacy">Privacy</a>
+            <div class="row text-center text-md-left">
+                <!-- About Section -->
+                <div class="col-md-4 mb-3">
+                    <h5 class="font-weight-bold"><strong>Chi Siamo</strong></h5>
+                    <hr class="my-2">
+                    <p>EcoPlug &amp; Go offre soluzioni innovative per la ricarica di auto elettriche, garantendo convenienza e sostenibilità per i nostri clienti.</p>
+                </div>
+
+                <!-- Quick Links Section -->
+                <div class="col-md-4 mb-3">
+                    <h5 class="font-weight-bold"><strong>Link Utili</strong></h5>
+                    <hr class="my-2">
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-home"></i> <a href="#">Home</a></li>
+                        <li><i class="fas fa-concierge-bell"></i> <a href="#">Servizi</a></li>
+                        <li><i class="fas fa-money-bill-wave"></i> <a href="#">Tariffe</a></li>
+                        <li><i class="fas fa-envelope-open-text"></i> <a href="#">Contattaci</a></li>
+                        <li><i class="fas fa-user-secret"></i> <a href="#">Privacy</a></li>
+                    </ul>
+                </div>
+
+                <!-- Contact Info Section -->
+                <div class="col-md-4 mb-3">
+                    <h5 class="font-weight-bold"><strong>Contattaci</strong></h5>
+                    <hr class="my-2">
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-map-marker-alt"></i> Via Esempio 123, Città, Paese</li>
+                        <li><i class="fas fa-phone"></i> +39 123 456 7890</li>
+                        <li><i class="fas fa-envelope"></i> <a href="mailto:info@parcheggielettrici.com">info@parcheggielettrici.com</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12 text-center mt-3">
+                    <p>&copy; 2024 Parcheggi Elettrici - Tutti i diritti riservati.</p>
+                </div>
+            </div>
         </div>
+
     </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
