@@ -9,6 +9,7 @@ namespace Progetto.App.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize(Policy = PolicyNames.IsAdmin)]
 public class MwBotController : ControllerBase
 {
     private readonly ILogger<MwBotController> _logger;
@@ -21,4 +22,6 @@ public class MwBotController : ControllerBase
         _repository = repository;
         _chargeHistoryRepository = chargeHistoryRepository;
     }
+
+    // TODO : implement turn on/off from the jsgrid (new custom button)
 }

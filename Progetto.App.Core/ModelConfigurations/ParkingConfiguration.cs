@@ -21,7 +21,8 @@ public class ParkingConfiguration : IEntityTypeConfiguration<Parking>
         builder.Property(p => p.Province).HasMaxLength(50).IsRequired();
         builder.Property(p => p.PostalCode).HasMaxLength(10).IsRequired();
         builder.Property(p => p.Country).HasMaxLength(50).IsRequired();
-        builder.Property(p => p.EnergyCostPerMinute).HasColumnType("decimal(5, 2)").IsRequired();
+        builder.Property(p => p.EnergyCostPerKw).HasColumnType("decimal(5, 2)").IsRequired();
+        builder.Property(p => p.StopCostPerMinute).HasColumnType("decimal(5, 2)").IsRequired();
         builder.HasMany(p => p.ParkingSlots).WithOne().HasForeignKey(ps => ps.Id);
     }
 }

@@ -13,8 +13,8 @@ public class ChargeHistoryConfiguration : IEntityTypeConfiguration<ChargeHistory
     public void Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<ChargeHistory> builder)
     {
         builder.HasKey(ch => ch.Id);
-        builder.Property(ch => ch.StartDate).IsRequired();
-        builder.Property(ch => ch.EndDate).IsRequired();
+        builder.Property(ch => ch.ParkStartDate).IsRequired();
+        builder.Property(ch => ch.ParkEndDate).IsRequired();
         builder.Property(ch => ch.StartChargeLevel).IsRequired();
         builder.Property(ch => ch.EndChargeLevel).IsRequired();
         builder.HasOne(ch => ch.MWBot).WithMany().HasForeignKey(ch => ch.MWBotId);

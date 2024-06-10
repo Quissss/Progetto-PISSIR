@@ -12,9 +12,9 @@ public class ChargeHistoryValidator : AbstractValidator<ChargeHistory>
 {
     public ChargeHistoryValidator()
     {
-        RuleFor(ch => ch.StartDate)
+        RuleFor(ch => ch.ParkStartDate)
             .NotEmpty().WithMessage("Start Date is required");
-        RuleFor(ch => ch.EndDate)
+        RuleFor(ch => ch.ParkEndDate)
             .NotEmpty().WithMessage("End Date is required");
         RuleFor(ch => ch.StartChargeLevel)
             .NotEmpty().WithMessage("Start Charge Level is required")
