@@ -8,5 +8,6 @@ namespace Progetto.App.Core.Models.Mqtt;
 
 public class MqttClientMessage : MwBot
 {
-    public Reservation? Reservation { get; set; }
+    public int? ParkingSlotId { get; set; }
+    public decimal? TargetBatteryPercentage { get; set; }
 }

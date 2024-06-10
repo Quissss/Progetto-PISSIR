@@ -17,15 +17,15 @@ using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Services.MQTT;
 
-public class MqttClient
+public class MqttMwBotClient
 {
-    private readonly ILogger<MqttClient> _logger;
+    private readonly ILogger<MqttMwBotClient> _logger;
     private readonly IMqttClient _mqttClient;
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private MqttClientOptions _options;
-    private MwBot _mwBot;
+    public MwBot MwBot { get; private set; }
 
-    public MqttClient(ILogger<MqttClient> logger, IServiceScopeFactory serviceScopeFactory)
+    public MqttMwBotClient(ILogger<MqttMwBotClient> logger, IServiceScopeFactory serviceScopeFactory)
     {
         _logger = logger;
         _serviceScopeFactory = serviceScopeFactory;
@@ -44,7 +44,6 @@ public class MqttClient
 
         await InitializeMwBot(mwBotId);
         await ConnectAsync(CancellationToken.None);
-        await SubscribeAsync("topic/mwbots");
     }
 
     private async Task InitializeMwBot(int? mwBotId)
@@ -55,22 +54,12 @@ public class MqttClient
             var mwBotRepository = scope.ServiceProvider.GetRequiredService<MwBotRepository>();
 
             if (mwBotId is not null)
-                _mwBot = await mwBotRepository.GetByIdAsync(mwBotId.Value);
+                MwBot = await mwBotRepository.GetByIdAsync(mwBotId.Value);
 
-            if (_mwBot == null)
-            {
-                _mwBot = new MwBot
-                {
-                    BatteryPercentage = 100,
-                    Status = MwBotStatus.StandBy
-                };
-                await mwBotRepository.AddAsync(_mwBot);
-                _logger.LogInformation("Created new MwBot");
-            }
+            if (MwBot is null)
+                _logger.LogWarning("MwBot not found");
             else
-            {
-                _logger.LogInformation("Found existing MwBot");
-            }
+                _logger.LogInformation("MwBot initialized successfully");
         }
         catch (Exception ex)
         {
@@ -116,13 +105,13 @@ public class MqttClient
             try
             {
                 _logger.BeginScope("Updating MwBot");
-                _mwBot.Status = mwBotMessage.Status;
-                _mwBot.BatteryPercentage = mwBotMessage.BatteryPercentage;
+                MwBot.Status = mwBotMessage.Status;
+                MwBot.BatteryPercentage = mwBotMessage.BatteryPercentage;
 
                 using (var scope = _serviceScopeFactory.CreateScope())
                 {
                     var mwBotRepository = scope.ServiceProvider.GetRequiredService<MwBotRepository>();
-                    await mwBotRepository.UpdateAsync(_mwBot);
+                    await mwBotRepository.UpdateAsync(MwBot);
                 }
                 _logger.LogInformation("MwBot updated successfully");
             }
@@ -157,11 +146,11 @@ public class MqttClient
         try
         {
             _logger.BeginScope("Disconnecting from MQTT server");
-            _mwBot.Status = MwBotStatus.Offline;
+            MwBot.Status = MwBotStatus.Offline;
 
             using var scope = _serviceScopeFactory.CreateScope();
             var mwBotRepository = scope.ServiceProvider.GetRequiredService<MwBotRepository>();
-            await mwBotRepository.UpdateAsync(_mwBot);
+            await mwBotRepository.UpdateAsync(MwBot);
 
             await _mqttClient.DisconnectAsync();
             _logger.LogInformation("Disconnected from MQTT server");

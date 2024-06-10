@@ -58,6 +58,10 @@ public class MqttBroker : IHostedService, IDisposable
                 mwBot.BatteryPercentage = mwBotMessage.BatteryPercentage;
                 await mwBotRepository.UpdateAsync(mwBot);
             }
+            else
+            {
+                _logger.LogDebug("MwBot doesn't exist");
+            }
         }
 
         arg.ProcessPublish = true;
