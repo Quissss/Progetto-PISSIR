@@ -1,5 +1,9 @@
-html {
-  font-size: 14px;
+html,body {
+    font-size: 14px;
+    height: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 @media (min-width: 768px) {
@@ -12,11 +16,20 @@ html {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
-html {
-  position: relative;
-  min-height: 100%;
+
+
+
+footer {
+    width: 100%;
+    position: relative;
+    background-color: whitesmoke;
+    text-align: center;
+    padding: 10px 0;
+    bottom: 0;
+    margin-top: auto;
 }
 
-body {
-  margin-bottom: 60px;
+a {
+    text-decoration: none;
+    padding: .5rem 1rem;
 }
