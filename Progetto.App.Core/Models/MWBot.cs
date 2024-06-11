@@ -8,10 +8,12 @@ namespace Progetto.App.Core.Models;
 
 public enum MwBotStatus
 {
-    InCharge,
-    ChargingCar,
-    StandBy,
-    Offline
+    Offline, // MwBot is offline
+    StandBy, // MwBot is waiting for a car / idle
+    ChargingCar, // MwBot is charging a car
+    Recharging, // MwBot is recharging
+    MovingToSlot, // MwBot is moving to parking slot to charge a car
+    MovingToDock, // MwBot is moving to charging station to recharge
 }
 
 public class MwBot

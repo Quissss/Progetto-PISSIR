@@ -9,7 +9,6 @@ namespace Progetto.App.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Policy = PolicyNames.IsAdmin)]
 public class ParkingController : ControllerBase
 {
     private readonly ILogger<ParkingController> _logger;
@@ -22,6 +21,7 @@ public class ParkingController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<Parking>> AddParking([FromBody] Parking parking)
     {
         if (!ModelState.IsValid)
@@ -55,6 +55,7 @@ public class ParkingController : ControllerBase
     }
 
     [HttpDelete]
+    [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult> DeleteParking([FromBody] Parking parking)
     {
         if (parking.Id <= 0)
@@ -80,6 +81,7 @@ public class ParkingController : ControllerBase
     }
 
     [HttpPut]
+    [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult> UpdateParking([FromBody] Parking parking)
     {
         if (!ModelState.IsValid)

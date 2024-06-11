@@ -64,7 +64,7 @@ services.AddSingleton<IAuthorizationHandler, IsAdminAuthorizationHandler>();
 services.AddSingleton<IAuthorizationHandler, IsPremiumUserAuthorizationHandler>();
 
 // Mqtt services
-services.AddTransient<MqttClient>();
+services.AddTransient<MqttMwBotClient>();
 
 var app = builder.Build();
 
