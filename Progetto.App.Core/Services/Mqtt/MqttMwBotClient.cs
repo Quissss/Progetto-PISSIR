@@ -52,7 +52,7 @@ public class MqttMwBotClient
             .Build();
 
         await InitializeMwBot(mwBotId);
-        await ConnectAsync(CancellationToken.None);
+        await ConnectAsync();
     }
 
     /// <summary>
