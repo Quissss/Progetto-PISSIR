@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Models;
 
+/// <summary>
+/// Represents the history of a charge
+/// </summary>
 public class ChargeHistory
 {
     public int Id { get; set; }

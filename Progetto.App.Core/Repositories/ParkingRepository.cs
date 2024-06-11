@@ -9,6 +9,10 @@ using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Repositories;
 
+/// <summary>
+/// Repository for Parking entity (inherits from GenericRepository)
+/// For database operations related to Parking entity
+/// </summary>
 public class ParkingRepository : GenericRepository<Parking>
 {
     private readonly ApplicationDbContext _context;

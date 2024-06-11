@@ -6,6 +6,9 @@ using System.Reflection;
 
 namespace Progetto.App.Core.Data;
 
+/// <summary>
+/// Application database context
+/// </summary>
 public class ApplicationDbContext : IdentityDbContext
 {
     private readonly IConfiguration _configuration;
@@ -16,12 +19,20 @@ public class ApplicationDbContext : IdentityDbContext
         _configuration = configuration;
     }
 
+    /// <summary>
+    /// Configure the database context (entities, relationships, etc.)
+    /// </summary>
+    /// <param name="builder"></param>
     protected override void OnModelCreating(ModelBuilder builder)
     {
         builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
         base.OnModelCreating(builder);
     }
 
+    /// <summary>
+    /// Configure the database connection (SQLite)
+    /// </summary>
+    /// <param name="optionsBuilder"></param>
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)
@@ -31,6 +42,7 @@ public class ApplicationDbContext : IdentityDbContext
         base.OnConfiguring(optionsBuilder);
     }
 
+    // Define the entities (tables) in the database
     public DbSet<Car> Cars { get; set; }
     public DbSet<MwBot> MwBots { get; set; }
     public DbSet<Parking> Parkings { get; set; }

@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 
 namespace Progetto.App.Core.ModelConfigurations;
 
+/// <summary>
+/// Configuration for the MwBot entity (table) in the database (EF Core)
+/// </summary>
 public class MwBotConfiguration : IEntityTypeConfiguration<MwBot>
 {
     public void Configure(EntityTypeBuilder<MwBot> builder)

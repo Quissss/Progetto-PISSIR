@@ -6,6 +6,10 @@ using Progetto.App.Core.Security;
 
 namespace Progetto.App.Controllers;
 
+/// <summary>
+/// Controller for car operations (endpoints for CRUD operations)
+/// Requires authentication
+/// </summary>
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]

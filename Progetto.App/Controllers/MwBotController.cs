@@ -9,6 +9,10 @@ using Progetto.App.Core.Services.MQTT;
 
 namespace Progetto.App.Controllers;
 
+/// <summary>
+/// Controller for managing MwBots (endpoints for CRUD operations)
+/// Requires admin authentication
+/// </summary>
 [Route("api/[controller]")]
 [ApiController]
 [Authorize(Policy = PolicyNames.IsAdmin)]

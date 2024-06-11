@@ -14,6 +14,9 @@ public enum CarStatus
     Charged
 }
 
+/// <summary>
+/// Represents a car
+/// </summary>
 public class Car
 {
     public string LicencePlate { get; set; }

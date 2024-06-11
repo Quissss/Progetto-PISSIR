@@ -13,6 +13,9 @@ public enum Role
     User
 }
 
+/// <summary>
+/// User claim names
+/// </summary>
 public static class ClaimName
 {
     public const string Role = "Role";

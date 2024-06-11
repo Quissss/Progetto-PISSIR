@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Validators;
 
+/// <summary>
+/// Rules for MwBot entity validation
+/// </summary>
 public class MwBotValidator : AbstractValidator<MwBot>
 {
     public MwBotValidator()

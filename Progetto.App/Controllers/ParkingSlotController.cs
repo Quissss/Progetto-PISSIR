@@ -7,6 +7,10 @@ using Progetto.App.Core.Security;
 
 namespace Progetto.App.Controllers;
 
+/// <summary>
+/// Controller for parking slot operations (endpoints for CRUD operations)
+/// Requires authentication
+/// </summary>
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]

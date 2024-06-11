@@ -16,6 +16,9 @@ public enum MwBotStatus
     MovingToDock, // MwBot is moving to charging station to recharge
 }
 
+/// <summary>
+/// Represents a MwBot (is also used in MqttClientMessage)
+/// </summary>
 public class MwBot
 {
     public int Id { get; set; }

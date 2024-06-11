@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Security.Policies;
 
+/// <summary>
+/// Requirement for admin users
+/// </summary>
 public class IsAdmin : IAuthorizationRequirement { }
 
 public class IsAdminAuthorizationHandler : AuthorizationHandler<IsAdmin>

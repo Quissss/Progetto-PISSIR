@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Validators;
 
+/// <summary>
+/// Rules for Car entity validation
+/// </summary>
 public class CarValidator : AbstractValidator<Car>
 {
     public CarValidator()
