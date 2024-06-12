@@ -1,0 +1,52 @@
+﻿@page
+@model ParkingLotApp.Pages.ParkingLotModel
+@{
+    ViewData["Title"] = "Parking Lot";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <style>
+        .parking-lot {
+            display: grid;
+            grid-template-columns: repeat(5, 100px);
+            gap: 10px;
+            margin: 20px;
+        }
+        .parking-space {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .free {
+            background-color: lightgreen;
+        }
+        .occupied {
+            background-color: lightcoral;
+        }
+    </style>
+</head>
+<body>
+    <h1>Parking Lot</h1>
+    <div class="parking-lot">
+        @for (int i = 0; i < Model.ParkingSpaces.Length; i++)
+        {
+            var isOccupied = Model.ParkingSpaces[i];
+            <form method="post">
+                <input type="hidden" name="index" value="@i" />
+                <button type="submit" class="parking-space @(isOccupied ? "occupied" : "free")">
+                    @(isOccupied ? "Occupied" : "Free")
+                </button>
+            </form>
+        }
+    </div>
+</body>
+</html>

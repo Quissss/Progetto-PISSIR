@@ -9,10 +9,10 @@ namespace Progetto.App.Core.Models;
 
 public enum ParkSlotStatus
 {
-    Free,
-    Occupied,
-    Reserved,
-    OutOfService
+    Free, //green   
+    Occupied, //red
+    Reserved, //orange
+    OutOfService //grey
 }
 
 /// <summary>

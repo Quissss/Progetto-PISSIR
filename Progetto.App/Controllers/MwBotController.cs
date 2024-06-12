@@ -103,17 +103,19 @@ public class MwBotController : ControllerBase
             var client = new MqttMwBotClient(_loggerFactory.CreateLogger<MqttMwBotClient>(), _serviceScopeFactory);
             await client.InitializeAsync(mwBot.Id);
 
+            mwBot.Status = MwBotStatus.StandBy;  // Aggiorna lo stato del MwBot
+            await _repository.UpdateAsync(mwBot);  // Salva le modifiche nel database
+
             _connectedClients.Add(client);
             _logger.LogDebug("MwBot {id} initialized", mwBot.Id);
 
-            return Ok(client.MwBot);
+            return Ok(mwBot);
         }
-        catch
+        catch (Exception ex)
         {
-            _logger.LogError("Error while creating MwBot with id {id}", mwBot.Id);
+            _logger.LogError(ex, "Error while creating MwBot with id {id}", mwBot.Id);
+            return StatusCode(StatusCodes.Status500InternalServerError, "Internal server error");
         }
-
-        return BadRequest();
     }
 
     [HttpPut("off")]
@@ -130,18 +132,25 @@ public class MwBotController : ControllerBase
             _logger.LogDebug("Turning off MwBot with id {id}", mwBot.Id);
             var client = _connectedClients.FirstOrDefault(c => c.MwBot.Id == mwBot.Id);
             if (client != null)
+            {
+                await client.DisconnectAsync();
                 _connectedClients.Remove(client);
+            }
+
+            mwBot.Status = MwBotStatus.Offline;  // Aggiorna lo stato del MwBot
+            _=_repository.UpdateAsync(mwBot);  // Salva le modifiche nel database
 
             _logger.LogDebug("MwBot with id {id} turned off", mwBot.Id);
             return Ok(mwBot);
         }
-        catch
+        catch (Exception ex)
         {
-            _logger.LogError("Error while turning off MwBot with id {id}", mwBot.Id);
+            _logger.LogError(ex, "Error while turning off MwBot with id {id}", mwBot.Id);
+            return StatusCode(StatusCodes.Status500InternalServerError, "Internal server error");
         }
-
-        return BadRequest();
     }
+
+
 
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteMwBot(int id)
