@@ -19,24 +19,26 @@ namespace Progetto.App.Controllers;
 public class MwBotController : ControllerBase
 {
     private readonly ILogger<MwBotController> _logger;
-    private readonly ILoggerFactory _loggerFactory;
-    private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly MwBotRepository _repository;
     private readonly ChargeHistoryRepository _chargeHistoryRepository;
+    private readonly ILoggerFactory _loggerFactory;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
+    private readonly List<MqttMwBotClient> _connectedClients = new List<MqttMwBotClient>();
 
-
-
-    private List<MqttMwBotClient> _connectedClients;
-
-    public MwBotController(ILogger<MwBotController> logger, MwBotRepository repository, ChargeHistoryRepository chargeHistoryRepository, ILoggerFactory loggerFactory, IServiceScopeFactory serviceScopeFactory)
+    public MwBotController(
+        ILogger<MwBotController> logger,
+        MwBotRepository repository,
+        ChargeHistoryRepository chargeHistoryRepository,
+        ILoggerFactory loggerFactory,
+        IServiceScopeFactory serviceScopeFactory)
     {
         _logger = logger;
-        _loggerFactory = loggerFactory;
-        _serviceScopeFactory = serviceScopeFactory;
         _repository = repository;
         _chargeHistoryRepository = chargeHistoryRepository;
+        _loggerFactory = loggerFactory;
+        _serviceScopeFactory = serviceScopeFactory;
 
-        GetConnectedClients().GetAwaiter();
+        GetConnectedClients().GetAwaiter().GetResult();
     }
 
     private async Task GetConnectedClients()
@@ -48,8 +50,9 @@ public class MwBotController : ControllerBase
             foreach (var singleMwBot in mwBotList)
             {
                 _logger.LogDebug("Creating MqttMwBotClient for MwBot with id {id}", singleMwBot.Id);
-                _connectedClients.Add(new MqttMwBotClient(_loggerFactory.CreateLogger<MqttMwBotClient>(), _serviceScopeFactory));
-                await _connectedClients.Last().InitializeAsync(singleMwBot.Id);
+                var client = new MqttMwBotClient(_loggerFactory.CreateLogger<MqttMwBotClient>(), _serviceScopeFactory);
+                await client.InitializeAsync(singleMwBot.Id);
+                _connectedClients.Add(client);
             }
         }
         catch
@@ -86,7 +89,7 @@ public class MwBotController : ControllerBase
     }
 
     [HttpPost("on")]
-    public async Task<ActionResult<MwBot>> TurnOn([FromBody] MwBot mwBot)
+    public async Task<ActionResult<MqttMwBotClient>> TurnOn([FromBody] MwBot mwBot)
     {
         if (!ModelState.IsValid)
         {
@@ -97,10 +100,12 @@ public class MwBotController : ControllerBase
         try
         {
             _logger.LogDebug("Creating / Retrieving MwBot with id {id}", mwBot.Id);
-            _connectedClients.Add(new MqttMwBotClient(_loggerFactory.CreateLogger<MqttMwBotClient>(), _serviceScopeFactory));
+            var client = new MqttMwBotClient(_loggerFactory.CreateLogger<MqttMwBotClient>(), _serviceScopeFactory);
+            await client.InitializeAsync(mwBot.Id);
+            _connectedClients.Add(client);
             _logger.LogDebug("MwBot {id} initialized", mwBot.Id);
 
-            return Ok(_connectedClients.Last());
+            return Ok(client);
         }
         catch
         {
@@ -122,36 +127,41 @@ public class MwBotController : ControllerBase
         try
         {
             _logger.LogDebug("Turning off MwBot with id {id}", mwBot.Id);
-            // TODO : Implement turning off MwBot
-            _connectedClients.Remove(_connectedClients.Find(mc => mc.MwBot.Id == mwBot.Id));
+            var client = _connectedClients.FirstOrDefault(c => c.MwBot.Id == mwBot.Id);
+            if (client != null)
+            {
+                _connectedClients.Remove(client);
+            }
+            _logger.LogDebug("MwBot with id {id} turned off", mwBot.Id);
+            return Ok();
         }
         catch
         {
-
+            _logger.LogError("Error while turning off MwBot with id {id}", mwBot.Id);
         }
 
         return BadRequest();
     }
 
-    [HttpDelete]
-    public async Task<ActionResult> DeleteMwBot([FromBody] MwBot mwBot)
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> DeleteMwBot(int id)
     {
-        if (mwBot.Id <= 0)
+        if (id <= 0)
         {
-            _logger.LogWarning("Invalid id {id}", mwBot.Id);
+            _logger.LogWarning("Invalid id {id}", id);
             return BadRequest();
         }
 
         try
         {
-            _logger.LogDebug("Deleting MwBot with id {id}", mwBot.Id);
-            await _repository.DeleteAsync(m => m.Id == mwBot.Id);
-            _logger.LogDebug("MwBot with id {id} deleted", mwBot.Id);
+            _logger.LogDebug("Deleting MwBot with id {id}", id);
+            await _repository.DeleteAsync(m => m.Id == id);
+            _logger.LogDebug("MwBot with id {id} deleted", id);
             return Ok();
         }
         catch
         {
-            _logger.LogError("Error while deleting MwBot with id {id}", mwBot.Id);
+            _logger.LogError("Error while deleting MwBot with id {id}", id);
         }
 
         return BadRequest();
