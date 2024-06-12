@@ -21,7 +21,7 @@ public class ChargeHistory
     public decimal? EndChargeLevel { get; set; }
     public int? MWBotId { get; set; }
     public MwBot? MWBot { get; set; }
-    public int CarId { get; set; }
+    public string CarLicencePlate { get; set; }
     public Car Car { get; set; }
     public string UserId { get; set; }
     public IdentityUser User { get; set; }

@@ -30,9 +30,6 @@ services.AddLogging(loggingBuilder =>
 //        googleOptions.ClientSecret = configuration["Authentication:Google:ClientSecret"]!;
 //    });
 
-// Mqtt server init
-//services.AddHostedService<MqttBroker>();
-
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 services.AddDbContext<ApplicationDbContext>();
@@ -59,11 +56,13 @@ services.AddScoped<ParkingRepository>();
 services.AddScoped<ParkingSlotRepository>();
 services.AddScoped<ReservationRepository>();
 
+
 // Authorization handlers
 services.AddSingleton<IAuthorizationHandler, IsAdminAuthorizationHandler>();
 services.AddSingleton<IAuthorizationHandler, IsPremiumUserAuthorizationHandler>();
 
-// Mqtt services
+// Mqtt
+services.AddHostedService<MqttBroker>();
 services.AddTransient<MqttMwBotClient>();
 
 var app = builder.Build();

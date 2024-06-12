@@ -30,7 +30,7 @@ public class MwBotController : ControllerBase
         MwBotRepository repository,
         ChargeHistoryRepository chargeHistoryRepository,
         ILoggerFactory loggerFactory,
-        IServiceScopeFactory serviceScopeFactory)
+        IServiceScopeFactory serviceScopeFactory )
     {
         _logger = logger;
         _repository = repository;
@@ -88,7 +88,7 @@ public class MwBotController : ControllerBase
         return BadRequest();
     }
 
-    [HttpPost("on")]
+    [HttpPut("on")]
     public async Task<ActionResult<MqttMwBotClient>> TurnOn([FromBody] MwBot mwBot)
     {
         if (!ModelState.IsValid)
@@ -102,6 +102,7 @@ public class MwBotController : ControllerBase
             _logger.LogDebug("Creating / Retrieving MwBot with id {id}", mwBot.Id);
             var client = new MqttMwBotClient(_loggerFactory.CreateLogger<MqttMwBotClient>(), _serviceScopeFactory);
             await client.InitializeAsync(mwBot.Id);
+
             _connectedClients.Add(client);
             _logger.LogDebug("MwBot {id} initialized", mwBot.Id);
 
@@ -115,7 +116,7 @@ public class MwBotController : ControllerBase
         return BadRequest();
     }
 
-    [HttpPost("off")]
+    [HttpPut("off")]
     public async Task<ActionResult<MwBot>> TurnOff([FromBody] MwBot mwBot)
     {
         if (!ModelState.IsValid)
@@ -192,12 +193,27 @@ public class MwBotController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<MwBot>>> GetMwBots()
+    public async Task<ActionResult<IEnumerable<MwBot>>> GetMwBots([FromQuery] int? status)
     {
         try
         {
             _logger.LogDebug("Retrieving MwBots");
-            var mwBots = await _repository.GetAllAsync();
+
+            IEnumerable<MwBot> mwBots;
+
+            if (status.HasValue && status.Value == -1)
+            {
+                mwBots = await _repository.GetOnlineMwBots();
+            }
+            else if (status.HasValue && status.Value == 0)
+            {
+                mwBots = await _repository.GetOfflineMwBots();
+            }
+            else
+            {
+                mwBots = await _repository.GetAllAsync();
+            }
+
             _logger.LogDebug("MwBots retrieved");
             return Ok(mwBots);
         }

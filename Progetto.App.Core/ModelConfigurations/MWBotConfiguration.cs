@@ -16,7 +16,7 @@ public class MwBotConfiguration : IEntityTypeConfiguration<MwBot>
 {
     public void Configure(EntityTypeBuilder<MwBot> builder)
     {
-        builder.ToTable("MwBots");
+        builder.ToTable("MWBots");
         builder.HasKey(b => b.Id);
         builder.Property(b => b.BatteryPercentage).IsRequired();
         builder.Property(b => b.Status).IsRequired()
