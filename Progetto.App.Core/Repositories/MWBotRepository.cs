@@ -9,6 +9,10 @@ using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Repositories;
 
+/// <summary>
+/// Repository for MwBot entity (inherits from GenericRepository)
+/// For database operations related to MwBot entity
+/// </summary>
 public class MwBotRepository : GenericRepository<MwBot>
 {
     private readonly ApplicationDbContext _context;

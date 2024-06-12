@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 
 namespace Progetto.App.Core.ModelConfigurations;
 
+/// <summary>
+/// Configuration for the ParkingSlot entity (table) in the database (EF Core)
+/// </summary>
 public class ParkingSlotConfiguration : IEntityTypeConfiguration<ParkingSlot>
 {
     public void Configure(EntityTypeBuilder<ParkingSlot> builder)

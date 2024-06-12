@@ -15,6 +15,9 @@ public enum ParkSlotStatus
     OutOfService
 }
 
+/// <summary>
+/// Represents a parking slot (single slot in a parking)
+/// </summary>
 public class ParkingSlot
 {
     public int Id { get; set; }

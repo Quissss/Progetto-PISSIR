@@ -2,6 +2,10 @@
 
 namespace Progetto.App.Core.Repositories;
 
+/// <summary>
+/// Generic repository interface
+/// </summary>
+/// <typeparam name="T"></typeparam>
 public interface IGenericRepository<T> where T : class
 {
     Task<List<T>> GetAllAsync();

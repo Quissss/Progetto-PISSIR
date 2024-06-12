@@ -3,6 +3,11 @@ using Progetto.App.Core.Data;
 using System.Linq.Expressions;
 
 namespace Progetto.App.Core.Repositories;
+
+/// <summary>
+/// Generic repository for database operations
+/// </summary>
+/// <typeparam name="T"></typeparam>
 public class GenericRepository<T> : IGenericRepository<T> where T : class
 {
     protected readonly ApplicationDbContext DbContext;

@@ -7,6 +7,9 @@ using System.Linq.Expressions;
 
 namespace Progetto.App.Controllers;
 
+/// <summary>
+/// Controller for managing parkings (endpoints for CRUD operations)
+/// </summary>
 [Route("api/[controller]")]
 [ApiController]
 public class ParkingController : ControllerBase

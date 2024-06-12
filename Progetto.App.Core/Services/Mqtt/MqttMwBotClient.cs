@@ -17,12 +17,15 @@ using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Services.MQTT;
 
+/// <summary>
+/// MwBot MQTT client (curresponds to single instance of mwbot when it's online)
+/// </summary>
 public class MqttMwBotClient
 {
-    private readonly ILogger<MqttMwBotClient> _logger;
-    private readonly IMqttClient _mqttClient;
-    private readonly IServiceScopeFactory _serviceScopeFactory;
     private MqttClientOptions _options;
+    private readonly IMqttClient _mqttClient;
+    private readonly ILogger<MqttMwBotClient> _logger;
+    private readonly IServiceScopeFactory _serviceScopeFactory; // Retrieve scoped services (repository in this case)
     public MwBot MwBot { get; private set; }
 
     public MqttMwBotClient(ILogger<MqttMwBotClient> logger, IServiceScopeFactory serviceScopeFactory)
@@ -33,6 +36,12 @@ public class MqttMwBotClient
         _mqttClient.ApplicationMessageReceivedAsync += HandleReceivedApplicationMessage;
     }
 
+    /// <summary>
+    /// Initialize MwBot client with given id and connect to MQTT server
+    /// </summary>
+    /// <param name="mwBotId"></param>
+    /// <param name="brokerAddress"></param>
+    /// <returns></returns>
     public async Task InitializeAsync(int? mwBotId, string brokerAddress = "localhost")
     {
         _options = new MqttClientOptionsBuilder()
@@ -43,9 +52,14 @@ public class MqttMwBotClient
             .Build();
 
         await InitializeMwBot(mwBotId);
-        await ConnectAsync(CancellationToken.None);
+        await ConnectAsync();
     }
 
+    /// <summary>
+    /// Initialize MwBot with given id if exists in database
+    /// </summary>
+    /// <param name="mwBotId"></param>
+    /// <returns></returns>
     private async Task InitializeMwBot(int? mwBotId)
     {
         try
@@ -67,18 +81,21 @@ public class MqttMwBotClient
         }
     }
 
-    // Publish message to MQTT server
-    public async Task PublishAsync(string topic, string payload)
+    /// <summary>
+    /// Publish message to MQTT server/broker
+    /// </summary>
+    /// <param name="payload"></param>
+    /// <returns></returns>
+    public async Task PublishAsync(string payload)
     {
         var message = new MqttApplicationMessageBuilder()
-            .WithTopic(topic)
             .WithPayload(payload)
             .Build();
 
         if (_mqttClient.IsConnected)
         {
             await _mqttClient.PublishAsync(message);
-            _logger.LogInformation($"Published message to topic: {topic}");
+            _logger.LogInformation("Published message {payload}", payload);
         }
         else
         {
@@ -86,13 +103,22 @@ public class MqttMwBotClient
         }
     }
 
+    /// <summary>
+    /// Publish MwBot message to MQTT server/broker
+    /// </summary>
+    /// <param name="mwBotMessage"></param>
+    /// <returns></returns>
     public async Task PublishClientMessageAsync(MqttClientMessage mwBotMessage)
     {
         var payload = JsonSerializer.Serialize(mwBotMessage);
-        await PublishAsync("topic/mwbots", payload); // TODO : Paramtrize topic
+        await PublishAsync(payload);
     }
 
-    // Handle received message
+    /// <summary>
+    /// Handle received application message from MQTT server
+    /// </summary>
+    /// <param name="message"></param>
+    /// <returns></returns>
     private async Task HandleReceivedApplicationMessage(MqttApplicationMessageReceivedEventArgs message)
     {
         var payload = Encoding.UTF8.GetString(message.ApplicationMessage.Payload);
@@ -122,7 +148,11 @@ public class MqttMwBotClient
         }
     }
 
-    public async Task ConnectAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// Connect to MQTT server
+    /// </summary>
+    /// <returns></returns>
+    public async Task ConnectAsync()
     {
         try
         {
@@ -141,6 +171,10 @@ public class MqttMwBotClient
         }
     }
 
+    /// <summary>
+    /// Disconnect from MQTT server
+    /// </summary>
+    /// <returns></returns>
     public async Task DisconnectAsync()
     {
         try
@@ -161,6 +195,10 @@ public class MqttMwBotClient
         }
     }
 
+    /// <summary>
+    /// Ping MQTT server
+    /// </summary>
+    /// <returns></returns>
     public async Task PingServer()
     {
         try
@@ -175,6 +213,11 @@ public class MqttMwBotClient
         }
     }
 
+    /// <summary>
+    /// Subscribe to given topic
+    /// </summary>
+    /// <param name="topic"></param>
+    /// <returns></returns>
     public async Task SubscribeAsync(string topic)
     {
         if (_mqttClient.IsConnected)

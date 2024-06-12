@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Models.Mqtt;
 
+/// <summary>
+/// Represents a message sent by the MQTT client
+/// </summary>
 public class MqttClientMessage : MwBot
 {
     public int? ParkingSlotId { get; set; }

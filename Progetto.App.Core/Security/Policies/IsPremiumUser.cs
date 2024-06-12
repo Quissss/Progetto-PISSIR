@@ -6,18 +6,20 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Progetto.App.Core.Security.Policies
+namespace Progetto.App.Core.Security.Policies;
+
+/// <summary>
+/// Requirement for premium users
+/// </summary>
+public class IsPremiumUser : IAuthorizationRequirement { }
+
+public class IsPremiumUserAuthorizationHandler : AuthorizationHandler<IsPremiumUser>
 {
-    public class IsPremiumUser : IAuthorizationRequirement { }
-
-    public class IsPremiumUserAuthorizationHandler : AuthorizationHandler<IsPremiumUser>
+    protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, IsPremiumUser requirement)
     {
-        protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, IsPremiumUser requirement)
-        {
-            if (context.User.HasClaim(ClaimName.Role, $"{((int)Role.PremiumUser)}"))
-                context.Succeed(requirement);
+        if (context.User.HasClaim(ClaimName.Role, $"{((int)Role.PremiumUser)}"))
+            context.Succeed(requirement);
 
-            return Task.FromResult(context);
-        }
+        return Task.FromResult(context);
     }
 }

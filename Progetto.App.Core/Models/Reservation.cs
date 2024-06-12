@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Models;
 
+/// <summary>
+/// Represents a reservation (only for premium users)
+/// </summary>
 public class Reservation
 {
     public int Id { get; set; }

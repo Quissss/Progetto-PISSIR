@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Models;
 
+/// <summary>
+/// Represents a parking
+/// </summary>
 public class Parking
 {
     public int Id { get; set; }

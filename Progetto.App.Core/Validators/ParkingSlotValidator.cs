@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Validators;
 
+/// <summary>
+/// Rules for ParkingSlot entity validation
+/// </summary>
 public class ParkingSlotValidator : AbstractValidator<ParkingSlot>
 {
     public ParkingSlotValidator()

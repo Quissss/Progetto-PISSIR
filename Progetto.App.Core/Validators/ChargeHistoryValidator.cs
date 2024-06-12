@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Validators;
 
+/// <summary>
+/// Rules for ChargeHistory entity validation
+/// </summary>
 public class ChargeHistoryValidator : AbstractValidator<ChargeHistory>
 {
     public ChargeHistoryValidator()

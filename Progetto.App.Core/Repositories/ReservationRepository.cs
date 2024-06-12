@@ -9,6 +9,10 @@ using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Repositories;
 
+/// <summary>
+/// Repository for Reservation entity (inherits from GenericRepository)
+/// For database operations related to Reservation entity
+/// </summary>
 public class ReservationRepository : GenericRepository<Reservation>
 {
     private readonly ApplicationDbContext _context;

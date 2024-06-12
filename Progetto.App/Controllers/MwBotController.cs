@@ -9,6 +9,10 @@ using Progetto.App.Core.Services.MQTT;
 
 namespace Progetto.App.Controllers;
 
+/// <summary>
+/// Controller for managing MwBots (endpoints for CRUD operations)
+/// Requires admin authentication
+/// </summary>
 [Route("api/[controller]")]
 [ApiController]
 [Authorize(Policy = PolicyNames.IsAdmin)]
@@ -19,6 +23,9 @@ public class MwBotController : ControllerBase
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly MwBotRepository _repository;
     private readonly ChargeHistoryRepository _chargeHistoryRepository;
+
+
+
     private List<MqttMwBotClient> _connectedClients;
 
     public MwBotController(ILogger<MwBotController> logger, MwBotRepository repository, ChargeHistoryRepository chargeHistoryRepository, ILoggerFactory loggerFactory, IServiceScopeFactory serviceScopeFactory)
@@ -53,8 +60,33 @@ public class MwBotController : ControllerBase
         _logger.LogDebug("Connected clients retrieved");
     }
 
+    [HttpPost]
+    public async Task<ActionResult<MwBot>> AddMwBot([FromBody] MwBot mwBot)
+    {
+        if (!ModelState.IsValid)
+        {
+            _logger.LogWarning("Invalid model state while creating MwBot");
+            return BadRequest();
+        }
+
+        try
+        {
+            _logger.LogDebug("Creating MwBot with id {id}", mwBot.Id);
+            await _repository.AddAsync(mwBot);
+            _logger.LogDebug("MwBot with id {id} created", mwBot.Id);
+
+            return Ok(mwBot);
+        }
+        catch
+        {
+            _logger.LogError("Error while creating MwBot with id {id}", mwBot.Id);
+        }
+
+        return BadRequest();
+    }
+
     [HttpPost("on")]
-    public async Task<ActionResult<MwBot>> TurnOn(MwBot mwBot)
+    public async Task<ActionResult<MwBot>> TurnOn([FromBody] MwBot mwBot)
     {
         if (!ModelState.IsValid)
         {
@@ -79,7 +111,7 @@ public class MwBotController : ControllerBase
     }
 
     [HttpPost("off")]
-    public async Task<ActionResult<MwBot>> TurnOff(MwBot mwBot)
+    public async Task<ActionResult<MwBot>> TurnOff([FromBody] MwBot mwBot)
     {
         if (!ModelState.IsValid)
         {
@@ -96,6 +128,72 @@ public class MwBotController : ControllerBase
         catch
         {
 
+        }
+
+        return BadRequest();
+    }
+
+    [HttpDelete]
+    public async Task<ActionResult> DeleteMwBot([FromBody] MwBot mwBot)
+    {
+        if (mwBot.Id <= 0)
+        {
+            _logger.LogWarning("Invalid id {id}", mwBot.Id);
+            return BadRequest();
+        }
+
+        try
+        {
+            _logger.LogDebug("Deleting MwBot with id {id}", mwBot.Id);
+            await _repository.DeleteAsync(m => m.Id == mwBot.Id);
+            _logger.LogDebug("MwBot with id {id} deleted", mwBot.Id);
+            return Ok();
+        }
+        catch
+        {
+            _logger.LogError("Error while deleting MwBot with id {id}", mwBot.Id);
+        }
+
+        return BadRequest();
+    }
+
+    [HttpPut]
+    public async Task<ActionResult<MwBot>> UpdateMwBot([FromBody] MwBot mwBot)
+    {
+        if (!ModelState.IsValid)
+        {
+            _logger.LogWarning("Invalid model state while updating MwBot with id {id}", mwBot.Id);
+            return BadRequest();
+        }
+
+        try
+        {
+            _logger.LogDebug("Updating MwBot with id {id}", mwBot.Id);
+            await _repository.UpdateAsync(mwBot);
+            _logger.LogDebug("MwBot with id {id} updated", mwBot.Id);
+            return Ok(mwBot);
+        }
+        catch
+        {
+            _logger.LogError("Error while updating MwBot with id {id}", mwBot.Id);
+        }
+
+        return BadRequest();
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<MwBot>>> GetMwBots()
+    {
+        try
+        {
+            _logger.LogDebug("Retrieving MwBots");
+            var mwBots = await _repository.GetAllAsync();
+            _logger.LogDebug("MwBots retrieved");
+            return Ok(mwBots);
+        }
+        catch
+        {
+            _logger.LogError("Error while retrieving MwBots");
         }
 
         return BadRequest();
