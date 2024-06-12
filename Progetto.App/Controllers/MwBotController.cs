@@ -89,7 +89,7 @@ public class MwBotController : ControllerBase
     }
 
     [HttpPut("on")]
-    public async Task<ActionResult<MqttMwBotClient>> TurnOn([FromBody] MwBot mwBot)
+    public async Task<ActionResult<MwBot>> TurnOn([FromBody] MwBot mwBot)
     {
         if (!ModelState.IsValid)
         {
@@ -106,7 +106,7 @@ public class MwBotController : ControllerBase
             _connectedClients.Add(client);
             _logger.LogDebug("MwBot {id} initialized", mwBot.Id);
 
-            return Ok(mwBot);
+            return Ok(client.MwBot);
         }
         catch
         {
@@ -130,9 +130,8 @@ public class MwBotController : ControllerBase
             _logger.LogDebug("Turning off MwBot with id {id}", mwBot.Id);
             var client = _connectedClients.FirstOrDefault(c => c.MwBot.Id == mwBot.Id);
             if (client != null)
-            {
                 _connectedClients.Remove(client);
-            }
+
             _logger.LogDebug("MwBot with id {id} turned off", mwBot.Id);
             return Ok(mwBot);
         }
