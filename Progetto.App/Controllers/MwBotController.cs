@@ -106,7 +106,7 @@ public class MwBotController : ControllerBase
             _connectedClients.Add(client);
             _logger.LogDebug("MwBot {id} initialized", mwBot.Id);
 
-            return Ok(client);
+            return Ok(mwBot);
         }
         catch
         {
@@ -134,7 +134,7 @@ public class MwBotController : ControllerBase
                 _connectedClients.Remove(client);
             }
             _logger.LogDebug("MwBot with id {id} turned off", mwBot.Id);
-            return Ok();
+            return Ok(mwBot);
         }
         catch
         {
