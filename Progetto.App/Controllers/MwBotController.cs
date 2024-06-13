@@ -101,14 +101,17 @@ public class MwBotController : ControllerBase
         {
             _logger.LogDebug("Creating / Retrieving MwBot with id {id}", mwBot.Id);
             var client = new MqttMwBotClient(_loggerFactory.CreateLogger<MqttMwBotClient>(), _serviceScopeFactory);
-            await client.InitializeAsync(mwBot.Id);
+
+            client.InitializeAsync(mwBot.Id).GetAwaiter().GetResult();
+            client.MwBot.Status = mwBot.Status = MwBotStatus.StandBy;
+            await _repository.UpdateAsync(mwBot);
 
             mwBot.Status = MwBotStatus.StandBy;  // Aggiorna lo stato del MwBot
             await _repository.UpdateAsync(mwBot);  // Salva le modifiche nel database
 
             _connectedClients.Add(client);
-            _logger.LogDebug("MwBot {id} initialized", mwBot.Id);
 
+            _logger.LogDebug("MwBot {id} initialized", mwBot.Id);
             return Ok(mwBot);
         }
         catch (Exception ex)
@@ -137,8 +140,8 @@ public class MwBotController : ControllerBase
                 _connectedClients.Remove(client);
             }
 
-            mwBot.Status = MwBotStatus.Offline;  // Aggiorna lo stato del MwBot
-            _=_repository.UpdateAsync(mwBot);  // Salva le modifiche nel database
+            mwBot.Status = MwBotStatus.Offline;
+            _=_repository.UpdateAsync(mwBot);
 
             _logger.LogDebug("MwBot with id {id} turned off", mwBot.Id);
             return Ok(mwBot);
