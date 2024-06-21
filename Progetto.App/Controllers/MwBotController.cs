@@ -153,8 +153,6 @@ public class MwBotController : ControllerBase
         }
     }
 
-
-
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteMwBot(int id)
     {
