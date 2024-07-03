@@ -53,10 +53,10 @@ $(function () {
         },
 
         fields: [
-            { name: "id", type: "number", width: 50, title: "ID", readOnly: true },
-            { name: "batteryPercentage", type: "number", width: 150, title: "Battery Percentage" },
+            { name: "id", type: "number", title: "ID", readOnly: true },
+            { name: "batteryPercentage", type: "number", title: "Battery Percentage", filtering: false },
             {
-                name: "status", type: "select", width: 150, title: "Status", items: [
+                name: "status", type: "select", title: "Status", items: [
                     { Name: "Offline", Id: 0 },
                     { Name: "Online", Id: -1 }
                 ], valueField: "Id", textField: "Name",
@@ -74,18 +74,18 @@ $(function () {
             
             {
                 type: "custom",
-                name: "On/Off",
-                width: 50,
+                //name: "On/Off",
+                width: 18,
                 itemTemplate: function (value, item) {
                     if (item.status === 0) {
-                        return $("<button>").text("Turn On")
-                            .addClass("btn btn-success")
+                        return $("<button>")
+                            .addClass("btn btn-sm btn-outline-success fa-solid fa-power-off")
                             .on("click", function () {
                                 turnBot(item, "on");
                             });
                     } else {
-                        return $("<button>").text("Turn Off")
-                            .addClass("btn btn-danger")
+                        return $("<button>")
+                            .addClass("btn btn-sm btn-outline-danger fa-solid fa-power-off")
                             .on("click", function () {
                                 turnBot(item, "off");
                             });
