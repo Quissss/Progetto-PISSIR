@@ -22,11 +22,11 @@ namespace Progetto.App.Core.Services.MQTT;
 /// </summary>
 public class MqttMwBotClient
 {
-    private MqttClientOptions _options;
+    private MqttClientOptions? _options;
     private readonly IMqttClient _mqttClient;
     private readonly ILogger<MqttMwBotClient> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory; // Retrieve scoped services (repository in this case)
-    public MwBot MwBot { get; private set; }
+    public MwBot? MwBot { get; private set; }
 
     public MqttMwBotClient(ILogger<MqttMwBotClient> logger, IServiceScopeFactory serviceScopeFactory)
     {
@@ -41,18 +41,18 @@ public class MqttMwBotClient
     /// </summary>
     /// <param name="mwBotId"></param>
     /// <param name="brokerAddress"></param>
-    /// <returns></returns>
-    public async Task InitializeAsync(int? mwBotId, string brokerAddress = "localhost")
+    /// <returns>Connection success/failure</returns>
+    public async Task<bool> InitializeAsync(int? mwBotId, string brokerAddress = "localhost")
     {
         _options = new MqttClientOptionsBuilder()
             .WithClientId(Guid.NewGuid().ToString())
-            .WithTcpServer(brokerAddress)
+            .WithTcpServer(brokerAddress) // TODO : fix this 
             .WithTlsOptions(new MqttClientTlsOptions { UseTls = true })
             .WithCleanSession()
             .Build();
 
         await InitializeMwBot(mwBotId);
-        await ConnectAsync();
+        return await ConnectAsync();
     }
 
     /// <summary>
@@ -71,9 +71,13 @@ public class MqttMwBotClient
                 MwBot = await mwBotRepository.GetByIdAsync(mwBotId.Value);
 
             if (MwBot is null)
+            {
                 _logger.LogWarning("MwBot not found");
-            else
-                _logger.LogInformation("MwBot initialized successfully");
+                return;
+            }
+
+            _logger.LogInformation("MwBot initialized successfully");
+
         }
         catch (Exception ex)
         {
@@ -88,19 +92,20 @@ public class MqttMwBotClient
     /// <returns></returns>
     public async Task PublishAsync(string payload)
     {
+        ArgumentNullException.ThrowIfNull(payload);
+
         var message = new MqttApplicationMessageBuilder()
             .WithPayload(payload)
             .Build();
 
-        if (_mqttClient.IsConnected)
-        {
-            await _mqttClient.PublishAsync(message);
-            _logger.LogInformation("Published message {payload}", payload);
-        }
-        else
+        if (!_mqttClient.IsConnected)
         {
             _logger.LogWarning("Client is not connected, cannot publish message");
+            return;
         }
+
+        await _mqttClient.PublishAsync(message);
+        _logger.LogInformation("Published message {payload}", payload);
     }
 
     /// <summary>
@@ -121,30 +126,35 @@ public class MqttMwBotClient
     /// <returns></returns>
     private async Task HandleReceivedApplicationMessage(MqttApplicationMessageReceivedEventArgs message)
     {
-        var payload = Encoding.UTF8.GetString(message.ApplicationMessage.Payload);
-        _logger.LogInformation($"Received message: {payload} from topic: {message.ApplicationMessage.Topic}");
+        ArgumentNullException.ThrowIfNull(message);
+
+        var payload = Encoding.UTF8.GetString(message.ApplicationMessage.PayloadSegment);
+        _logger.LogInformation("Received message: {payload} from topic: {message.ApplicationMessage.Topic}", payload, message.ApplicationMessage.Topic);
 
         var mwBotMessage = JsonSerializer.Deserialize<MqttClientMessage>(payload);
 
-        if (mwBotMessage != null)
+        if (mwBotMessage is null || MwBot is null)
         {
-            try
-            {
-                _logger.BeginScope("Updating MwBot");
-                MwBot.Status = mwBotMessage.Status;
-                MwBot.BatteryPercentage = mwBotMessage.BatteryPercentage;
+            _logger.LogWarning("Invalid message received or MwBot not initialized");
+            return;
+        }
 
-                using (var scope = _serviceScopeFactory.CreateScope())
-                {
-                    var mwBotRepository = scope.ServiceProvider.GetRequiredService<MwBotRepository>();
-                    await mwBotRepository.UpdateAsync(MwBot);
-                }
-                _logger.LogInformation("MwBot updated successfully");
-            }
-            catch (Exception ex)
+        try
+        {
+            _logger.BeginScope("Updating MwBot");
+            MwBot.Status = mwBotMessage.Status;
+            MwBot.BatteryPercentage = mwBotMessage.BatteryPercentage;
+
+            using (var scope = _serviceScopeFactory.CreateScope())
             {
-                _logger.LogError(ex, "Error updating MwBot");
+                var mwBotRepository = scope.ServiceProvider.GetRequiredService<MwBotRepository>();
+                await mwBotRepository.UpdateAsync(MwBot);
             }
+            _logger.LogInformation("MwBot updated successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating MwBot");
         }
     }
 
@@ -152,22 +162,26 @@ public class MqttMwBotClient
     /// Connect to MQTT server
     /// </summary>
     /// <returns></returns>
-    public async Task ConnectAsync()
+    public async Task<bool> ConnectAsync()
     {
         try
         {
             _logger.BeginScope("Connecting to MQTT server");
-            using var timeoutToken = new CancellationTokenSource(TimeSpan.FromSeconds(1));
-            await _mqttClient.ConnectAsync(_options, timeoutToken.Token);
+            //using var timeoutToken = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            //await _mqttClient.ConnectAsync(_options, timeoutToken.Token);
+            await _mqttClient.ConnectAsync(_options);
             _logger.LogInformation("Connected to MQTT server");
+            return true;
         }
         catch (OperationCanceledException)
         {
             _logger.LogWarning("Timeout while connecting.");
+            return false;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error connecting to MQTT server");
+            return false;
         }
     }
 
@@ -175,8 +189,20 @@ public class MqttMwBotClient
     /// Disconnect from MQTT server
     /// </summary>
     /// <returns></returns>
-    public async Task DisconnectAsync()
+    public async Task<bool> DisconnectAsync()
     {
+        if (MwBot is null)
+        {
+            _logger.LogWarning("MwBot not initialized, cannot disconnect");
+            return false;
+        }
+
+        if (MwBot.Status == MwBotStatus.Offline)
+        {
+            _logger.LogWarning("MwBot is not online, cannot disconnect");
+            return false;
+        }
+
         try
         {
             _logger.BeginScope("Disconnecting from MQTT server");
@@ -188,10 +214,12 @@ public class MqttMwBotClient
 
             await _mqttClient.DisconnectAsync();
             _logger.LogInformation("Disconnected from MQTT server");
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error disconnecting from MQTT server");
+            return false;
         }
     }
 
@@ -199,17 +227,19 @@ public class MqttMwBotClient
     /// Ping MQTT server
     /// </summary>
     /// <returns></returns>
-    public async Task PingServer()
+    public async Task<bool> PingServer()
     {
         try
         {
             _logger.BeginScope("Pinging MQTT server");
             await _mqttClient.PingAsync();
             _logger.LogInformation("Ping sent to MQTT server");
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error sending ping to MQTT server");
+            return false;
         }
     }
 
@@ -218,16 +248,31 @@ public class MqttMwBotClient
     /// </summary>
     /// <param name="topic"></param>
     /// <returns></returns>
-    public async Task SubscribeAsync(string topic)
+    public async Task<bool> SubscribeAsync(string topic)
     {
-        if (_mqttClient.IsConnected)
+        if (string.IsNullOrWhiteSpace(topic))
         {
-            await _mqttClient.SubscribeAsync(new MqttTopicFilterBuilder().WithTopic(topic).Build());
-            _logger.LogInformation($"Subscribed to topic: {topic}");
+            _logger.LogWarning("Invalid topic, cannot subscribe");
+            return false;
         }
-        else
+
+        if (!_mqttClient.IsConnected)
         {
             _logger.LogWarning("Client is not connected, cannot subscribe to topic");
+            return false;
         }
+
+        try
+        {
+            await _mqttClient.SubscribeAsync(new MqttTopicFilterBuilder().WithTopic(topic).Build());
+            _logger.LogInformation("Subscribed to topic: {topic}", topic);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error subscribing to topic: {topic}", topic);
+            return false;
+        }
+
+        return true;
     }
 }

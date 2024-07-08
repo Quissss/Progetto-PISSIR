@@ -47,7 +47,7 @@ public class MqttBroker : IHostedService, IDisposable
     /// <returns></returns>
     private async Task MqttServer_InterceptingPublishAsync(InterceptingPublishEventArgs arg)
     {
-        string payload = Encoding.UTF8.GetString(arg.ApplicationMessage.Payload);
+        string payload = Encoding.UTF8.GetString(arg.ApplicationMessage.PayloadSegment);
         _logger.LogDebug("Message payload: {payload}", payload);
         var mwBotMessage = JsonSerializer.Deserialize<MqttClientMessage>(payload, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
         _logger.LogDebug("Message mwBot: {mwBotMessage}", mwBotMessage);
@@ -59,17 +59,17 @@ public class MqttBroker : IHostedService, IDisposable
             _logger.BeginScope("Fetching mwBot by id: {id}", mwBotMessage.Id);
 
             var mwBot = await mwBotRepository.GetByIdAsync(mwBotMessage.Id);
-            if (mwBot != null)
-            {
-                _logger.LogDebug("Updating local mwBot with params: {battery} and {status}", mwBotMessage.BatteryPercentage, mwBot.Status);
-                mwBot.Status = mwBotMessage.Status;
-                mwBot.BatteryPercentage = mwBotMessage.BatteryPercentage;
-                await mwBotRepository.UpdateAsync(mwBot);
-            }
-            else
+
+            if (mwBot is null)
             {
                 _logger.LogDebug("MwBot doesn't exist");
+                return;
             }
+
+            _logger.LogDebug("Updating local mwBot with params: {battery} and {status}", mwBotMessage.BatteryPercentage, mwBot.Status);
+            mwBot.Status = mwBotMessage.Status;
+            mwBot.BatteryPercentage = mwBotMessage.BatteryPercentage;
+            await mwBotRepository.UpdateAsync(mwBot);
         }
 
         arg.ProcessPublish = true;
