@@ -1,10 +1,9 @@
 ﻿@page
-@model Progetto.App.Pages.ParkingModel
+@model Progetto.App.Pages.dashboardModel
 @{
-    ViewData["Title"] = "Dashboard Parking Lots";
+    ViewData["Title"] = "Dashboard";
 }
 
-<h2>@ViewData["Title"]</h2>
 
 
 <div class="container-fluid">
@@ -14,7 +13,7 @@
             <div class="position-sticky">
                 <ul class="nav flex-column">
                     <li class="nav-item">
-                        <a class="nav-link active text-white" href="#">
+                        <a class="nav-link active text-white" href="/Dashboard">
                             <i class="bi bi-house-door-fill"></i>
                             Dashboard
                         </a>
@@ -35,41 +34,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="#">
-                            Reports
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="#">
-                            Integrations
+                        <a class="nav-link text-white" href="/recharge">
+                            Recharge
                         </a>
                     </li>
                 </ul>
-                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-                    <span>SAVED REPORTS</span>
-                </h6>
-                <ul class="nav flex-column mb-2">
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="#">
-                            Current month
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="#">
-                            Last quarter
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="#">
-                            Social engagement
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="#">
-                            Year-end sale
-                        </a>
-                    </li>
-                </ul>
+
                 <ul class="nav flex-column mb-2">
                     <li class="nav-item">
                         <a class="nav-link text-white" href="#">
@@ -88,24 +58,14 @@
         <!-- Main content -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
 
-            <div id="parkingSlotsGrid"></div>
 
             <!-- Line chart -->
             <canvas class="my-4 w-100" id="myChart" width="900" height="380"></canvas>
 
 
+    
+     </main>
     </div>
-    </main>
-</div>
 </div>
 
-}
 
-
-@section Scripts {
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.js"></script>
-    <script>
-        const parkings = @Html.Raw(Json.Serialize(Model.Parkings));
-    </script>
-    <script type="text/javascript" src="~/js/jsGridParkingSlots.js"></script>
-}

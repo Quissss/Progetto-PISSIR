@@ -3,64 +3,81 @@
 @{
     ViewData["Title"] = "Car Charging Status";
 }
-<body class="bg-light">
-    <div class="container mt-5">
-        <h2 class="text-center mb-5 ">Car Charging Status</h2>
 
-        <div id="car-info" class="card mb-4 shadow-sm border-info">
-            <div class="card-body">
-                <h3 class="card-title "><strong> Car Information </strong></h3>
-                <p class="card-text">License Plate: <span id="car-license-plate" class="font-weight-bold">ABC123</span></p>
-                <p class="card-text">Brand: <span id="car-brand" class="font-weight-bold">Tesla</span></p>
-                <p class="card-text">Model: <span id="car-model" class="font-weight-bold">Model S</span></p>
-                <p class="card-text">Battery Percentage: <span id="car-battery-percentage" class="font-weight-bold">75</span>%</p>
-                <div class="progress mb-3">
-                    <div id="car-battery-progress" class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width: 75%;" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
+
+
+
+
+<!-- Main content -->
+<main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+
+
+
+        <div class="container mt-5">
+            <h2 class="text-center mb-5 ">Car Charging Status</h2>
+
+            <div id="car-info" class="card mb-4 shadow-sm border-info">
+                <div class="card-body">
+                    <h3 class="card-title "><strong> Car Information </strong></h3>
+                    <p class="card-text">License Plate: <span id="car-license-plate" class="font-weight-bold">ABC123</span></p>
+                    <p class="card-text">Brand: <span id="car-brand" class="font-weight-bold">Tesla</span></p>
+                    <p class="card-text">Model: <span id="car-model" class="font-weight-bold">Model S</span></p>
+                    <p class="card-text">Battery Percentage: <span id="car-battery-percentage" class="font-weight-bold">75</span>%</p>
+                    <div class="progress mb-3">
+                        <div id="car-battery-progress" class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width: 75%;" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <p class="card-text">Status: <span id="car-status" class="font-weight-bold text-success">Charging</span></p>
+                    <p class="card-text">Parking Slot: <span id="car-parking-slot" class="font-weight-bold">12A</span></p>
                 </div>
-                <p class="card-text">Status: <span id="car-status" class="font-weight-bold text-success">Charging</span></p>
-                <p class="card-text">Parking Slot: <span id="car-parking-slot" class="font-weight-bold">12A</span></p>
+            </div>
+
+            <div id="mwbot-info" class="card shadow-sm border-success">
+                <div class="card-body">
+                    <h3 class="card-title "><strong> MwBot Information </strong></h3>
+                    <p class="card-text">Status: <span id="mwbot-status" class="font-weight-bold">Active</span></p>
+                    <p class="card-text">Battery Percentage: <span id="mwbot-battery-percentage" class="font-weight-bold">85</span>%</p>
+                    <div class="progress">
+                        <div id="mwbot-battery-progress" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 85%;" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div id="mwbot-info" class="card shadow-sm border-success">
-            <div class="card-body">
-                <h3 class="card-title "><strong> MwBot Information </strong></h3>
-                <p class="card-text">Status: <span id="mwbot-status" class="font-weight-bold">Active</span></p>
-                <p class="card-text">Battery Percentage: <span id="mwbot-battery-percentage" class="font-weight-bold">85</span>%</p>
-                <div class="progress">
-                    <div id="mwbot-battery-progress" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 85%;" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100"></div>
-                </div>
-            </div>
+        <!-- Line chart -->
+        <canvas class="my-4 w-100" id="myChart" width="900" height="380"></canvas>
+
+
         </div>
-    </div>
+</main>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            function updateInfo() {
-                // Esempio solo a livello di template
-                const data = {
-                    chargingCar: {
-                        batteryPercentage: Math.floor(Math.random() * 100),
-                        status: 'Charging',
-                    },
-                    mwBot: {
-                        batteryPercentage: Math.floor(Math.random() * 100),
-                        status: 'Active',
-                    }
-                };
 
-                document.getElementById('car-battery-percentage').textContent = data.chargingCar.batteryPercentage;
-                document.getElementById('car-status').textContent = data.chargingCar.status;
-                document.getElementById('mwbot-status').textContent = data.mwBot.status;
-                document.getElementById('mwbot-battery-percentage').textContent = data.mwBot.batteryPercentage;
 
-                document.getElementById('car-battery-progress').style.width = data.chargingCar.batteryPercentage + '%';
-                document.getElementById('car-battery-progress').setAttribute('aria-valuenow', data.chargingCar.batteryPercentage);
-                document.getElementById('mwbot-battery-progress').style.width = data.mwBot.batteryPercentage + '%';
-                document.getElementById('mwbot-battery-progress').setAttribute('aria-valuenow', data.mwBot.batteryPercentage);
-            }
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        function updateInfo() {
+            // Esempio solo a livello di template
+            const data = {
+                chargingCar: {
+                    batteryPercentage: Math.floor(Math.random() * 100),
+                    status: 'Charging',
+                },
+                mwBot: {
+                    batteryPercentage: Math.floor(Math.random() * 100),
+                    status: 'Active',
+                }
+            };
 
-            setInterval(updateInfo, 5000);
-        });
-    </script>
-</body>
+            document.getElementById('car-battery-percentage').textContent = data.chargingCar.batteryPercentage;
+            document.getElementById('car-status').textContent = data.chargingCar.status;
+            document.getElementById('mwbot-status').textContent = data.mwBot.status;
+            document.getElementById('mwbot-battery-percentage').textContent = data.mwBot.batteryPercentage;
+
+            document.getElementById('car-battery-progress').style.width = data.chargingCar.batteryPercentage + '%';
+            document.getElementById('car-battery-progress').setAttribute('aria-valuenow', data.chargingCar.batteryPercentage);
+            document.getElementById('mwbot-battery-progress').style.width = data.mwBot.batteryPercentage + '%';
+            document.getElementById('mwbot-battery-progress').setAttribute('aria-valuenow', data.mwBot.batteryPercentage);
+        }
+
+        setInterval(updateInfo, 5000);
+    });
+</script>

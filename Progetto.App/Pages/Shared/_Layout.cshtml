@@ -33,16 +33,11 @@
                                 var role = User?.Claims?.First(x => x.Type == ClaimName.Role).Value;
                                 if ((int)Role.Admin == Convert.ToInt32(role))
                                 {
-                                    <li class="nav-item">
-                                        <a class="nav-link text-dark" asp-area="" asp-page="/parking">Parking</a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link text-dark" asp-area="" asp-page="/dashparking">ParkingSlot</a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link text-dark" asp-area="" asp-page="/dashmwbot">DashMWbot</a>
-                                    </li>
+                                              
                                 }
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-area="" asp-page="/dashboard">DashBoard</a>
+                                </li>
                                 <li class="nav-item">
                                     <a class="nav-link text-dark" asp-area="" asp-page="/recharge">Recharge</a>
                                 </li>

@@ -8,6 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Pages\Dashboards\**" />
+    <Content Remove="Pages\Dashboards\**" />
+    <EmbeddedResource Remove="Pages\Dashboards\**" />
+    <None Remove="Pages\Dashboards\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Remove="wwwroot\js\jsGridParking.js" />
   </ItemGroup>
 
@@ -39,7 +46,6 @@
 
   <ItemGroup>
     <Folder Include="Logs\" />
-    <Folder Include="Pages\Dashboards\" />
   </ItemGroup>
 
   <ItemGroup>
