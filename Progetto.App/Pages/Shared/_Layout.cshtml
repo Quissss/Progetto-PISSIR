@@ -27,9 +27,6 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
-                        </li>
                         @{
                             if (SignInManager.IsSignedIn(User))
                             {
@@ -46,8 +43,12 @@
                                         <a class="nav-link text-dark" asp-area="" asp-page="/dashmwbot">DashMWbot</a>
                                     </li>
                                 }
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-area="" asp-page="/recharge">Recharge</a>
+                                </li>
                             }
                         }
+                        
                     </ul>
                     <partial name="_LoginPartial" />
                 </div>
@@ -90,7 +91,7 @@
                     <ul class="list-unstyled">
                         <li><i class="fas fa-map-marker-alt"></i> Via Esempio 123, Città, Paese</li>
                         <li><i class="fas fa-phone"></i> +39 123 456 7890</li>
-                        <li><i class="fas fa-envelope"></i> <a href="mailto:info@parcheggielettrici.com">info@parcheggielettrici.com</a></li>
+                        <li><i class="fas fa-envelope"></i> <a href="mailto:info@ecoplug&go.com">info@ecoplug&go.com</a></li>
                     </ul>
                 </div>
             </div>
