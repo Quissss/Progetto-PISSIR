@@ -15,9 +15,12 @@
         <!-- Main content -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
 
-            <div id="car-info" class="card mb-4 shadow-sm border-info">
+            <!-- Car Information Card -->
+            <div id="car-info" class="card mb-4 shadow-lg border-info">
+                <div class="card-header bg-info text-white">
+                    <h3 class="card-title mb-0"><strong>Car Information</strong></h3>
+                </div>
                 <div class="card-body">
-                    <h3 class="card-title "><strong> Car Information </strong></h3>
                     <p class="card-text">License Plate: <span id="car-license-plate" class="font-weight-bold">ABC123</span></p>
                     <p class="card-text">Brand: <span id="car-brand" class="font-weight-bold">Tesla</span></p>
                     <p class="card-text">Model: <span id="car-model" class="font-weight-bold">Model S</span></p>
@@ -30,12 +33,15 @@
                 </div>
             </div>
 
-            <div id="mwbot-info" class="card shadow-sm border-success">
+            <!-- MwBot Information Card -->
+            <div id="mwbot-info" class="card shadow-lg border-success">
+                <div class="card-header bg-success text-white">
+                    <h3 class="card-title mb-0"><strong>MwBot Information</strong></h3>
+                </div>
                 <div class="card-body">
-                    <h3 class="card-title "><strong> MwBot Information </strong></h3>
                     <p class="card-text">Status: <span id="mwbot-status" class="font-weight-bold">Active</span></p>
                     <p class="card-text">Battery Percentage: <span id="mwbot-battery-percentage" class="font-weight-bold">85</span>%</p>
-                    <div class="progress">
+                    <div class="progress mb-3">
                         <div id="mwbot-battery-progress" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 85%;" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
                 </div>
@@ -43,9 +49,10 @@
 
             <!-- Line chart -->
             <canvas class="my-4 w-100" id="myChart" width="900" height="200"></canvas>
+        </main>
     </div>
 
-    </main>
+    
 </div>
 
 
