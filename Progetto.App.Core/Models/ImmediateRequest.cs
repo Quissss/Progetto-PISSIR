@@ -7,14 +7,10 @@ using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Models;
 
-/// <summary>
-/// Represents a reservation (only for premium users)
-/// </summary>
-public class Reservation
+public class ImmediateRequest
 {
     public int Id { get; set; }
-    public DateTime ReservationTime { get; set; } // Time when the reservation was made
-    public DateTime RequestDate { get; set; } // Date when the user wants to charge the vehicle
+    public DateTime RequestDate { get; set; } // Date when user arrives at the parking
     public decimal RequestedChargeLevel { get; set; } // Requested charge level
     public int ParkingSlotId { get; set; }
     public ParkingSlot ParkingSlot { get; set; }

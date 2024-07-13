@@ -46,8 +46,8 @@ public class MqttMwBotClient
     {
         _options = new MqttClientOptionsBuilder()
             .WithClientId(Guid.NewGuid().ToString())
-            .WithTcpServer(brokerAddress) // TODO : fix this 
-            .WithTlsOptions(new MqttClientTlsOptions { UseTls = true })
+            .WithTcpServer(brokerAddress, 1883)
+            .WithTimeout(TimeSpan.FromSeconds(10))
             .WithCleanSession()
             .Build();
 
@@ -76,7 +76,7 @@ public class MqttMwBotClient
                 return;
             }
 
-            _logger.LogInformation("MwBot initialized successfully");
+            _logger.LogInformation("MwBot {mwBotId} initialized successfully", mwBotId);
 
         }
         catch (Exception ex)
@@ -167,8 +167,6 @@ public class MqttMwBotClient
         try
         {
             _logger.BeginScope("Connecting to MQTT server");
-            //using var timeoutToken = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-            //await _mqttClient.ConnectAsync(_options, timeoutToken.Token);
             await _mqttClient.ConnectAsync(_options);
             _logger.LogInformation("Connected to MQTT server");
             return true;
