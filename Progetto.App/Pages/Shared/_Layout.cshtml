@@ -16,17 +16,22 @@
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-sm navbar-light bg-light border-bottom box-shadow mb-3">
             <div class="container">
-                <a class="navbar-brand" asp-area="" asp-page="/Index"> EcoPlug &amp; Go </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                <a class="navbar-brand d-flex align-items-center" asp-area="" asp-page="/Index">
+
+                    <strong> EcoPlug &amp; Go .</strong> <i class="fa-solid fa-bolt"></i>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between" id="navbarCollapse">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
+                            <a class="nav-link text-dark d-flex align-items-center" asp-area="" asp-page="/Index">
+                                <i class="fas fa-home me-2"></i> Home
+                            </a>
                         </li>
                         @{
                             if (SignInManager.IsSignedIn(User))
@@ -34,19 +39,24 @@
                                 var role = User?.Claims?.First(x => x.Type == ClaimName.Role).Value;
                                 if ((int)Role.Admin == Convert.ToInt32(role))
                                 {
-                                              
+                                    // Route per admin da mettere qua
                                 }
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-page="/DashMwBot">DashBoard</a>
+                                    <a class="nav-link text-dark d-flex align-items-center" asp-area="" asp-page="/DashMwBot">
+                                        <i class="fas fa-tachometer-alt me-2"></i> DashBoard
+                                    </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-page="/recharge">Recharge</a>
+                                    <a class="nav-link text-dark d-flex align-items-center" asp-area="" asp-page="/recharge">
+                                        <i class="fas fa-battery-full me-2"></i> Recharge
+                                    </a>
                                 </li>
                             }
                         }
-                        
                     </ul>
-                    <partial name="_LoginPartial" />
+                    <div class="d-flex align-items-center">
+                        <partial name="_LoginPartial" />
+                    </div>
                 </div>
             </div>
         </nav>

@@ -5,16 +5,15 @@
 }
 
 
+<h2><i class="fas fa-battery-full"></i> <strong>@ViewData["Title"]</strong></h2>
 
 
+<div class="container-fluid">
+    <div class="row">
+        <partial name="_DashboardPartial" />
 
-<!-- Main content -->
-<main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-
-
-
-        <div class="container mt-5">
-            <h2 class="text-center mb-5 ">Car Charging Status</h2>
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
 
             <div id="car-info" class="card mb-4 shadow-sm border-info">
                 <div class="card-body">
@@ -41,14 +40,14 @@
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Line chart -->
-        <canvas class="my-4 w-100" id="myChart" width="900" height="380"></canvas>
+            <!-- Line chart -->
+            <canvas class="my-4 w-100" id="myChart" width="900" height="200"></canvas>
+    </div>
 
+    </main>
+</div>
 
-        </div>
-</main>
 
 
 
