@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace Progetto.App.Pages
+namespace Progetto.App.Pages.Shared
 {
-    public class dashboardModel : PageModel
+    public class _DashboardPartialModel : PageModel
     {
         public void OnGet()
         {
