@@ -13,11 +13,11 @@ namespace Progetto.App.Core.Models;
 public class Reservation
 {
     public int Id { get; set; }
-    public DateTime ReservationTime { get; set; } // Time when the reservation was made
-    public DateTime RequestDate { get; set; } // Date when the user wants to charge the vehicle
+    public DateTime? ReservationTime { get; set; } // Time when the reservation was made
+    public DateTime? RequestDate { get; set; } // Date when the user wants to charge the vehicle
     public decimal RequestedChargeLevel { get; set; } // Requested charge level
     public int ParkingSlotId { get; set; }
-    public ParkingSlot ParkingSlot { get; set; }
+    public ParkingSlot? ParkingSlot { get; set; }
     public string UserId { get; set; }
-    public IdentityUser User { get; set; }
+    public IdentityUser? User { get; set; }
 }

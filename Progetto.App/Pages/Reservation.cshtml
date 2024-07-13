@@ -1,46 +1,47 @@
 ﻿@page
 @model Progetto.App.Pages.ReservationModel
 @{
-    ViewData["Title"] = "Rervation";
+    ViewData["Title"] = "Reservation";
 }
-<div class="container mt-5">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="form-container">
-                <h2 class="text-center mb-4">Prenota Ricarica Elettrica</h2>
-                <form action="/submit_form" method="POST">
-                    <div class="form-group">
-                        <label for="name">Nome completo</label>
-                        <input type="text" class="form-control" id="name" name="name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="email">Indirizzo Email</label>
-                        <input type="email" class="form-control" id="email" name="email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="phone">Numero di Telefono</label>
-                        <input type="tel" class="form-control" id="phone" name="phone" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="car">Modello dell'auto</label>
-                        <input type="text" class="form-control" id="car" name="car" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="parking">Parcheggio desiderato</label>
-                        <select class="form-control" id="parking" name="parking" required>
-                            <option value="">Seleziona il parcheggio</option>
-                            <option value="Parcheggio 1">Parcheggio 1</option>
-                            <option value="Parcheggio 2">Parcheggio 2</option>
-                            <option value="Parcheggio 3">Parcheggio 3</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="datetime">Data e Ora desiderata</label>
-                        <input type="datetime-local" class="form-control" id="datetime" name="datetime" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary btn-block">Prenota</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+<h2>Crea una nuova prenotazione</h2>
+<form id="reservationForm">
+
+
+    <label for="requestDate">Data Richiesta:</label><br>
+    <input type="datetime-local" id="requestDate" name="RequestDate" required><br><br>
+
+    <label for="requestedChargeLevel">Livello di Carica Richiesto:</label><br>
+    <input type="number" id="requestedChargeLevel" name="RequestedChargeLevel" min="0" max="100" step="1" required><br><br>
+
+    <label for="parkingSlotId">ID Slot Parcheggio:</label><br>
+    <input type="number" id="parkingSlotId" name="ParkingSlotId" required><br><br>
+
+    <input type="hidden" id="userId" name="userId" value="@Model.Reservation.UserId" required>
+
+    <button type="button" onclick="submitForm()">Crea Prenotazione</button>
+</form>
+
+@section Scripts {
+    <script>
+        async function submitForm() {
+            const form = document.getElementById('reservationForm');
+            const formData = new FormData(form);
+
+            try {
+                const response = await fetch('/api/reservation', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    alert('Prenotazione creata con successo!');
+                } else {
+                    alert('Si è verificato un errore durante la creazione della prenotazione.');
+                }
+            } catch (error) {
+                console.error('Errore durante la chiamata fetch:', error);
+                alert('Si è verificato un errore durante la chiamata fetch. Controlla la console per ulteriori dettagli.');
+            }
+        }
+    </script>
+}

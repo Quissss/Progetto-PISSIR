@@ -24,7 +24,7 @@ public class ReservationController : ControllerBase
         _reservationRepository = repository;
     }
 
-    [HttpPost]
+    [HttpPost("admin")]
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<Reservation>> CreateReservation([FromBody] Reservation reservation)
     {
@@ -60,8 +60,8 @@ public class ReservationController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Policy = PolicyNames.IsPremiumUser)]
-    public async Task<ActionResult<Reservation>> CreateReservationForUser([FromBody] Reservation reservation)
+    [Authorize]
+    public async Task<ActionResult<Reservation>> CreateReservationForUser([FromForm] Reservation reservation)
     {
         if (!ModelState.IsValid)
         {
@@ -69,11 +69,6 @@ public class ReservationController : ControllerBase
             return BadRequest();
         }
 
-        if (reservation.UserId != User.Identity.Name)
-        {
-            _logger.LogCritical("User {user} tried to create reservation for another user {userId}", User.Identity.Name, reservation.UserId);
-            return BadRequest();
-        }
 
         try
         {
@@ -85,7 +80,7 @@ public class ReservationController : ControllerBase
                 _logger.LogWarning("Reservation with id {id} already exists", reservation.Id);
                 return BadRequest();
             }
-
+            reservation.ReservationTime = DateTime.Now;
             await _reservationRepository.AddAsync(reservation);
 
             _logger.LogDebug("Reservation created with {id}", reservation.Id);
