@@ -9,27 +9,21 @@ using System.Threading.Tasks;
 namespace Progetto.App.Core.Validators;
 
 /// <summary>
-/// Rules for Reservation entity validation
+/// Rules for immediate request entity validation
 /// </summary>
-public class ReservationValidator : AbstractValidator<Reservation>
+public class ImmediateRequestValidator : AbstractValidator<ImmediateRequest>
 {
-    public ReservationValidator()
+    public ImmediateRequestValidator()
     {
-        RuleFor(r => r.ReservationTime)
-            .NotEmpty().WithMessage("Reservation Time is required")
-            .LessThanOrEqualTo(DateTime.Now).WithMessage("Reservation Time must be now");
-        RuleFor(r => r.RequestDate)
+        RuleFor(ir => ir.RequestDate)
             .NotEmpty().WithMessage("Request Date is required")
             .LessThanOrEqualTo(DateTime.Now).WithMessage("Request Date must be in the past");
-        RuleFor(r => r.RequestedChargeLevel)
+        RuleFor(ir => ir.RequestedChargeLevel)
             .NotEmpty().WithMessage("Charge level is required")
             .Must(c => c >= 0 && c <= 100).WithMessage("Charge level must be between 0 and 100");
-        RuleFor(r => r.UserId)
+        RuleFor(ir => ir.UserId)
             .NotEmpty().WithMessage("User is required");
-        RuleFor(r => r.ParkingSlotId)
+        RuleFor(ir => ir.ParkingSlotId)
             .NotEmpty().WithMessage("Parking Slot is required");
-        RuleFor(r => r)
-            .Must(r => r.ReservationTime <= r.RequestDate)
-            .WithMessage("Reservation Time must be earlier than or equal to Request Date");
     }
 }

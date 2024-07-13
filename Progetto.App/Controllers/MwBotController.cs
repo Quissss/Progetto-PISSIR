@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using MQTTnet.Client;
 using Progetto.App.Core.Models;
@@ -23,7 +24,7 @@ public class MwBotController : ControllerBase
     private readonly ChargeHistoryRepository _chargeHistoryRepository;
     private readonly ILoggerFactory _loggerFactory;
     private readonly IServiceScopeFactory _serviceScopeFactory;
-    private readonly List<MqttMwBotClient> _connectedClients = new List<MqttMwBotClient>();
+    private readonly List<MqttMwBotClient> _connectedClients;
 
     public MwBotController(
         ILogger<MwBotController> logger,
@@ -37,6 +38,7 @@ public class MwBotController : ControllerBase
         _chargeHistoryRepository = chargeHistoryRepository;
         _loggerFactory = loggerFactory;
         _serviceScopeFactory = serviceScopeFactory;
+        _connectedClients = [];
 
         GetConnectedClients().GetAwaiter().GetResult();
     }
@@ -47,12 +49,21 @@ public class MwBotController : ControllerBase
         try
         {
             var mwBotList = await _repository.GetOnlineMwBots();
+
             foreach (var singleMwBot in mwBotList)
             {
                 _logger.LogDebug("Creating MqttMwBotClient for MwBot with id {id}", singleMwBot.Id);
                 var client = new MqttMwBotClient(_loggerFactory.CreateLogger<MqttMwBotClient>(), _serviceScopeFactory);
-                await client.InitializeAsync(singleMwBot.Id);
-                _connectedClients.Add(client);
+
+                var connectResult = await client.InitializeAsync(singleMwBot.Id);
+                if (!connectResult) // If connection fails, set MwBot status to offline
+                {
+                    _logger.LogError("Failed to connect MwBot with id {id} to MQTT server while getting connected clients", singleMwBot.Id);
+                    singleMwBot.Status = MwBotStatus.Offline;
+                    _ = _repository.UpdateAsync(singleMwBot);
+                }
+                else
+                    _connectedClients.Add(client);
             }
         }
         catch
@@ -97,17 +108,38 @@ public class MwBotController : ControllerBase
             return BadRequest();
         }
 
+        if (mwBot is null)
+        {
+            _logger.LogWarning("MwBot not set, cannot turn on");
+            return BadRequest();
+        }
+
         try
         {
             _logger.LogDebug("Creating / Retrieving MwBot with id {id}", mwBot.Id);
             var client = new MqttMwBotClient(_loggerFactory.CreateLogger<MqttMwBotClient>(), _serviceScopeFactory);
 
-            client.InitializeAsync(mwBot.Id).GetAwaiter().GetResult();
+            if (client is null)
+            {
+                _logger.LogWarning("Client not initialized, cannot turn on");
+                return BadRequest();
+            }
+
+            if (client.MwBot is null)
+            {
+                _logger.LogWarning("MwBot not initialized, cannot turn on");
+                return BadRequest();
+            }
+
+            var connectResult = await client.InitializeAsync(mwBot.Id);
+            if (!connectResult)
+            {
+                _logger.LogError("Failed to connect MwBot with id {id} to MQTT server while turning on", mwBot.Id);
+                return BadRequest();
+            }
+
             client.MwBot.Status = mwBot.Status = MwBotStatus.StandBy;
             await _repository.UpdateAsync(mwBot);
-
-            mwBot.Status = MwBotStatus.StandBy;  // Aggiorna lo stato del MwBot
-            await _repository.UpdateAsync(mwBot);  // Salva le modifiche nel database
 
             _connectedClients.Add(client);
 
@@ -117,7 +149,7 @@ public class MwBotController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error while creating MwBot with id {id}", mwBot.Id);
-            return StatusCode(StatusCodes.Status500InternalServerError, "Internal server error");
+            return BadRequest();
         }
     }
 
@@ -130,10 +162,17 @@ public class MwBotController : ControllerBase
             return BadRequest();
         }
 
+        if (mwBot is null)
+        {
+            _logger.LogWarning("MwBot not initialized, cannot turn off");
+            return BadRequest();
+        }
+
         try
         {
             _logger.LogDebug("Turning off MwBot with id {id}", mwBot.Id);
-            var client = _connectedClients.FirstOrDefault(c => c.MwBot.Id == mwBot.Id);
+            var client = _connectedClients.FirstOrDefault(c => c.MwBot?.Id == mwBot.Id);
+
             if (client != null)
             {
                 await client.DisconnectAsync();
@@ -141,7 +180,7 @@ public class MwBotController : ControllerBase
             }
 
             mwBot.Status = MwBotStatus.Offline;
-            _=_repository.UpdateAsync(mwBot);
+            _ = _repository.UpdateAsync(mwBot);
 
             _logger.LogDebug("MwBot with id {id} turned off", mwBot.Id);
             return Ok(mwBot);
@@ -149,11 +188,9 @@ public class MwBotController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error while turning off MwBot with id {id}", mwBot.Id);
-            return StatusCode(StatusCodes.Status500InternalServerError, "Internal server error");
+            return BadRequest();
         }
     }
-
-
 
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteMwBot(int id)
