@@ -126,25 +126,8 @@ public class ParkingSlotController : ControllerBase
         return BadRequest();
     }
 
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<ParkingSlot>>> GetParkingSlots()
-    {
-        try
-        {
-            _logger.LogDebug("Getting all parking slots");
+    
 
-            var parkingSlots = await _parkingSlotRepository.GetAllAsync();
-            _logger.LogDebug("Returning {count} parking slots", parkingSlots.Count());
-
-            return Ok(parkingSlots);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error while getting all parking slots");
-        }
-
-        return BadRequest();
-    }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<ParkingSlot>> GetParkingSlot(int id)

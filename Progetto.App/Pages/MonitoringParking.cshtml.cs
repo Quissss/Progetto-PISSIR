@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
 using Progetto.App.Core.Models;
@@ -23,17 +24,27 @@ namespace Progetto.App.Pages
 
         public IList<ParkingSlotViewModel> ParkingSlots { get; private set; }
 
-        public async Task OnGetAsync()
+        [BindProperty]
+        public List<Parking> Parkings { get; set; } = new();
+
+        public async Task OnGetAsync(
+            [FromQuery] string? searchSlotNumber,
+            [FromQuery] ParkSlotStatus? parkingSlotStatus,
+            [FromQuery] int? parkingSlotId)
         {
-            var parkingSlots = await _parkingSlotRepository.GetAllAsync();
-            ParkingSlots = parkingSlots.Select( slot => new ParkingSlotViewModel
+            var parkingSlots = await _parkingSlotRepository.GetFilteredAsync(searchSlotNumber, parkingSlotStatus, parkingSlotId);
+            ParkingSlots = parkingSlots.Select(slot => new ParkingSlotViewModel
             {
                 Id = slot.Id,
                 Number = slot.Number,
                 Status = slot.Status,
-                Parking =  _parkingRepository.GetParkingById(slot.ParkingId),
+                Parking = _parkingRepository.GetParkingById(slot.ParkingId),
                 StatusColor = GetStatusColor(slot.Status)
             }).ToList();
+
+            Parkings = await _parkingRepository.GetAllAsync();
+
+
         }
 
         private string GetStatusColor(ParkSlotStatus status)

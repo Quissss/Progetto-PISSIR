@@ -1,37 +1,76 @@
 ﻿@page
+@using Progetto.App.Core.Models
 @model Progetto.App.Pages.MonitoringParkingModel
 @{
     ViewData["Title"] = "MonitoringParking";
 }
 
-<h2><i class="fa-solid fa-square-parking"></i> <strong>@ViewData["Title"]</strong></h2>
-
+<h2 class="my-4 "><i class="fa-solid fa-square-parking"></i> <strong>@ViewData["Title"]</strong></h2>
 
 <div class="container-fluid">
+
     <div class="row">
         <partial name="_DashboardPartial" />
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Slot Number</th>
-                        <th>Status</th>
-                        <th>Parking</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var slot in Model.ParkingSlots)
-                    {
-                        <tr>
-                            <td>@slot.Number</td>
-                            <td style="color:@slot.StatusColor;">@slot.Status</td>
-                            <td>@(slot.Parking?.Name ?? "N/A")</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+            <!-- Form per la ricerca -->
+            <form action="" method="GET" class="row justify-content-center">
+                <div class="col-md-auto mb-3">
+                    <input type="text" class="form-control" id="searchSlotNumber" name="searchSlotNumber" placeholder="Ricerca per Slot Number">
+                </div>
+                <div class="col-md-auto mb-3">
+                    <select id="parkingSlotStatus" name="parkingSlotStatus" class="form-select">
+                        <option value="">Tutti gli stati</option>
+                        @foreach (var status in Enum.GetValues(typeof(ParkSlotStatus)))
+                        {
+                            <option value="@status">@status</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-auto mb-3">
+                    <select id="parkingSlotId" name="ParkingSlotId" class="form-select">
+                        <option value="">Tutti i parcheggi</option>
+                        @foreach (var parking in Model.Parkings)
+                        {
+                            <option value="@parking.Id">@parking.Name - @parking.Address</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-auto mb-3">
+                    <button type="submit" class="btn btn-light btn-outline-dark">Cerca <i class="fa-solid fa-magnifying-glass"></i></button>
+                </div>
+            </form>
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Parking Slots Status</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-hover table-bordered">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Slot Number</th>
+                                <th>Status</th>
+                                <th>Parking</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var slot in Model.ParkingSlots)
+                            {
+                                <tr>
+                                    <td>@slot.Number</td>
+                                    <td style="color:@slot.StatusColor;">@slot.Status</td>
+                                    <td>@(slot.Parking?.Name ?? "N/A")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
             <!-- Line chart -->
-            <canvas class="my-4 w-100" id="myChart" width="900" height="380"></canvas>
+
+            <div class="card-body">
+                <canvas class="my-4 w-100" id="myChart" width="900" height="380"></canvas>
+            </div>
+
         </main>
     </div>
 </div>
