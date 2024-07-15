@@ -6,14 +6,8 @@ using MQTTnet.Server;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Models.Mqtt;
 using Progetto.App.Core.Repositories;
-using Serilog.Formatting.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.ConstrainedExecution;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Services.MQTT;
 
@@ -26,14 +20,69 @@ public class MqttMwBotClient
     private readonly IMqttClient _mqttClient;
     private readonly ILogger<MqttMwBotClient> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory; // Retrieve scoped services (repository in this case)
-    public MwBot? MwBot { get; private set; }
+    private readonly ChargeManager _chargeManager;
+    private Timer _timer;
+    public MwBot? mwBot { get; private set; }
 
     public MqttMwBotClient(ILogger<MqttMwBotClient> logger, IServiceScopeFactory serviceScopeFactory)
     {
         _logger = logger;
         _serviceScopeFactory = serviceScopeFactory;
+        _chargeManager = new ChargeManager();
         _mqttClient = new MqttFactory().CreateMqttClient();
         _mqttClient.ApplicationMessageReceivedAsync += HandleReceivedApplicationMessage;
+
+        // Configura il timer per eseguire ogni 10 secondi
+        _timer = new Timer(OnTimedEvent, null, Timeout.Infinite, 1000);
+    }
+
+    /// <summary>
+    /// What to do every _timer interval
+    /// </summary>
+    /// <param name="state"></param>
+    private async void OnTimedEvent(object state)
+    {
+        if (mwBot?.Status == MwBotStatus.StandBy)
+        {
+            var result = _chargeManager.ServeNext();
+
+            if (result is ImmediateRequest immediateRequest)
+            {
+                _logger.LogInformation($"Serving immediate request from user {immediateRequest.UserId} at {immediateRequest.RequestDate}.");
+                await ProcessRequest(immediateRequest);
+            }
+            else if (result is Reservation reservation)
+            {
+                _logger.LogInformation($"Serving reservation from user {reservation.UserId} for {reservation.ReservationTime}.");
+                await ProcessRequest(reservation);
+            }
+            else
+            {
+                _logger.LogInformation(result.ToString());
+            }
+        }
+    }
+
+    /// <summary>
+    /// Process request by sending message to MQTTBroker
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns></returns>
+    private async Task ProcessRequest(object request)
+    {
+        if (mwBot is null)
+        {
+            _logger.LogWarning("MwBot not initialized, cannot process request");
+            return;
+        }
+
+        var mwBotMessage = new MqttClientMessage
+        {
+            Id = mwBot.Id,
+            Status = mwBot.Status,
+            BatteryPercentage = mwBot.BatteryPercentage
+        };
+        await PublishClientMessageAsync(mwBotMessage);
     }
 
     /// <summary>
@@ -52,7 +101,12 @@ public class MqttMwBotClient
             .Build();
 
         await InitializeMwBot(mwBotId);
-        return await ConnectAsync();
+        var isConnected = await ConnectAsync();
+        if (isConnected)
+        {
+            _timer.Change(0, 10000); // Inizia il timer immediatamente, con un intervallo di 10 secondi
+        }
+        return isConnected;
     }
 
     /// <summary>
@@ -68,9 +122,9 @@ public class MqttMwBotClient
             var mwBotRepository = scope.ServiceProvider.GetRequiredService<MwBotRepository>();
 
             if (mwBotId is not null)
-                MwBot = await mwBotRepository.GetByIdAsync(mwBotId.Value);
+                mwBot = await mwBotRepository.GetByIdAsync(mwBotId.Value);
 
-            if (MwBot is null)
+            if (mwBot is null)
             {
                 _logger.LogWarning("MwBot not found");
                 return;
@@ -133,7 +187,7 @@ public class MqttMwBotClient
 
         var mwBotMessage = JsonSerializer.Deserialize<MqttClientMessage>(payload);
 
-        if (mwBotMessage is null || MwBot is null)
+        if (mwBotMessage is null || mwBot is null)
         {
             _logger.LogWarning("Invalid message received or MwBot not initialized");
             return;
@@ -142,13 +196,13 @@ public class MqttMwBotClient
         try
         {
             _logger.BeginScope("Updating MwBot");
-            MwBot.Status = mwBotMessage.Status;
-            MwBot.BatteryPercentage = mwBotMessage.BatteryPercentage;
+            mwBot.Status = mwBotMessage.Status;
+            mwBot.BatteryPercentage = mwBotMessage.BatteryPercentage;
 
             using (var scope = _serviceScopeFactory.CreateScope())
             {
                 var mwBotRepository = scope.ServiceProvider.GetRequiredService<MwBotRepository>();
-                await mwBotRepository.UpdateAsync(MwBot);
+                await mwBotRepository.UpdateAsync(mwBot);
             }
             _logger.LogInformation("MwBot updated successfully");
         }
@@ -189,13 +243,13 @@ public class MqttMwBotClient
     /// <returns></returns>
     public async Task<bool> DisconnectAsync()
     {
-        if (MwBot is null)
+        if (mwBot is null)
         {
             _logger.LogWarning("MwBot not initialized, cannot disconnect");
             return false;
         }
 
-        if (MwBot.Status == MwBotStatus.Offline)
+        if (mwBot.Status == MwBotStatus.Offline)
         {
             _logger.LogWarning("MwBot is not online, cannot disconnect");
             return false;
@@ -204,11 +258,11 @@ public class MqttMwBotClient
         try
         {
             _logger.BeginScope("Disconnecting from MQTT server");
-            MwBot.Status = MwBotStatus.Offline;
+            mwBot.Status = MwBotStatus.Offline;
 
             using var scope = _serviceScopeFactory.CreateScope();
             var mwBotRepository = scope.ServiceProvider.GetRequiredService<MwBotRepository>();
-            await mwBotRepository.UpdateAsync(MwBot);
+            await mwBotRepository.UpdateAsync(mwBot);
 
             await _mqttClient.DisconnectAsync();
             _logger.LogInformation("Disconnected from MQTT server");

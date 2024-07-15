@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,65 +9,70 @@ namespace Progetto.App.Core.Models;
 
 public class ChargeManager
 {
-    private List<Reservation>? reservations;
-    private Queue<ImmediateRequest>? immediateRequests;
+    private List<Reservation>? _reservations;
+    private Queue<ImmediateRequest>? _immediateRequests;
+    private readonly ILogger<ChargeManager> _logger;
 
     public ChargeManager()
     {
-        reservations = new List<Reservation>();
-        immediateRequests = new Queue<ImmediateRequest>();
+        _reservations = new List<Reservation>();
+        _immediateRequests = new Queue<ImmediateRequest>();
+        _logger = new Logger<ChargeManager>(new LoggerFactory());
     }
 
     // Add premium reservation
     public void AddReservation(Reservation reservation)
     {
-        reservations?.Add(reservation);
-        reservations = reservations?.OrderBy(r => r.ReservationTime).ToList();
+        _reservations?.Add(reservation);
+        _reservations = _reservations?.OrderBy(r => r.ReservationTime).ToList();
     }
 
     // Add immediate request by base user
     public void AddImmediateRequest(ImmediateRequest immediateRequest)
     {
-        immediateRequests?.Enqueue(immediateRequest);
+        _immediateRequests?.Enqueue(immediateRequest);
     }
 
     // Get next reservation in list
-    public Reservation GetNextReservation()
+    public Reservation? GetNextReservation()
     {
-        if (reservations?.Count > 0)
+        if (_reservations?.Count > 0)
         {
-            var nextReservation = reservations[0];
-            reservations.RemoveAt(0);
+            var nextReservation = _reservations[0];
+            _reservations.RemoveAt(0);
             return nextReservation;
         }
         return null;
     }
 
     // Get next immediate request in queue
-    public ImmediateRequest GetNextImmediateRequest()
+    public ImmediateRequest? GetNextImmediateRequest()
     {
-        if (immediateRequests?.Count > 0)
+        if (_immediateRequests?.Count > 0)
         {
-            return immediateRequests.Dequeue();
+            return _immediateRequests.Dequeue();
         }
         return null;
     }
 
     // Determine which request to serve next
-    public string ServeNext()
+    public object? ServeNext()
     {
-        if (immediateRequests?.Count > 0)
+        if (_immediateRequests?.Count > 0)
         {
             var immediateRequest = GetNextImmediateRequest();
-            return $"Serving immediate request from user {immediateRequest.UserId} at {immediateRequest.RequestDate}.";
+            _logger.LogInformation($"Serving immediate request from user {immediateRequest?.UserId} at {immediateRequest?.RequestDate}.");
+            return immediateRequest;
         }
 
-        if (reservations?.Count > 0)
+        if (_reservations?.Count > 0)
         {
             var nextReservation = GetNextReservation();
-            return $"Serving reservation from user {nextReservation.UserId} for {nextReservation.ReservationTime}.";
+            _logger.LogInformation($"Serving reservation from user {nextReservation?.UserId} for {nextReservation?.ReservationTime}.");
+            return nextReservation;
         }
 
-        return "No requests to serve.";
+        _logger.LogInformation("No requests to serve.");
+        return null;
     }
 }

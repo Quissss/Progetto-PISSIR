@@ -53,7 +53,7 @@ public class MwBotController : ControllerBase
             foreach (var singleMwBot in mwBotList)
             {
                 _logger.LogDebug("Creating MqttMwBotClient for MwBot with id {id}", singleMwBot.Id);
-                var client = new MqttMwBotClient(_loggerFactory.CreateLogger<MqttMwBotClient>(), _serviceScopeFactory);
+                var client = new MqttMwBotClient(_loggerFactory.CreateLogger<MqttMwBotClient>(), _serviceScopeFactory, 10000);
 
                 var connectResult = await client.InitializeAsync(singleMwBot.Id);
                 if (!connectResult) // If connection fails, set MwBot status to offline
@@ -117,7 +117,7 @@ public class MwBotController : ControllerBase
         try
         {
             _logger.LogDebug("Creating / Retrieving MwBot with id {id}", mwBot.Id);
-            var client = new MqttMwBotClient(_loggerFactory.CreateLogger<MqttMwBotClient>(), _serviceScopeFactory);
+            var client = new MqttMwBotClient(_loggerFactory.CreateLogger<MqttMwBotClient>(), _serviceScopeFactory, 10000);
 
             if (client is null)
             {
@@ -125,7 +125,7 @@ public class MwBotController : ControllerBase
                 return BadRequest();
             }
 
-            if (client.MwBot is null)
+            if (client.mwBot is null)
             {
                 _logger.LogWarning("MwBot not initialized, cannot turn on");
                 return BadRequest();
@@ -138,7 +138,7 @@ public class MwBotController : ControllerBase
                 return BadRequest();
             }
 
-            client.MwBot.Status = mwBot.Status = MwBotStatus.StandBy;
+            client.mwBot.Status = mwBot.Status = MwBotStatus.StandBy;
             await _repository.UpdateAsync(mwBot);
 
             _connectedClients.Add(client);
@@ -171,7 +171,7 @@ public class MwBotController : ControllerBase
         try
         {
             _logger.LogDebug("Turning off MwBot with id {id}", mwBot.Id);
-            var client = _connectedClients.FirstOrDefault(c => c.MwBot?.Id == mwBot.Id);
+            var client = _connectedClients.FirstOrDefault(c => c.mwBot?.Id == mwBot.Id);
 
             if (client != null)
             {
