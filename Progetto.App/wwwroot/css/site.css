@@ -105,3 +105,16 @@ body,
 .custom-rounded {
     border-radius: 10px; /* Imposta il valore di arrotondamento desiderato */
 }
+
+
+
+.error {
+    color: red;
+    font-size: 0.9em;
+    display: block;
+    margin-top: 5px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}

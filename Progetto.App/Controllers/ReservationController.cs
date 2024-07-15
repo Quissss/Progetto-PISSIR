@@ -60,7 +60,8 @@ public class ReservationController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize]
+    [Authorize(Policy = PolicyNames.IsPremiumUser)]
+    [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<Reservation>> CreateReservationForUser([FromForm] Reservation reservation)
     {
         if (!ModelState.IsValid)

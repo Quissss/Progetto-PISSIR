@@ -1,36 +1,59 @@
-﻿@using Microsoft.AspNetCore.Identity
+﻿@using Progetto.App.Core.Models.Users
+@using Microsoft.AspNetCore.Identity
 @inject SignInManager<IdentityUser> SignInManager
 @inject UserManager<IdentityUser> UserManager
 
 <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block sidebar collapse">
     <div class="position-sticky">
         <ul class="nav flex-column">
-            <li class="nav-item">
-                <a class="nav-link" href="/DashMwBot">
-                    <i class="fas fa-robot"></i> MwBots
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/Parking">
-                    <i class="fas fa-car"></i> Parking
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/DashParking">
-                    <i class="fas fa-parking"></i> ParkingSlot
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/recharge">
-                    <i class="fas fa-battery-full"></i> Recharge
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/MonitoringParking">
-                    <i class="fa-solid fa-square-parking"></i> MonitoringParking
-                </a>
-            </li>
+            @if (SignInManager.IsSignedIn(User))
+            {
+                var role = User?.Claims?.First(x => x.Type == ClaimName.Role).Value;
+                var isAdmin = (int)Role.Admin == Convert.ToInt32(role);
+                var isPremiumUser = (int)Role.PremiumUser == Convert.ToInt32(role);
+                var isUser = (int)Role.User == Convert.ToInt32(role);
+
+                @if (isAdmin)
+                {
+                    <li class="nav-item border-bottom">
+                        <a class="nav-link" href="/DashMwBot">
+                            <i class="fas fa-robot"></i> MwBots
+                        </a>
+                    </li>
+                    <li class="nav-item border-top border-bottom">
+                        <a class="nav-link" href="/Parking">
+                            <i class="fas fa-car"></i> Parking
+                        </a>
+                    </li>
+                    <li class="nav-item border-top border-bottom">
+                        <a class="nav-link" href="/DashParking">
+                            <i class="fas fa-parking"></i> ParkingSlot
+                        </a>
+                    </li>
+                    <li class="nav-item border-top border-bottom">
+                        <a class="nav-link" href="/MonitoringParking">
+                            <i class="fa-solid fa-circle-check"></i> MonitoringParking
+                        </a>
+                    </li>
+                }
+
+                @if (isAdmin || isPremiumUser)
+                {
+                    <li class="nav-item border-top border-bottom">
+                        <a class="nav-link" href="/reservation">
+                            <i class="fa-solid fa-calendar"></i> Reservation
+                        </a>
+                    </li>
+                }
+
+                <li class="nav-item border-top border-bottom">
+                    <a class="nav-link" href="/recharge">
+                        <i class="fas fa-battery-full"></i> Recharge
+                    </a>
+                </li>
+            }
         </ul>
+
         <ul class="nav flex-column mb-2">
             <li class="nav-item">
                 <a class="nav-link" href="/Identity/Account/Manage">

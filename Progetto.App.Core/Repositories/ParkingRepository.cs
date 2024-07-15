@@ -51,4 +51,6 @@ public class ParkingRepository : GenericRepository<Parking>
     {
         return  _context.Parkings.Where(p => p.Id == parkingId).FirstOrDefault();
     }
+
+
 }

@@ -125,12 +125,6 @@ public class MwBotController : ControllerBase
                 return BadRequest();
             }
 
-            if (client.MwBot is null)
-            {
-                _logger.LogWarning("MwBot not initialized, cannot turn on");
-                return BadRequest();
-            }
-
             var connectResult = await client.InitializeAsync(mwBot.Id);
             if (!connectResult)
             {
