@@ -44,7 +44,7 @@ public class MqttMwBotClient
         _mqttClient.ApplicationMessageReceivedAsync += HandleReceivedApplicationMessage;
 
         // Set timer for processing charge requests
-        _timer = new Timer(TimedProcessChargeRequest, null, Timeout.Infinite, 10000);
+        //_timer = new Timer(TimedProcessChargeRequest, null, Timeout.Infinite, 10000);
     }
 
     private async Task<bool> ChangeBotStatus(MwBotStatus status)
@@ -171,10 +171,10 @@ public class MqttMwBotClient
 
         await InitializeMwBot(mwBotId);
         var isConnected = await ConnectAsync();
-        if (isConnected)
-        {
-            _timer.Change(0, 10000); // Inizia il timer immediatamente, con un intervallo di 10 secondi
-        }
+        //if (isConnected)
+        //{
+        //    _timer.Change(0, 10000); // Initialize timer at 10 seconds
+        //}
         return isConnected;
     }
 

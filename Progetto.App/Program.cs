@@ -12,6 +12,7 @@ using FluentValidation;
 using Progetto.App.Core.Services.MQTT;
 using Progetto.App.Core.Models;
 using Progetto.App.Controllers;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -67,18 +68,12 @@ services.AddSingleton<IAuthorizationHandler, IsAdminAuthorizationHandler>();
 services.AddSingleton<IAuthorizationHandler, IsPremiumUserAuthorizationHandler>();
 
 // Mqtt
-services.AddTransient<MqttMwBotClient>();
 services.AddHostedService<MqttBroker>();
+services.AddTransient<MqttMwBotClient>();
 
-services.AddSingleton<MwBotController>();
+services.AddSingleton<ConnectedClientsService>();
 
 var app = builder.Build();
-
-using (var scope = app.Services.CreateScope())
-{
-    var mwBotController = scope.ServiceProvider.GetRequiredService<MwBotController>();
-    mwBotController?.InitializeConnectedClients();
-}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -99,4 +94,15 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapRazorPages();
+
+// Ensure the MQTT broker is started before initializing clients
+app.Lifetime.ApplicationStarted.Register(async () =>
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var connectedClientsService = scope.ServiceProvider.GetRequiredService<ConnectedClientsService>();
+        await connectedClientsService.InitializeConnectedClients();
+    }
+});
+
 app.Run();
