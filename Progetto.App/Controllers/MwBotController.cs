@@ -181,25 +181,19 @@ public class MwBotController : ControllerBase
         }
     }
 
-    [HttpDelete("{id}")]
-    public async Task<ActionResult> DeleteMwBot(int id)
+    [HttpDelete]
+    public async Task<ActionResult> DeleteMwBot([FromBody] MwBot mwBot)
     {
-        if (id <= 0)
-        {
-            _logger.LogWarning("Invalid id {id}", id);
-            return BadRequest();
-        }
-
         try
         {
-            _logger.LogDebug("Deleting MwBot with id {id}", id);
-            await _mwBotRepository.DeleteAsync(m => m.Id == id);
-            _logger.LogDebug("MwBot with id {id} deleted", id);
+            _logger.LogDebug("Deleting MwBot with id {id}", mwBot.Id);
+            await _mwBotRepository.DeleteAsync(m => m.Id == mwBot.Id);
+            _logger.LogDebug("MwBot with id {id} deleted", mwBot.Id);
             return Ok();
         }
         catch
         {
-            _logger.LogError("Error while deleting MwBot with id {id}", id);
+            _logger.LogError("Error while deleting MwBot with id {id}", mwBot.Id);
         }
 
         return BadRequest();

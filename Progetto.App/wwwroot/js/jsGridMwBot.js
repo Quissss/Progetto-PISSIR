@@ -1,14 +1,16 @@
 ﻿const url = "/api/MwBot";
 
 let ajax = function (item, verb, json = true) {
+    let requestData = json ? JSON.stringify(item) : item;
+
     return $.ajax({
         type: verb,
-        url: verb === "DELETE" ? `${url}/${item}` : url,
-        data: json ? JSON.stringify(item) : item,
-        dataType: "json",
+        url: url,
+        data: requestData,
         contentType: json ? "application/json" : "text/plain",
     });
 };
+
 
 function turnBot(item, action) {
     var endpoint = action === "on" ? "on" : "off";
@@ -19,7 +21,7 @@ function turnBot(item, action) {
         contentType: "application/json",
         success: function (response) {
             console.log("Bot turned " + action);
-            $('#mwBotGrid').jsGrid('loadData'); // Aggiorna i dati della griglia
+            $('#mwBotGrid').jsGrid('loadData'); 
         },
         error: function (xhr, status, error) {
             console.error("Error turning bot " + action + ": " + error);
@@ -43,22 +45,13 @@ $(function () {
                 return ajax(filter, "GET", false);
             },
             updateItem: function (item) {
-                return ajax(item, "PUT")
-                    .done(function () {
-                        $('#mwBotGrid').jsGrid('loadData'); 
-                    });
+                return ajax(item, "PUT");
             },
             insertItem: function (item) {
-                return ajax(item, "POST")
-                    .done(function () {
-                        $('#mwBotGrid').jsGrid('loadData');
-                    });
+                return ajax(item, "POST");
             },
             deleteItem: function (item) {
-                return ajax(item.id, "DELETE", false)
-                    .done(function () {
-                        $('#mwBotGrid').jsGrid('loadData');
-                    });
+                return ajax(item, "DELETE");
             }
         },
 
