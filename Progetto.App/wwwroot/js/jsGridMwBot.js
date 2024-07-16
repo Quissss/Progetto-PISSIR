@@ -12,14 +12,15 @@ let ajax = function (item, verb, json = true) {
 };
 
 function turnBot(item, action) {
-    var endpoint = action === "on" ? "on" : "off";  
+    var endpoint = action === "on" ? "on" : "off";
     $.ajax({
-        type: "PUT",  
+        type: "PUT",
         url: url + "/" + endpoint,
         data: JSON.stringify(item),
         contentType: "application/json",
         success: function (response) {
             console.log("Bot turned " + action);
+            $('#mwBotGrid').jsGrid('loadData'); // Aggiorna i dati della griglia
         },
         error: function (xhr, status, error) {
             console.error("Error turning bot " + action + ": " + error);
@@ -98,4 +99,5 @@ $(function () {
             }
         ]
     });
+    
 });
