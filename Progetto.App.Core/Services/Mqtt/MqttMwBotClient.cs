@@ -3,17 +3,12 @@ using Microsoft.Extensions.Logging;
 using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Server;
+using Progetto.App.Core.Data;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Models.Mqtt;
 using Progetto.App.Core.Repositories;
-using Serilog.Formatting.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.ConstrainedExecution;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Services.MQTT;
 
@@ -25,15 +20,138 @@ public class MqttMwBotClient
     private MqttClientOptions? _options;
     private readonly IMqttClient _mqttClient;
     private readonly ILogger<MqttMwBotClient> _logger;
-    private readonly IServiceScopeFactory _serviceScopeFactory; // Retrieve scoped services (repository in this case)
-    public MwBot? MwBot { get; private set; }
+    private readonly IServiceScopeFactory _serviceScopeFactory;
+    private readonly ChargeManager _chargeManager;
+    private CurrentlyChargingRepository _currentlyChargingRepository;
+    private MwBotRepository _mwBotRepository;
+    private Timer _timer;
+    public MwBot? mwBot { get; private set; }
 
-    public MqttMwBotClient(ILogger<MqttMwBotClient> logger, IServiceScopeFactory serviceScopeFactory)
+    public MqttMwBotClient(ILogger<MqttMwBotClient> logger, IServiceScopeFactory serviceScopeFactory, ChargeManager chargeManager)
     {
         _logger = logger;
         _serviceScopeFactory = serviceScopeFactory;
+        _chargeManager = chargeManager;
+
+        using (var scope = _serviceScopeFactory.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            _currentlyChargingRepository = new CurrentlyChargingRepository(dbContext);
+            _mwBotRepository = new MwBotRepository(dbContext);
+        }
+
         _mqttClient = new MqttFactory().CreateMqttClient();
         _mqttClient.ApplicationMessageReceivedAsync += HandleReceivedApplicationMessage;
+
+        // Set timer for processing charge requests
+        //_timer = new Timer(TimedProcessChargeRequest, null, Timeout.Infinite, 10000);
+    }
+
+    private async Task<bool> ChangeBotStatus(MwBotStatus status)
+    {
+        if (mwBot is null)
+        {
+            _logger.LogWarning("MwBot not initialized, cannot change status");
+            return false;
+        }
+
+        switch (status)
+        {
+            case MwBotStatus.Offline:
+                _logger.LogInformation("Disconnecting from MQTT server");
+                await DisconnectAsync();
+                break;
+            case MwBotStatus.StandBy:
+                _logger.LogInformation("Awaiting for task");
+                break;
+            case MwBotStatus.ChargingCar:
+                _logger.LogInformation("Charging car");
+                break;
+            case MwBotStatus.Recharging:
+                _logger.LogInformation("Recharging");
+                break;
+            case MwBotStatus.MovingToSlot:
+                _logger.LogInformation("Going to charge car on parking slot");
+                break;
+            case MwBotStatus.MovingToDock:
+                _logger.LogInformation("Going to dock for recharge");
+                break;
+            default:
+                _logger.LogWarning("Invalid status");
+                return false;
+        }
+
+        mwBot.Status = status;
+        using var scope = _serviceScopeFactory.CreateScope();
+        var mwBotRepository = scope.ServiceProvider.GetRequiredService<MwBotRepository>();
+        await mwBotRepository.UpdateAsync(mwBot);
+
+        return true;
+    }
+
+    /// <summary>
+    /// EVENT: What to do every _timer interval
+    /// </summary>
+    /// <param name="state"></param>
+    private async void TimedProcessChargeRequest(object? state)
+    {
+        if (mwBot?.Status == MwBotStatus.StandBy)
+        {
+            var handleRequest = await _chargeManager.ServeNext(mwBot.Id);
+
+            if (handleRequest is not null)
+            {
+                _logger.BeginScope("Processing request {request}", handleRequest);
+
+                // Simulate mwbot movement
+                var changeSuccess = await ChangeBotStatus(MwBotStatus.MovingToSlot);
+                if (!changeSuccess)
+                    return;
+
+                int maxDelaySeconds = 30; // 30 max seconds
+                int minDelaySeconds = 10; // 10 minimum seconds
+                int delayRange = maxDelaySeconds - minDelaySeconds;
+                int delay = minDelaySeconds + (int)(delayRange * (1 - mwBot.BatteryPercentage / 100));
+                _logger.LogInformation("Simulating movement for {delay} seconds...", delay);
+                await Task.Delay(TimeSpan.FromSeconds(delay));
+
+                await ProcessRequest(handleRequest);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Process request by sending message to MQTTBroker
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns></returns>
+    private async Task ProcessRequest(ImmediateRequest request)
+    {
+        if (mwBot is null)
+        {
+            _logger.LogWarning("MwBot not initialized, cannot process request");
+            return;
+        }
+
+        mwBot.Status = MwBotStatus.ChargingCar;
+        var mwBotMessage = new MqttClientMessage
+        {
+            Id = mwBot.Id,
+            Status = mwBot.Status,
+            BatteryPercentage = mwBot.BatteryPercentage,
+            ParkingSlotId = request.ParkingSlotId,
+            TargetBatteryPercentage = request.RequestedChargeLevel
+        };
+
+        await PublishClientMessageAsync(mwBotMessage);
+        /* TODO : broker deve 
+         * impostare ChargingCar nel backend
+         * aggiungere il record in CurrentlyCharging
+         * 
+                var changeSuccess = await ChangeBotStatus(MwBotStatus.MovingToSlot);
+                if (!changeSuccess)
+                    return;
+        */
     }
 
     /// <summary>
@@ -52,7 +170,12 @@ public class MqttMwBotClient
             .Build();
 
         await InitializeMwBot(mwBotId);
-        return await ConnectAsync();
+        var isConnected = await ConnectAsync();
+        //if (isConnected)
+        //{
+        //    _timer.Change(0, 10000); // Initialize timer at 10 seconds
+        //}
+        return isConnected;
     }
 
     /// <summary>
@@ -68,9 +191,9 @@ public class MqttMwBotClient
             var mwBotRepository = scope.ServiceProvider.GetRequiredService<MwBotRepository>();
 
             if (mwBotId is not null)
-                MwBot = await mwBotRepository.GetByIdAsync(mwBotId.Value);
+                mwBot = await mwBotRepository.GetByIdAsync(mwBotId.Value);
 
-            if (MwBot is null)
+            if (mwBot is null)
             {
                 _logger.LogWarning("MwBot not found");
                 return;
@@ -133,7 +256,7 @@ public class MqttMwBotClient
 
         var mwBotMessage = JsonSerializer.Deserialize<MqttClientMessage>(payload);
 
-        if (mwBotMessage is null || MwBot is null)
+        if (mwBotMessage is null || mwBot is null)
         {
             _logger.LogWarning("Invalid message received or MwBot not initialized");
             return;
@@ -142,13 +265,13 @@ public class MqttMwBotClient
         try
         {
             _logger.BeginScope("Updating MwBot");
-            MwBot.Status = mwBotMessage.Status;
-            MwBot.BatteryPercentage = mwBotMessage.BatteryPercentage;
+            mwBot.Status = mwBotMessage.Status;
+            mwBot.BatteryPercentage = mwBotMessage.BatteryPercentage;
 
             using (var scope = _serviceScopeFactory.CreateScope())
             {
                 var mwBotRepository = scope.ServiceProvider.GetRequiredService<MwBotRepository>();
-                await mwBotRepository.UpdateAsync(MwBot);
+                await mwBotRepository.UpdateAsync(mwBot);
             }
             _logger.LogInformation("MwBot updated successfully");
         }
@@ -189,13 +312,13 @@ public class MqttMwBotClient
     /// <returns></returns>
     public async Task<bool> DisconnectAsync()
     {
-        if (MwBot is null)
+        if (mwBot is null)
         {
             _logger.LogWarning("MwBot not initialized, cannot disconnect");
             return false;
         }
 
-        if (MwBot.Status == MwBotStatus.Offline)
+        if (mwBot.Status == MwBotStatus.Offline)
         {
             _logger.LogWarning("MwBot is not online, cannot disconnect");
             return false;
@@ -204,11 +327,11 @@ public class MqttMwBotClient
         try
         {
             _logger.BeginScope("Disconnecting from MQTT server");
-            MwBot.Status = MwBotStatus.Offline;
+            mwBot.Status = MwBotStatus.Offline;
 
             using var scope = _serviceScopeFactory.CreateScope();
             var mwBotRepository = scope.ServiceProvider.GetRequiredService<MwBotRepository>();
-            await mwBotRepository.UpdateAsync(MwBot);
+            await mwBotRepository.UpdateAsync(mwBot);
 
             await _mqttClient.DisconnectAsync();
             _logger.LogInformation("Disconnected from MQTT server");

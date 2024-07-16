@@ -1,13 +1,14 @@
+
 ﻿using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using MQTTnet.Client;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Security;
+using Progetto.App.Core.Services.Mqtt;
 using Progetto.App.Core.Services.MQTT;
 using Progetto.App.Core.Validators;
 
@@ -23,58 +24,33 @@ namespace Progetto.App.Controllers;
 public class MwBotController : ControllerBase
 {
     private readonly ILogger<MwBotController> _logger;
-    private readonly MwBotRepository _repository;
-    private readonly ChargeHistoryRepository _chargeHistoryRepository;
+    private readonly MwBotRepository _mwBotRepository;
     private readonly ILoggerFactory _loggerFactory;
     private readonly IServiceScopeFactory _serviceScopeFactory;
-    private readonly List<MqttMwBotClient> _connectedClients;
+    private readonly ChargeManager _chargeManager;
+    private readonly ConnectedClientsService _connectedClientsService;
 
     public MwBotController(
         ILogger<MwBotController> logger,
-        MwBotRepository repository,
-        ChargeHistoryRepository chargeHistoryRepository,
+        MwBotRepository mwBotRespository,
         ILoggerFactory loggerFactory,
-        IServiceScopeFactory serviceScopeFactory )
+        IServiceScopeFactory serviceScopeFactory,
+        ChargeManager chargeManager,
+        ConnectedClientsService connectedClientsService)
     {
         _logger = logger;
-        _repository = repository;
-        _chargeHistoryRepository = chargeHistoryRepository;
         _loggerFactory = loggerFactory;
+        _chargeManager = chargeManager;
         _serviceScopeFactory = serviceScopeFactory;
-        _connectedClients = [];
+        _connectedClientsService = connectedClientsService;
 
-        GetConnectedClients().GetAwaiter().GetResult();
+        var provider = serviceScopeFactory.CreateScope().ServiceProvider;
+        _mwBotRepository = provider.GetRequiredService<MwBotRepository>();
     }
 
-    private async Task GetConnectedClients()
+    public async Task InitializeConnectedClients()
     {
-        _logger.LogDebug("Retrieving connected clients");
-        try
-        {
-            var mwBotList = await _repository.GetOnlineMwBots();
-
-            foreach (var singleMwBot in mwBotList)
-            {
-                _logger.LogDebug("Creating MqttMwBotClient for MwBot with id {id}", singleMwBot.Id);
-                var client = new MqttMwBotClient(_loggerFactory.CreateLogger<MqttMwBotClient>(), _serviceScopeFactory);
-
-                var connectResult = await client.InitializeAsync(singleMwBot.Id);
-                if (!connectResult) // If connection fails, set MwBot status to offline
-                {
-                    _logger.LogError("Failed to connect MwBot with id {id} to MQTT server while getting connected clients", singleMwBot.Id);
-                    singleMwBot.Status = MwBotStatus.Offline;
-                    _ = _repository.UpdateAsync(singleMwBot);
-                }
-                else
-                    _connectedClients.Add(client);
-            }
-        }
-        catch
-        {
-            _logger.LogError("Error while retrieving online MwBots");
-        }
-
-        _logger.LogDebug("Connected clients retrieved");
+        await _connectedClientsService.InitializeConnectedClients();
     }
 
     [HttpPost]
@@ -94,7 +70,7 @@ public class MwBotController : ControllerBase
         try
         {
             _logger.LogDebug("Creating MwBot with id {id}", mwBot.Id);
-            await _repository.AddAsync(mwBot);
+            await _mwBotRepository.AddAsync(mwBot);
             _logger.LogDebug("MwBot with id {id} created", mwBot.Id);
 
             return Ok(mwBot);
@@ -130,7 +106,10 @@ public class MwBotController : ControllerBase
         try
         {
             _logger.LogDebug("Creating / Retrieving MwBot with id {id}", mwBot.Id);
-            var client = new MqttMwBotClient(_loggerFactory.CreateLogger<MqttMwBotClient>(), _serviceScopeFactory);
+            var client = new MqttMwBotClient(
+                _loggerFactory.CreateLogger<MqttMwBotClient>(),
+                _serviceScopeFactory,
+                _chargeManager);
 
             if (client is null)
             {
@@ -145,10 +124,9 @@ public class MwBotController : ControllerBase
                 return BadRequest();
             }
 
-            client.MwBot.Status = mwBot.Status = MwBotStatus.StandBy;
-            await _repository.UpdateAsync(mwBot);
-
-            _connectedClients.Add(client);
+            client.mwBot.Status = mwBot.Status = MwBotStatus.StandBy;
+            await _mwBotRepository.UpdateAsync(mwBot);
+            _connectedClientsService.AddClient(client);
 
             _logger.LogDebug("MwBot {id} initialized", mwBot.Id);
             return Ok(mwBot);
@@ -182,16 +160,16 @@ public class MwBotController : ControllerBase
         try
         {
             _logger.LogDebug("Turning off MwBot with id {id}", mwBot.Id);
-            var client = _connectedClients.FirstOrDefault(c => c.MwBot?.Id == mwBot.Id);
+            var client = _connectedClientsService.GetConnectedClients().FirstOrDefault(c => c.mwBot?.Id == mwBot.Id);
 
             if (client != null)
             {
                 await client.DisconnectAsync();
-                _connectedClients.Remove(client);
+                _connectedClientsService.RemoveClient(client);
             }
 
             mwBot.Status = MwBotStatus.Offline;
-            _ = _repository.UpdateAsync(mwBot);
+            _ = _mwBotRepository.UpdateAsync(mwBot);
 
             _logger.LogDebug("MwBot with id {id} turned off", mwBot.Id);
             return Ok(mwBot);
@@ -215,7 +193,7 @@ public class MwBotController : ControllerBase
         try
         {
             _logger.LogDebug("Deleting MwBot with id {id}", id);
-            await _repository.DeleteAsync(m => m.Id == id);
+            await _mwBotRepository.DeleteAsync(m => m.Id == id);
             _logger.LogDebug("MwBot with id {id} deleted", id);
             return Ok();
         }
@@ -243,7 +221,7 @@ public class MwBotController : ControllerBase
         try
         {
             _logger.LogDebug("Updating MwBot with id {id}", mwBot.Id);
-            await _repository.UpdateAsync(mwBot);
+            await _mwBotRepository.UpdateAsync(mwBot);
             _logger.LogDebug("MwBot with id {id} updated", mwBot.Id);
             return Ok(mwBot);
         }
@@ -260,21 +238,21 @@ public class MwBotController : ControllerBase
     {
         try
         {
-            _logger.LogDebug("Retrieving MwBots");
+            _logger.BeginScope("Retrieving MwBots");
 
             IEnumerable<MwBot> mwBots;
 
             if (status.HasValue && status.Value == -1)
             {
-                mwBots = await _repository.GetOnlineMwBots();
+                mwBots = await _mwBotRepository.GetOnlineMwBots();
             }
             else if (status.HasValue && status.Value == 0)
             {
-                mwBots = await _repository.GetOfflineMwBots();
+                mwBots = await _mwBotRepository.GetOfflineMwBots();
             }
             else
             {
-                mwBots = await _repository.GetAllAsync();
+                mwBots = await _mwBotRepository.GetAllAsync();
             }
 
             _logger.LogDebug("MwBots retrieved");
@@ -287,4 +265,37 @@ public class MwBotController : ControllerBase
 
         return BadRequest();
     }
+
+    [HttpGet("{id}")]
+    public async Task<ActionResult<MwBot>> GetMwBot(int id)
+    {
+        if (id <= 0)
+        {
+            _logger.LogWarning("Invalid id {id}", id);
+            return BadRequest();
+        }
+
+        try
+        {
+            _logger.LogDebug("Retrieving MwBot with id {id}", id);
+            var mwBot = await _mwBotRepository.GetByIdAsync(id);
+
+            if (mwBot == null)
+            {
+                _logger.LogWarning("MwBot with id {id} not found", id);
+                return NotFound();
+            }
+
+            _logger.LogDebug("MwBot with id {id} retrieved", id);
+            return Ok(mwBot);
+        }
+        catch
+        {
+            _logger.LogError("Error while retrieving MwBot with id {id}", id);
+        }
+
+        return BadRequest();
+    }
+
+    //[HttpGet("chargelevel/{id}")]
 }

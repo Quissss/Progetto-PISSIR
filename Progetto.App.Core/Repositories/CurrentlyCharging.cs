@@ -1,4 +1,5 @@
-﻿using Progetto.App.Core.Data;
+﻿using Microsoft.EntityFrameworkCore;
+using Progetto.App.Core.Data;
 using Progetto.App.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -12,12 +13,17 @@ namespace Progetto.App.Core.Repositories;
 /// Repository for ChargeHistory entity (inherits from GenericRepository)
 /// For database operations related to ChargeHistory entity
 /// </summary>
-public class ChargeHistoryRepository : GenericRepository<ChargeHistory>
+public class CurrentlyChargingRepository : GenericRepository<CurrentlyCharging>
 {
     private readonly ApplicationDbContext _context;
 
-    public ChargeHistoryRepository(ApplicationDbContext context) : base(context) 
+    public CurrentlyChargingRepository(ApplicationDbContext context) : base(context) 
     {
         _context = context;
+    }
+
+    public async Task<CurrentlyCharging?> GetCurrentlyChargingByCarId(string carPlate)
+    {
+        return await _context.CurrentlyCharging.Where(c => c.CarPlate == carPlate).FirstOrDefaultAsync();
     }
 }

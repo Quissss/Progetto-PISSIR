@@ -20,8 +20,9 @@ public class ReservationController : ControllerBase
 {
     private readonly ILogger<ReservationController> _logger;
     private readonly ReservationRepository _reservationRepository;
+    private readonly ChargeManager _chargeManager;
 
-    public ReservationController(ILogger<ReservationController> logger, ReservationRepository repository)
+    public ReservationController(ILogger<ReservationController> logger, ReservationRepository repository, ChargeManager chargeManager)
     {
         _logger = logger;
         _reservationRepository = repository;
@@ -81,7 +82,6 @@ public class ReservationController : ControllerBase
             return BadRequest();
         }
 
-
         try
         {
             _logger.LogDebug("Creating reservation with id {id} for user {user}", reservation.Id, User.Identity.Name);
@@ -94,6 +94,7 @@ public class ReservationController : ControllerBase
             }
             reservation.ReservationTime = DateTime.Now;
             await _reservationRepository.AddAsync(reservation);
+            _chargeManager.AddReservation(reservation);
 
             _logger.LogDebug("Reservation created with {id}", reservation.Id);
             return Ok();
