@@ -138,7 +138,7 @@ namespace Progetto.App.Core.Models
                         {
                             RequestDate = DateTime.Now,
                             RequestedChargeLevel = nextReservation.RequestedChargeLevel,
-                            ParkingSlotId = nextReservation.ParkingSlotId,
+                           // ParkingId = nextReservation.ParkingId,
                             UserId = nextReservation.UserId,
                             FromReservation = true
                         }

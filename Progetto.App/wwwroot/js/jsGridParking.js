@@ -12,7 +12,6 @@ let ajax = function (item, verb, json = true) {
 };
 
 $(function () {
-    // Get the enum values for the statuses
     $.getJSON(url + "/statuses", function (statuses) {
         $("#parkingGrid").jsGrid({
             width: "100%",

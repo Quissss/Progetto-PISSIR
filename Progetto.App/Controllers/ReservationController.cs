@@ -26,50 +26,12 @@ public class ReservationController : ControllerBase
     {
         _logger = logger;
         _reservationRepository = repository;
+        _chargeManager = chargeManager;
     }
 
-    [HttpPost("admin")]
-    [Authorize(Policy = PolicyNames.IsAdmin)]
-    public async Task<ActionResult<Reservation>> CreateReservation([FromBody] Reservation reservation)
-    {
-        var validator = new ReservationValidator();
-        var result = validator.Validate(reservation);
-        result.AddToModelState(ModelState);
-
-        if (!ModelState.IsValid)
-        {
-            _logger.LogWarning("Invalid model state while creating reservation with id {id}", reservation.Id);
-            return BadRequest();
-        }
-
-        try
-        {
-            _logger.LogDebug("Creating reservation with id {id}", reservation.Id);
-
-            var existingReservation = await _reservationRepository.GetByIdAsync(reservation.Id);
-            if (existingReservation != null)
-            {
-                _logger.LogWarning("Reservation with id {id} already exists", reservation.Id);
-                return BadRequest();
-            }
-
-            await _reservationRepository.AddAsync(reservation);
-
-            _logger.LogDebug("Reservation created with {id}", reservation.Id);
-            return Ok();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error while creating reservation with id {id}", reservation.Id);
-        }
-
-        return BadRequest();
-
-    }
 
     [HttpPost]
     [Authorize(Policy = PolicyNames.IsPremiumUser)]
-    [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<Reservation>> CreateReservationForUser([FromForm] Reservation reservation)
     {
         var validator = new ReservationValidator();

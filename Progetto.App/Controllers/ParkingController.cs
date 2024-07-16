@@ -114,7 +114,7 @@ public class ParkingController : ControllerBase
                 return NotFound();
             }
 
-            await _parkingRepository.UpdateAsync(parking);
+            await _parkingRepository.UpdateAsync(existingParking);
 
             _logger.LogDebug("Parking with id {id} updated", parking.Id);
             return Ok(parking);
