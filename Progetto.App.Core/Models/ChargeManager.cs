@@ -120,7 +120,7 @@ namespace Progetto.App.Core.Models
             return null;
         }
 
-        public async Task<ImmediateRequest?> ServeNext()
+        public async Task<ImmediateRequest?> ServeNext(int mwBotId)
         {
             await _reservationsSemaphore.WaitAsync();
             try
@@ -131,7 +131,7 @@ namespace Progetto.App.Core.Models
                     if (nextReservation is null)
                         return null;
 
-                    _logger.LogInformation($"Serving reservation from user {nextReservation?.UserId} for {nextReservation?.ReservationTime}.");
+                    _logger.LogInformation("MwBot {mwBot}: Serving reservation from user {nextReservation?.UserId} for {nextReservation?.ReservationTime}.", mwBotId, nextReservation?.UserId, nextReservation?.ReservationTime);
 
                     var immediateRequest = await _immediateRequestRepository.AddAsync(
                         new ImmediateRequest
@@ -146,7 +146,7 @@ namespace Progetto.App.Core.Models
                     if (immediateRequest is null)
                         return null;
 
-                    _logger.LogInformation($"Created immediate request for user {immediateRequest.UserId} at {immediateRequest.RequestDate}.");
+                    _logger.LogInformation("MwBot {mwBot}: Created immediate request for user {immediateRequest.UserId} at {immediateRequest.RequestDate}.", mwBotId, immediateRequest.UserId, immediateRequest.RequestDate);
 
                     return immediateRequest;
                 }
@@ -162,7 +162,7 @@ namespace Progetto.App.Core.Models
                 if (_immediateRequests?.Count > 0)
                 {
                     var immediateRequest = GetNextImmediateRequest();
-                    _logger.LogInformation($"Serving immediate request from user {immediateRequest?.UserId} at {immediateRequest?.RequestDate}.");
+                    _logger.LogInformation("MwBot {mwBot}: Serving immediate request from user {immediateRequest?.UserId} at {immediateRequest?.RequestDate}.", mwBotId, immediateRequest?.UserId, immediateRequest?.RequestDate);
                     return immediateRequest;
                 }
             }
@@ -171,7 +171,7 @@ namespace Progetto.App.Core.Models
                 _immediateRequestsSemaphore.Release();
             }
 
-            _logger.LogInformation("No requests to serve.");
+            _logger.LogInformation("MwBot {mwBot}: No requests to serve.", mwBotId);
             return null;
         }
     }

@@ -26,7 +26,6 @@ public class MwBotController : ControllerBase
     public MwBotController(
         ILogger<MwBotController> logger,
         MwBotRepository repository,
-        ChargeHistoryRepository chargeHistoryRepository,
         ILoggerFactory loggerFactory,
         IServiceScopeFactory serviceScopeFactory,
         ChargeManager chargeManager)

@@ -44,7 +44,7 @@ public class MqttMwBotClient
         _mqttClient.ApplicationMessageReceivedAsync += HandleReceivedApplicationMessage;
 
         // Set timer for processing charge requests
-        _timer = new Timer(TimedProcessChargeRequest, null, Timeout.Infinite, 100000);
+        _timer = new Timer(TimedProcessChargeRequest, null, Timeout.Infinite, 10000);
     }
 
     private async Task<bool> ChangeBotStatus(MwBotStatus status)
@@ -97,7 +97,7 @@ public class MqttMwBotClient
     {
         if (mwBot?.Status == MwBotStatus.StandBy)
         {
-            var handleRequest = await _chargeManager.ServeNext();
+            var handleRequest = await _chargeManager.ServeNext(mwBot.Id);
 
             if (handleRequest is not null)
             {
