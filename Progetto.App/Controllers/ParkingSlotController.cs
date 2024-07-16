@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Security;
+using Progetto.App.Core.Validators;
 
 namespace Progetto.App.Controllers;
 
@@ -29,6 +31,10 @@ public class ParkingSlotController : ControllerBase
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<ParkingSlot>> AddParkingSlot([FromBody] ParkingSlot parkingSlot)
     {
+        var validator = new ParkingSlotValidator();
+        var result = validator.Validate(parkingSlot);
+        result.AddToModelState(ModelState);
+
         if (!ModelState.IsValid)
         {
             _logger.LogWarning("Invalid model state while creating parking slot with id {id}", parkingSlot.Id);
@@ -96,6 +102,10 @@ public class ParkingSlotController : ControllerBase
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<ParkingSlot>> UpdateParkingSlot([FromBody] ParkingSlot parkingSlot)
     {
+        var validator = new ParkingSlotValidator();
+        var result = validator.Validate(parkingSlot);
+        result.AddToModelState(ModelState);
+
         if (!ModelState.IsValid)
         {
             _logger.LogWarning("Invalid model state while updating parking slot with id {id}", parkingSlot.Id);

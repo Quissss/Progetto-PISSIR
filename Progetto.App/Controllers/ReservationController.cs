@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using FluentValidation;
+using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Security;
+using Progetto.App.Core.Validators;
 
 namespace Progetto.App.Controllers;
 
@@ -28,6 +31,10 @@ public class ReservationController : ControllerBase
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<Reservation>> CreateReservation([FromBody] Reservation reservation)
     {
+        var validator = new ReservationValidator();
+        var result = validator.Validate(reservation);
+        result.AddToModelState(ModelState);
+
         if (!ModelState.IsValid)
         {
             _logger.LogWarning("Invalid model state while creating reservation with id {id}", reservation.Id);
@@ -64,6 +71,10 @@ public class ReservationController : ControllerBase
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<Reservation>> CreateReservationForUser([FromForm] Reservation reservation)
     {
+        var validator = new ReservationValidator();
+        var result = validator.Validate(reservation);
+        result.AddToModelState(ModelState);
+
         if (!ModelState.IsValid)
         {
             _logger.LogWarning("Invalid model state while creating reservation for user {userId}", reservation.UserId);
@@ -128,6 +139,10 @@ public class ReservationController : ControllerBase
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<Reservation>> UpdateReservation([FromBody] Reservation reservation)
     {
+        var validator = new ReservationValidator();
+        var result = validator.Validate(reservation);
+        result.AddToModelState(ModelState);
+
         if (!ModelState.IsValid)
         {
             _logger.LogWarning("Invalid model state while updating reservation with id {id}", reservation.Id);
