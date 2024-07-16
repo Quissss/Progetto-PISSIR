@@ -15,21 +15,16 @@ public class ReservationValidator : AbstractValidator<Reservation>
 {
     public ReservationValidator()
     {
-        RuleFor(r => r.ReservationTime)
-            .NotEmpty().WithMessage("Reservation Time is required")
-            .LessThanOrEqualTo(DateTime.Now).WithMessage("Reservation Time must be now");
+
         RuleFor(r => r.RequestDate)
             .NotEmpty().WithMessage("Request Date is required")
-            .LessThanOrEqualTo(DateTime.Now).WithMessage("Request Date must be in the past");
+            .GreaterThanOrEqualTo(DateTime.Now).WithMessage("Request Date must be in the future ");
         RuleFor(r => r.RequestedChargeLevel)
             .NotEmpty().WithMessage("Charge level is required")
             .Must(c => c >= 0 && c <= 100).WithMessage("Charge level must be between 0 and 100");
         RuleFor(r => r.UserId)
             .NotEmpty().WithMessage("User is required");
-        RuleFor(r => r.ParkingSlotId)
-            .NotEmpty().WithMessage("Parking Slot is required");
-        RuleFor(r => r)
-            .Must(r => r.ReservationTime <= r.RequestDate)
-            .WithMessage("Reservation Time must be earlier than or equal to Request Date");
+        RuleFor(r => r.ParkingId)
+            .NotEmpty().WithMessage("Parking is required");
     }
 }

@@ -1,10 +1,16 @@
-﻿using Microsoft.AspNetCore.Authorization;
+
+﻿using FluentValidation;
+using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Security;
 using Progetto.App.Core.Services.Mqtt;
 using Progetto.App.Core.Services.MQTT;
+using Progetto.App.Core.Validators;
 
 namespace Progetto.App.Controllers;
 
@@ -50,6 +56,11 @@ public class MwBotController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<MwBot>> AddMwBot([FromBody] MwBot mwBot)
     {
+        var validator = new MwBotValidator();
+        var result = validator.Validate(mwBot);
+        result.AddToModelState(ModelState);
+
+
         if (!ModelState.IsValid)
         {
             _logger.LogWarning("Invalid model state while creating MwBot");
@@ -75,6 +86,11 @@ public class MwBotController : ControllerBase
     [HttpPut("on")]
     public async Task<ActionResult<MwBot>> TurnOn([FromBody] MwBot mwBot)
     {
+
+        var validator = new MwBotValidator();
+        var result = validator.Validate(mwBot);
+        result.AddToModelState(ModelState);
+
         if (!ModelState.IsValid)
         {
             _logger.LogWarning("Invalid model state while creating MwBot");
@@ -125,6 +141,10 @@ public class MwBotController : ControllerBase
     [HttpPut("off")]
     public async Task<ActionResult<MwBot>> TurnOff([FromBody] MwBot mwBot)
     {
+        var validator = new MwBotValidator();
+        var result = validator.Validate(mwBot);
+        result.AddToModelState(ModelState);
+
         if (!ModelState.IsValid)
         {
             _logger.LogWarning("Invalid model state while turning off MwBot");
@@ -182,6 +202,10 @@ public class MwBotController : ControllerBase
     [HttpPut]
     public async Task<ActionResult<MwBot>> UpdateMwBot([FromBody] MwBot mwBot)
     {
+        var validator = new MwBotValidator();
+        var result = validator.Validate(mwBot);
+        result.AddToModelState(ModelState);
+
         if (!ModelState.IsValid)
         {
             _logger.LogWarning("Invalid model state while updating MwBot with id {id}", mwBot.Id);

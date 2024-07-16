@@ -3,27 +3,102 @@
 @{
     ViewData["Title"] = "Reservation";
 }
-<h2>Crea una nuova prenotazione</h2>
-<form id="reservationForm">
+<h2><i class="fa-solid fa-book"></i> <strong>@ViewData["Title"]</strong></h2>
 
+<div class="container-fluid">
+    <div class="row">
+        <partial name="_DashboardPartial" />
 
-    <label for="requestDate">Data Richiesta:</label><br>
-    <input type="datetime-local" id="requestDate" name="RequestDate" required><br><br>
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="card mt-4 shadow-sm">
+                <div class="card-header bg-primary text-white text-center">
+                    <h4><i class="fa-solid fa-calendar-plus"></i> <strong>Prenota la ricarica</strong></h4>
+                </div>
+                <div class="card-body">
+                    <form id="reservationForm" method="post">
+                        <div class="form-group mb-4">
+                            <label for="requestDate" class="form-label"><strong>Data Richiesta:</strong></label>
+                            <input type="datetime-local" id="requestDate" name="RequestDate" class="form-control" required>
+                            <span class="error text-danger" id="requestDateError"></span>
+                        </div>
 
-    <label for="requestedChargeLevel">Livello di Carica Richiesto:</label><br>
-    <input type="number" id="requestedChargeLevel" name="RequestedChargeLevel" min="0" max="100" step="1" required><br><br>
+                        <div class="form-group mb-4">
+                            <label for="requestedChargeLevel" class="form-label"><strong>Livello di Carica Richiesto: <span id="chargeLevelDisplay">50</span> %</strong></label>
+                            <input type="range" id="requestedChargeLevel" name="RequestedChargeLevel" class="form-range" min="0" max="100" step="1" value="50" oninput="updateChargeLevelDisplay()" required>
+                            <span class="error text-danger" id="requestedChargeLevelError"></span>
+                        </div>
 
-    <label for="parkingSlotId">ID Slot Parcheggio:</label><br>
-    <input type="number" id="parkingSlotId" name="ParkingSlotId" required><br><br>
+                        <div class="form-group mb-4">
+                            <label for="parkingId" class="form-label"><strong>Seleziona Parcheggio:</strong></label>
+                            <select id="parkingId" name="ParkingId" class="form-select" required>
+                                @foreach (var parking in Model.Parkings)
+                                {
+                                    <option value="@parking.Id">@parking.Name - @parking.Address</option>
+                                }
+                            </select>
+                            <span class="error text-danger" id="parkingIdError"></span>
+                        </div>
 
-    <input type="hidden" id="userId" name="userId" value="@Model.Reservation.UserId" required>
+                        <input type="hidden" id="userId" name="userId" value="@Model.Reservation.UserId" required>
 
-    <button type="button" onclick="submitForm()">Crea Prenotazione</button>
-</form>
+                        <div class="d-flex justify-content-center">
+                            <button type="button" class="btn btn-primary btn-lg" onclick="submitForm()">Crea Prenotazione</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Line chart -->
+            <canvas class="my-4 w-100" id="myChart" width="900" height="380"></canvas>
+        </main>
+    </div>
+</div>
 
 @section Scripts {
     <script>
+        function updateChargeLevelDisplay() {
+            const chargeLevel = document.getElementById('requestedChargeLevel').value;
+            document.getElementById('chargeLevelDisplay').innerText = chargeLevel;
+        }
+
+        function clearErrors() {
+            document.querySelectorAll('.error').forEach(error => error.innerText = '');
+        }
+
+        function validateForm() {
+            clearErrors();
+            let isValid = true;
+
+            const requestDate = document.getElementById('requestDate').value;
+            const requestedChargeLevel = document.getElementById('requestedChargeLevel').value;
+            const parkingId = document.getElementById('parkingId').value;
+            const userId = document.getElementById('userId').value;
+
+            if (!requestDate) {
+                document.getElementById('requestDateError').innerText = 'Data Richiesta è obbligatoria.';
+                isValid = false;
+            }
+            if (requestedChargeLevel < 0 || requestedChargeLevel > 100) {
+                document.getElementById('requestedChargeLevelError').innerText = 'Livello di Carica Richiesto deve essere tra 0 e 100.';
+                isValid = false;
+            }
+            if (!parkingId) {
+                document.getElementById('parkingIdError').innerText = 'Seleziona un parcheggio.';
+                isValid = false;
+            }
+            if (!userId) {
+                alert('Utente non valido.');
+                isValid = false;
+            }
+            return isValid;
+        }
+
         async function submitForm() {
+            if (!validateForm()) {
+                return;
+            }
+
             const form = document.getElementById('reservationForm');
             const formData = new FormData(form);
 

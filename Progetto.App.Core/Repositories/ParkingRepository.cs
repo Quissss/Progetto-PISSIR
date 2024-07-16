@@ -46,4 +46,11 @@ public class ParkingRepository : GenericRepository<Parking>
     {
         return await _context.Parkings.Where(p => p.PostalCode == postalCode).ToListAsync();
     }
+
+    public  Parking? GetParkingById(int parkingId)
+    {
+        return  _context.Parkings.Where(p => p.Id == parkingId).FirstOrDefault();
+    }
+
+
 }

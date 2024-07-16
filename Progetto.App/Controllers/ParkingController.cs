@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Security;
+using Progetto.App.Core.Validators;
 using System.Linq.Expressions;
 
 namespace Progetto.App.Controllers;
@@ -27,6 +29,10 @@ public class ParkingController : ControllerBase
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<Parking>> AddParking([FromBody] Parking parking)
     {
+        var validator = new ParkingValidator();
+        var result = validator.Validate(parking);
+        result.AddToModelState(ModelState);
+
         if (!ModelState.IsValid)
         {
             _logger.LogWarning("Invalid model state while creating parking with name {name}", parking.Name);
@@ -87,6 +93,10 @@ public class ParkingController : ControllerBase
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult> UpdateParking([FromBody] Parking parking)
     {
+        var validator = new ParkingValidator();
+        var result = validator.Validate(parking);
+        result.AddToModelState(ModelState);
+
         if (!ModelState.IsValid)
         {
             _logger.LogWarning("Invalid model state while updating parking with name {name}", parking.Name);
@@ -104,7 +114,7 @@ public class ParkingController : ControllerBase
                 return NotFound();
             }
 
-            await _parkingRepository.UpdateAsync(parking);
+            await _parkingRepository.UpdateAsync(existingParking);
 
             _logger.LogDebug("Parking with id {id} updated", parking.Id);
             return Ok(parking);

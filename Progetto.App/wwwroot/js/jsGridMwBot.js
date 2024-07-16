@@ -1,31 +1,34 @@
-﻿
-const url = "/api/MwBot";
+﻿const url = "/api/MwBot";
 
 let ajax = function (item, verb, json = true) {
+    let requestData = json ? JSON.stringify(item) : item;
+
     return $.ajax({
         type: verb,
         url: url,
-        data: json ? JSON.stringify(item) : item,
-        dataType: "json",
+        data: requestData,
         contentType: json ? "application/json" : "text/plain",
     });
 };
 
+
 function turnBot(item, action) {
-    var endpoint = action === "on" ? "on" : "off";  
+    var endpoint = action === "on" ? "on" : "off";
     $.ajax({
-        type: "PUT",  
+        type: "PUT",
         url: url + "/" + endpoint,
         data: JSON.stringify(item),
         contentType: "application/json",
         success: function (response) {
             console.log("Bot turned " + action);
+            $('#mwBotGrid').jsGrid('loadData'); 
         },
         error: function (xhr, status, error) {
             console.error("Error turning bot " + action + ": " + error);
         }
     });
 }
+
 $(function () {
     $("#mwBotGrid").jsGrid({
         width: "100%",
@@ -53,7 +56,7 @@ $(function () {
         },
 
         fields: [
-            { name: "id", type: "number", title: "ID", readOnly: true },
+            { name: "id", type: "number", title: "ID", filtering: false },
             { name: "batteryPercentage", type: "number", title: "Battery Percentage", filtering: false },
             {
                 name: "status", type: "select", title: "Status", items: [
@@ -71,10 +74,8 @@ $(function () {
                     }
                 }
             },
-            
             {
                 type: "custom",
-                //name: "On/Off",
                 width: 18,
                 itemTemplate: function (value, item) {
                     if (item.status === 0) {
@@ -91,7 +92,6 @@ $(function () {
                             });
                     }
                 }
-
             },
             {
                 type: "control", editButton: false, deleteButton: true,

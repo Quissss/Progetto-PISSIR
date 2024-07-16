@@ -30,6 +30,10 @@ public class CarController : ControllerBase
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<Car>> AddCar([FromBody] Car car)
     {
+        var validator = new CarValidator();
+        var result = validator.Validate(car);
+        result.AddToModelState(ModelState);
+
         if (!ModelState.IsValid)
         {
             _logger.LogWarning("Invalid model state while creating car with licence plate {licencePlate}", car.LicencePlate);
@@ -98,6 +102,11 @@ public class CarController : ControllerBase
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<Car>> UpdateCar([FromBody] Car car)
     {
+        var validator = new CarValidator();
+        var result = validator.Validate(car);
+        result.AddToModelState(ModelState);
+
+
         if (!ModelState.IsValid)
         {
             _logger.LogWarning("Invalid model state while updating car with licence plate {licencePlate}", car.LicencePlate);

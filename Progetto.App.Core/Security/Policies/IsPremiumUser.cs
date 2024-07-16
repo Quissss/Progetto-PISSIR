@@ -20,6 +20,9 @@ public class IsPremiumUserAuthorizationHandler : AuthorizationHandler<IsPremiumU
         if (context.User.HasClaim(ClaimName.Role, $"{((int)Role.PremiumUser)}"))
             context.Succeed(requirement);
 
+        if (context.User.HasClaim(ClaimName.Role, $"{((int)Role.Admin)}"))
+            context.Succeed(requirement);
+
         return Task.FromResult(context);
     }
 }

@@ -41,4 +41,27 @@ public class ParkingSlotRepository : GenericRepository<ParkingSlot>
     {
         return await _context.ParkingSlots.Where(ps => ps.Status == ParkSlotStatus.Occupied).ToListAsync();
     }
+
+    public async Task<IEnumerable<ParkingSlot>> GetFilteredAsync(string searchSlotNumber, ParkSlotStatus? parkingSlotStatus, int? parkingSlotId)
+    {
+        IQueryable<ParkingSlot> query = _context.ParkingSlots;
+
+        if (!string.IsNullOrEmpty(searchSlotNumber))
+        {
+            query = query.Where(ps => ps.Number.ToString().Contains(searchSlotNumber));
+        }
+
+        if (parkingSlotStatus.HasValue)
+        {
+            query = query.Where(ps => ps.Status == parkingSlotStatus.Value);
+        }
+
+        if (parkingSlotId.HasValue)
+        {
+            query = query.Where(ps => ps.ParkingId == parkingSlotId.Value);
+        }
+
+        return await query.ToListAsync();
+    }
+
 }
