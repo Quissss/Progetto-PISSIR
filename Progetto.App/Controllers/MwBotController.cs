@@ -36,8 +36,11 @@ public class MwBotController : ControllerBase
         _serviceScopeFactory = serviceScopeFactory;
         _chargeManager = chargeManager;
         _connectedClients = new List<MqttMwBotClient>();
+    }
 
-        GetConnectedClients().GetAwaiter().GetResult();
+    public async Task InitializeConnectedClients()
+    {
+       await GetConnectedClients();
     }
 
     private async Task GetConnectedClients()
