@@ -110,6 +110,7 @@ public class MwBotController : ControllerBase
     [HttpPut("on")]
     public async Task<ActionResult<MwBot>> TurnOn([FromBody] MwBot mwBot)
     {
+
         var validator = new MwBotValidator();
         var result = validator.Validate(mwBot);
         result.AddToModelState(ModelState);

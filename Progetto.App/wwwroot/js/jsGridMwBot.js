@@ -1,10 +1,9 @@
-﻿
-const url = "/api/MwBot";
+﻿const url = "/api/MwBot";
 
 let ajax = function (item, verb, json = true) {
     return $.ajax({
         type: verb,
-        url: url,
+        url: verb === "DELETE" ? `${url}/${item}` : url,
         data: json ? JSON.stringify(item) : item,
         dataType: "json",
         contentType: json ? "application/json" : "text/plain",
@@ -27,6 +26,7 @@ function turnBot(item, action) {
         }
     });
 }
+
 $(function () {
     $("#mwBotGrid").jsGrid({
         width: "100%",
@@ -43,18 +43,27 @@ $(function () {
                 return ajax(filter, "GET", false);
             },
             updateItem: function (item) {
-                return ajax(item, "PUT");
+                return ajax(item, "PUT")
+                    .done(function () {
+                        $('#mwBotGrid').jsGrid('loadData'); 
+                    });
             },
             insertItem: function (item) {
-                return ajax(item, "POST");
+                return ajax(item, "POST")
+                    .done(function () {
+                        $('#mwBotGrid').jsGrid('loadData');
+                    });
             },
             deleteItem: function (item) {
-                return ajax(item, "DELETE");
+                return ajax(item.id, "DELETE", false)
+                    .done(function () {
+                        $('#mwBotGrid').jsGrid('loadData');
+                    });
             }
         },
 
         fields: [
-            { name: "id", type: "number", title: "ID", readOnly: true },
+            { name: "id", type: "number", title: "ID", filtering: false },
             { name: "batteryPercentage", type: "number", title: "Battery Percentage", filtering: false },
             {
                 name: "status", type: "select", title: "Status", items: [
@@ -72,10 +81,8 @@ $(function () {
                     }
                 }
             },
-            
             {
                 type: "custom",
-                //name: "On/Off",
                 width: 18,
                 itemTemplate: function (value, item) {
                     if (item.status === 0) {
@@ -92,12 +99,10 @@ $(function () {
                             });
                     }
                 }
-
             },
             {
                 type: "control", editButton: false, deleteButton: true,
             }
         ]
     });
-    
 });
