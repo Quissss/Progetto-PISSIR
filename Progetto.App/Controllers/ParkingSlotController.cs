@@ -248,7 +248,6 @@ public class ParkingSlotController : ControllerBase
         return BadRequest();
     }
 
-
     [HttpGet("statuses")]
     public IActionResult GetStatuses()
     {
@@ -259,6 +258,4 @@ public class ParkingSlotController : ControllerBase
 
         return Ok(statuses);
     }
-
-
 }

@@ -20,7 +20,6 @@ public class MwBotValidator : AbstractValidator<MwBot>
             .LessThanOrEqualTo(100).WithMessage("Battery Percentage must be less than or equal to 100")
             .GreaterThanOrEqualTo(0).WithMessage("Battery Percentage must be greater than or equal to 0");
         RuleFor(mw => mw.Status)
-            .NotEmpty().WithMessage("Status is required")
             .IsInEnum().WithMessage("Status must be a valid MwBotStatus");
     }
 }

@@ -16,6 +16,7 @@ namespace Progetto.App.Core.Models
         private readonly ILogger<ChargeManager> _logger;
         private ReservationRepository _reservationRepository;
         private ImmediateRequestRepository _immediateRequestRepository;
+        private ParkingSlotRepository _parkingSlotRepository;
         private readonly SemaphoreSlim _reservationsSemaphore = new SemaphoreSlim(1, 1);
         private readonly SemaphoreSlim _immediateRequestsSemaphore = new SemaphoreSlim(1, 1);
 
@@ -28,6 +29,7 @@ namespace Progetto.App.Core.Models
             var provider = serviceScopeFactory.CreateScope().ServiceProvider;
             _reservationRepository = provider.GetRequiredService<ReservationRepository>();
             _immediateRequestRepository = provider.GetRequiredService<ImmediateRequestRepository>();
+            _parkingSlotRepository = provider.GetRequiredService<ParkingSlotRepository>();
 
             GetReservations().GetAwaiter().GetResult();
             GetImmediateRequests().GetAwaiter().GetResult();
@@ -133,18 +135,26 @@ namespace Progetto.App.Core.Models
 
                     _logger.LogInformation("MwBot {mwBot}: Serving reservation from user {nextReservation?.UserId} for {nextReservation?.ReservationTime}.", mwBotId, nextReservation?.UserId, nextReservation?.ReservationTime);
 
+                    var allFreeSlots = await _parkingSlotRepository.GetFreeParkingSlots();
+                    if (allFreeSlots is null || allFreeSlots.Count() == 0)
+                        return null;
+                    var freeSlot = allFreeSlots.FirstOrDefault();
+
                     var immediateRequest = await _immediateRequestRepository.AddAsync(
                         new ImmediateRequest
                         {
                             RequestDate = DateTime.Now,
                             RequestedChargeLevel = nextReservation.RequestedChargeLevel,
-                            ParkingSlotId = nextReservation.ParkingSlotId,
+                            ParkingSlotId = freeSlot.Id,
                             UserId = nextReservation.UserId,
                             FromReservation = true
                         }
                     );
                     if (immediateRequest is null)
                         return null;
+
+                    freeSlot.Status = ParkSlotStatus.Occupied;
+                    await _parkingSlotRepository.UpdateAsync(freeSlot);
 
                     _logger.LogInformation("MwBot {mwBot}: Created immediate request for user {immediateRequest.UserId} at {immediateRequest.RequestDate}.", mwBotId, immediateRequest.UserId, immediateRequest.RequestDate);
 
