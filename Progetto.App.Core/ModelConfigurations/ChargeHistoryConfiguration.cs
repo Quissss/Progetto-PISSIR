@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Progetto.App.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -13,8 +14,9 @@ namespace Progetto.App.Core.ModelConfigurations;
 /// </summary>
 public class ChargeHistoryConfiguration : IEntityTypeConfiguration<ChargeHistory>
 {
-    public void Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<ChargeHistory> builder)
+    public void Configure(EntityTypeBuilder<ChargeHistory> builder)
     {
+        builder.ToTable("ChargeHistory");
         builder.HasKey(ch => ch.Id);
         builder.Property(ch => ch.ParkStartDate).IsRequired();
         builder.Property(ch => ch.ParkEndDate).IsRequired();

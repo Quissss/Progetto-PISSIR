@@ -10,6 +10,7 @@ using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Validators;
 using FluentValidation;
 using Progetto.App.Core.Services.MQTT;
+using Progetto.App.Core.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -51,13 +52,16 @@ services.AddValidatorsFromAssemblyContaining<CarValidator>();
 // Repositories
 services.AddScoped<CarRepository>();
 services.AddScoped<ChargeHistoryRepository>();
+services.AddScoped<ChargeManager>();
 services.AddScoped<MwBotRepository>();
 services.AddScoped<ParkingRepository>();
 services.AddScoped<ParkingSlotRepository>();
 services.AddScoped<ReservationRepository>();
-
+services.AddScoped<ImmediateRequestRepository>();
+services.AddScoped<CurrentlyChargingRepository>();
 
 // Authorization handlers
+services.AddSingleton<ChargeManager>();
 services.AddSingleton<IAuthorizationHandler, IsAdminAuthorizationHandler>();
 services.AddSingleton<IAuthorizationHandler, IsPremiumUserAuthorizationHandler>();
 

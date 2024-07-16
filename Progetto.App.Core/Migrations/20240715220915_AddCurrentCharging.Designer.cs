@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Progetto.App.Core.Data;
 
@@ -10,9 +11,11 @@ using Progetto.App.Core.Data;
 namespace Progetto.App.Core.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240715220915_AddCurrentCharging")]
+    partial class AddCurrentCharging
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.6");
@@ -318,7 +321,7 @@ namespace Progetto.App.Core.Migrations
                     b.Property<DateTime>("StartDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 7, 16, 1, 51, 21, 220, DateTimeKind.Local).AddTicks(6351));
+                        .HasDefaultValue(new DateTime(2024, 7, 16, 0, 9, 13, 118, DateTimeKind.Local).AddTicks(8662));
 
                     b.Property<string>("UserId")
                         .IsRequired()
@@ -339,9 +342,6 @@ namespace Progetto.App.Core.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("FromReservation")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("ParkingSlotId")
