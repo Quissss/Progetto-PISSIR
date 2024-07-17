@@ -13,6 +13,12 @@
                 var isPremiumUser = (int)Role.PremiumUser == Convert.ToInt32(role);
                 var isUser = (int)Role.User == Convert.ToInt32(role);
 
+                <li class="nav-item  border-bottom">
+                    <a class="nav-link" href="/MonitoringParking">
+                        <i class="fa-solid fa-circle-check"></i> MonitoringParking
+                    </a>
+                </li>
+
                 @if (isAdmin)
                 {
                     <li class="nav-item border-bottom">
@@ -28,11 +34,6 @@
                     <li class="nav-item border-top border-bottom">
                         <a class="nav-link" href="/DashParking">
                             <i class="fas fa-parking"></i> ParkingSlot
-                        </a>
-                    </li>
-                    <li class="nav-item border-top border-bottom">
-                        <a class="nav-link" href="/MonitoringParking">
-                            <i class="fa-solid fa-circle-check"></i> MonitoringParking
                         </a>
                     </li>
                 }
