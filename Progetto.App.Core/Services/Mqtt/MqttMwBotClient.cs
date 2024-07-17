@@ -134,7 +134,10 @@ public class MqttMwBotClient
             return;
         }
 
-        mwBot.Status = MwBotStatus.ChargingCar;
+        var changeSuccess = await ChangeBotStatus(MwBotStatus.ChargingCar);
+        if (!changeSuccess)
+            return;
+
         var mwBotMessage = new MqttClientMessage
         {
             Id = mwBot.Id,
@@ -145,14 +148,6 @@ public class MqttMwBotClient
         };
 
         await PublishClientMessageAsync(mwBotMessage);
-        /* TODO : broker deve 
-         * impostare ChargingCar nel backend
-         * aggiungere il record in CurrentlyCharging
-         * 
-                var changeSuccess = await ChangeBotStatus(MwBotStatus.MovingToSlot);
-                if (!changeSuccess)
-                    return;
-        */
     }
 
     /// <summary>

@@ -40,8 +40,8 @@ namespace Progetto.App.Core.Models
             _logger.BeginScope("Retrieving reservations");
             try
             {
-                var reservations = await _reservationRepository.GetAllAsync();
                 await _reservationsSemaphore.WaitAsync();
+                var reservations = await _reservationRepository.GetAllAsync();
                 _reservations = reservations.OrderBy(r => r.ReservationTime).ToList();
                 _logger.LogInformation("Retrieved {count} reservations", _reservations.Count);
             }
@@ -60,8 +60,8 @@ namespace Progetto.App.Core.Models
             _logger.BeginScope("Retrieving immediate requests");
             try
             {
-                var immediateRequests = await _immediateRequestRepository.GetAllAsync();
                 await _immediateRequestsSemaphore.WaitAsync();
+                var immediateRequests = await _immediateRequestRepository.GetAllAsync();
                 _immediateRequests = new Queue<ImmediateRequest>(immediateRequests.OrderBy(ir => ir.RequestDate));
                 _logger.LogInformation("Retrieved {count} immediate requests", _immediateRequests.Count);
             }
@@ -77,9 +77,9 @@ namespace Progetto.App.Core.Models
 
         public async Task AddReservation(Reservation reservation)
         {
-            await _reservationsSemaphore.WaitAsync();
             try
             {
+                await _reservationsSemaphore.WaitAsync();
                 _reservations?.Add(reservation);
                 _reservations = _reservations?.OrderBy(r => r.ReservationTime).ToList();
             }
@@ -91,9 +91,9 @@ namespace Progetto.App.Core.Models
 
         public async Task AddImmediateRequest(ImmediateRequest immediateRequest)
         {
-            await _immediateRequestsSemaphore.WaitAsync();
             try
             {
+                await _immediateRequestsSemaphore.WaitAsync();
                 _immediateRequests?.Enqueue(immediateRequest);
             }
             finally
@@ -124,9 +124,9 @@ namespace Progetto.App.Core.Models
 
         public async Task<ImmediateRequest?> ServeNext(int mwBotId)
         {
-            await _reservationsSemaphore.WaitAsync();
             try
             {
+                await _reservationsSemaphore.WaitAsync();
                 if (_reservations?.Count > 0)
                 {
                     var nextReservation = GetNextReservation();
@@ -166,9 +166,9 @@ namespace Progetto.App.Core.Models
                 _reservationsSemaphore.Release();
             }
 
-            await _immediateRequestsSemaphore.WaitAsync();
             try
             {
+                await _immediateRequestsSemaphore.WaitAsync();
                 if (_immediateRequests?.Count > 0)
                 {
                     var immediateRequest = GetNextImmediateRequest();
