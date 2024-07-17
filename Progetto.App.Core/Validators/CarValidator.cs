@@ -26,5 +26,7 @@ public class CarValidator : AbstractValidator<Car>
             .MaximumLength(50).WithMessage("Model must be less than 50 characters");
         RuleFor(c => c.OwnerId)
             .NotEmpty().WithMessage("Owner is required");
+        RuleFor(c => c.Status)
+            .IsInEnum().WithMessage("Invalid status");
     }
 }

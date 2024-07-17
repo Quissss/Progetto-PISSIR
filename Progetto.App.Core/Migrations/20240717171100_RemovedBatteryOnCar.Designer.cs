@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Progetto.App.Core.Data;
 
@@ -10,9 +11,11 @@ using Progetto.App.Core.Data;
 namespace Progetto.App.Core.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240717171100_RemovedBatteryOnCar")]
+    partial class RemovedBatteryOnCar
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.6");
@@ -252,39 +255,42 @@ namespace Progetto.App.Core.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("CarPlate")
+                    b.Property<string>("CarLicencePlate")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("EndChargingTime")
+                    b.Property<DateTime?>("ChargeEndDate")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("MwBotId")
+                    b.Property<DateTime>("ChargeStartDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("EndChargeLevel")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("MWBotId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("ParkingSlotId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<decimal?>("StartChargePercentage")
+                    b.Property<DateTime?>("ParkEndDate")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("StartChargingTime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 7, 17, 19, 18, 52, 514, DateTimeKind.Local).AddTicks(8921));
+                    b.Property<DateTime>("ParkStartDate")
+                        .HasColumnType("TEXT");
 
-                    b.Property<decimal?>("TargetChargePercentage")
+                    b.Property<decimal>("StartChargeLevel")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("UserId")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CarPlate");
+                    b.HasIndex("CarLicencePlate");
 
-                    b.HasIndex("MwBotId");
-
-                    b.HasIndex("ParkingSlotId");
+                    b.HasIndex("MWBotId");
 
                     b.HasIndex("UserId");
 
@@ -312,7 +318,7 @@ namespace Progetto.App.Core.Migrations
                     b.Property<DateTime>("StartChargingTime")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 7, 17, 19, 18, 52, 515, DateTimeKind.Local).AddTicks(9028));
+                        .HasDefaultValue(new DateTime(2024, 7, 17, 19, 10, 54, 754, DateTimeKind.Local).AddTicks(3297));
 
                     b.Property<decimal?>("TargetChargePercentage")
                         .HasColumnType("TEXT");
@@ -549,27 +555,23 @@ namespace Progetto.App.Core.Migrations
                 {
                     b.HasOne("Progetto.App.Core.Models.Car", "Car")
                         .WithMany()
-                        .HasForeignKey("CarPlate");
-
-                    b.HasOne("Progetto.App.Core.Models.MwBot", "MwBot")
-                        .WithMany()
-                        .HasForeignKey("MwBotId")
+                        .HasForeignKey("CarLicencePlate")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Progetto.App.Core.Models.ParkingSlot", "ParkingSlot")
+                    b.HasOne("Progetto.App.Core.Models.MwBot", "MWBot")
                         .WithMany()
-                        .HasForeignKey("ParkingSlotId");
+                        .HasForeignKey("MWBotId");
 
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
                         .WithMany()
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Car");
 
-                    b.Navigation("MwBot");
-
-                    b.Navigation("ParkingSlot");
+                    b.Navigation("MWBot");
 
                     b.Navigation("User");
                 });

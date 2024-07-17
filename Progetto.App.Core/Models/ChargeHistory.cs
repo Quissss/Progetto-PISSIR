@@ -13,16 +13,16 @@ namespace Progetto.App.Core.Models;
 public class ChargeHistory
 {
     public int Id { get; set; }
-    public DateTime ParkStartDate { get; set; }
-    public DateTime? ParkEndDate { get; set; }
-    public DateTime ChargeStartDate { get; set; }
-    public DateTime? ChargeEndDate { get; set; }
-    public decimal StartChargeLevel { get; set; }
-    public decimal? EndChargeLevel { get; set; }
-    public int? MWBotId { get; set; }
-    public MwBot? MWBot { get; set; }
-    public string CarLicencePlate { get; set; }
-    public Car Car { get; set; }
-    public string UserId { get; set; }
-    public IdentityUser User { get; set; }
+    public DateTime StartChargingTime { get; set; }
+    public DateTime EndChargingTime { get; set; }
+    public decimal? StartChargePercentage { get; set; }
+    public decimal? TargetChargePercentage { get; set; }
+    public int MwBotId { get; set; }
+    public MwBot? MwBot { get; set; }
+    public string? UserId { get; set; }
+    public IdentityUser? User { get; set; }
+    public string? CarPlate { get; set; }
+    public Car? Car { get; set; }
+    public int? ParkingSlotId { get; set; }
+    public ParkingSlot? ParkingSlot { get; set; }
 }
