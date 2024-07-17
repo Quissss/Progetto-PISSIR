@@ -98,7 +98,7 @@ public class MqttMwBotClient
     {
         if (mwBot?.Status == MwBotStatus.StandBy)
         {
-            var handleRequest = await _chargeManager.ServeNext(mwBot.Id);
+            var handleRequest = await _chargeManager.ServeNext(mwBot);
 
             if (handleRequest is not null)
             {

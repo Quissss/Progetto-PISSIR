@@ -228,26 +228,27 @@ public class MwBotController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<MwBot>>> GetMwBots([FromQuery] int? status)
+    public async Task<ActionResult<IEnumerable<MwBot>>> GetMwBots([FromQuery] int? status, [FromQuery] int? parkingId)
     {
         try
         {
             _logger.BeginScope("Retrieving MwBots");
 
-            IEnumerable<MwBot> mwBots;
+            IEnumerable<MwBot> mwBots =await _mwBotRepository.GetAllAsync();
 
             if (status.HasValue && status.Value == -1)
             {
-                mwBots = await _mwBotRepository.GetOnlineMwBots();
+                mwBots = mwBots.Where(p => p.Status != MwBotStatus.Offline);
             }
             else if (status.HasValue && status.Value == 0)
             {
-                mwBots = await _mwBotRepository.GetOfflineMwBots();
+                mwBots = mwBots.Where(p => p.Status == MwBotStatus.Offline);
             }
-            else
+            if (parkingId.HasValue && parkingId.Value > -1 )
             {
-                mwBots = await _mwBotRepository.GetAllAsync();
+                mwBots = mwBots.Where(b => b.ParkingId == parkingId.Value).ToList();
             }
+
 
             _logger.LogDebug("MwBots retrieved");
             return Ok(mwBots);

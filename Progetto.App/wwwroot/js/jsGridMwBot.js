@@ -59,6 +59,15 @@ $(function () {
             { name: "id", type: "number", title: "ID", filtering: false },
             { name: "batteryPercentage", type: "number", title: "Battery Percentage", filtering: false },
             {
+                name: "parkingId",  type: "select", width: 100, title: "Location", items: parkings, valueField: "value", textField: "text",
+                itemTemplate: function (value, item) {
+                    let result = $.grep(parkings, function (parking) {
+                        return parking.value === value.toString();
+                    });
+                    return result.length ? result[0].text : value;
+                }
+            },
+            {
                 name: "status", type: "select", title: "Status", items: [
                     { Name: "Offline", Id: 0 },
                     { Name: "Online", Id: -1 }
