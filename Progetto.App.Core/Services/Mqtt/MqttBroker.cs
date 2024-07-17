@@ -23,6 +23,7 @@ public class MqttBroker : IHostedService, IDisposable
     private readonly ILogger<MqttBroker> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private CurrentlyChargingRepository _currentlyChargingRepository;
+    private ChargeHistoryRepository _chargeHistoryRepository;
 
     public MqttBroker(ILogger<MqttBroker> logger, IServiceScopeFactory serviceScopeFactory)
     {
@@ -37,6 +38,7 @@ public class MqttBroker : IHostedService, IDisposable
 
         var provider = _serviceScopeFactory.CreateScope().ServiceProvider;
         _currentlyChargingRepository = provider.GetRequiredService<CurrentlyChargingRepository>();
+        _chargeHistoryRepository = provider.GetRequiredService<ChargeHistoryRepository>();
 
         _mqttServer.ApplicationMessageEnqueuedOrDroppedAsync += MqttServer_ApplicationMessageEnqueuedOrDroppedAsync;
         _mqttServer.ClientConnectedAsync += MqttServer_ClientConnectedAsync;
@@ -51,6 +53,10 @@ public class MqttBroker : IHostedService, IDisposable
     /// <returns></returns>
     private async Task MqttServer_InterceptingPublishAsync(InterceptingPublishEventArgs arg)
     {
+        var topic = arg.ApplicationMessage.Topic;
+        if (arg.ClientId == "MqttServer")
+            return;
+
         string payload = Encoding.UTF8.GetString(arg.ApplicationMessage.PayloadSegment);
         var mwBotMessage = JsonSerializer.Deserialize<MqttClientMessage>(payload);
         _logger.LogDebug("MqttBroker: MwBot message: {mwBotMessage}", mwBotMessage);
@@ -61,20 +67,14 @@ public class MqttBroker : IHostedService, IDisposable
             var mwBotRepository = scope.ServiceProvider.GetRequiredService<MwBotRepository>();
             _logger.BeginScope("MqttBroker: Handling message by {id}", mwBotMessage.Id);
 
-            if (mwBotMessage.Status == MwBotStatus.ChargingCar)
-            { // TODO: check currently charging, format correct message
-                _logger.LogDebug("MqttBroker: MwBot {id} is charging car", mwBotMessage.Id);
-                var currentlyCharging = new CurrentlyCharging
-                {
-                    StartChargingTime = DateTime.Now,
-                    StartChargePercentage = mwBotMessage.CurrentCarCharge,
-                    TargetChargePercentage = mwBotMessage.TargetBatteryPercentage,
-                    MwBotId = mwBotMessage.Id,
-                    UserId = mwBotMessage.UserId,
-                    CarPlate = mwBotMessage.CarPlate,
-                    ParkingSlotId = mwBotMessage.ParkingSlotId
-                };
-                await _currentlyChargingRepository.AddAsync(currentlyCharging);
+            switch (mwBotMessage.Status)
+            {
+                case MwBotStatus.MovingToSlot:
+                    await HandleMovingToSlotMessageAsync(mwBotMessage, arg, mwBotRepository);
+                    break;
+                case MwBotStatus.ChargingCar:
+                    await HandleChargingCarMessageAsync(mwBotMessage, arg, mwBotRepository);
+                    break;
             }
 
             var mwBot = await mwBotRepository.GetByIdAsync(mwBotMessage.Id);
@@ -94,6 +94,79 @@ public class MqttBroker : IHostedService, IDisposable
         arg.ProcessPublish = true;
     }
 
+    private async Task HandleMovingToSlotMessageAsync(MqttClientMessage mwBotMessage, InterceptingPublishEventArgs arg, MwBotRepository mwBotRepository)
+    {
+        _logger.LogDebug("MqttBroker: MwBot {id} is moving to slot", mwBotMessage.Id);
+
+        // Send confirmation message to MwBot
+        var confirmMessage = new MqttClientMessage
+        {
+            Id = mwBotMessage.Id,
+            Status = mwBotMessage.Status,
+            BatteryPercentage = mwBotMessage.BatteryPercentage,
+            ParkingSlotId = mwBotMessage.ParkingSlotId,
+            TargetBatteryPercentage = mwBotMessage.TargetBatteryPercentage,
+            UserId = mwBotMessage.UserId
+        };
+
+        var confirmPayload = JsonSerializer.Serialize(confirmMessage);
+        var topic = arg.ApplicationMessage.Topic;
+        var message = new MqttApplicationMessageBuilder()
+            .WithPayload(confirmPayload)
+            .WithTopic(topic)
+            .Build();
+
+        await _mqttServer.InjectApplicationMessage(new InjectedMqttApplicationMessage(message) { SenderClientId = "MqttServer",  });
+
+        _logger.LogDebug("Confirmation sent to MwBot {id}", mwBotMessage.Id);
+    }
+
+    private async Task HandleChargingCarMessageAsync(MqttClientMessage mwBotMessage, InterceptingPublishEventArgs arg, MwBotRepository mwBotRepository)
+    {
+        _logger.LogDebug("MqttBroker: MwBot {id} is charging car", mwBotMessage.Id);
+
+        // Set random start charge percentage
+        Random random = new Random();
+        decimal minValue = 1;
+        decimal maxValue = mwBotMessage.TargetBatteryPercentage ?? 50;
+        decimal randomStartCharge = random.Next((int)minValue, (int)maxValue);
+
+        var currentlyCharging = new CurrentlyCharging
+        {
+            StartChargingTime = DateTime.Now,
+            StartChargePercentage = randomStartCharge,
+            TargetChargePercentage = mwBotMessage.TargetBatteryPercentage,
+            MwBotId = mwBotMessage.Id,
+            UserId = mwBotMessage.UserId,
+            ParkingSlotId = mwBotMessage.ParkingSlotId,
+
+        };
+        await _currentlyChargingRepository.AddAsync(currentlyCharging);
+
+        // Send confirmation message to MwBot
+        var confirmMessage = new MqttClientMessage
+        {
+            Id = mwBotMessage.Id,
+            Status = MwBotStatus.StandBy,
+            BatteryPercentage = mwBotMessage.BatteryPercentage,
+            ParkingSlotId = mwBotMessage.ParkingSlotId,
+            TargetBatteryPercentage = mwBotMessage.TargetBatteryPercentage,
+            UserId = mwBotMessage.UserId,
+            CarPlate = mwBotMessage.CarPlate,
+            CurrentCarCharge = randomStartCharge
+        };
+
+        var confirmPayload = JsonSerializer.Serialize(confirmMessage);
+        var message = new MqttApplicationMessageBuilder()
+            .WithPayload(confirmPayload)
+            .WithTopic(arg.ApplicationMessage.Topic)
+            .Build();
+
+        await _mqttServer.InjectApplicationMessage(new InjectedMqttApplicationMessage(message) { SenderClientId = "MqttServer" });
+
+        _logger.LogDebug("Confirmation sent to MwBot {id}", mwBotMessage.Id);
+    }
+
     /// <summary>
     /// Handle enqueued or dropped messages sent by MwBot client
     /// </summary>
@@ -101,7 +174,7 @@ public class MqttBroker : IHostedService, IDisposable
     /// <returns></returns>
     private Task MqttServer_ApplicationMessageEnqueuedOrDroppedAsync(ApplicationMessageEnqueuedEventArgs arg)
     {
-        _logger.LogDebug("Message: {payload}", arg.ApplicationMessage.PayloadSegment);
+        _logger.LogDebug("MqttBroker MessageEnqueuedOrDropped: Message: {payload}", arg.ApplicationMessage.PayloadSegment);
         return Task.CompletedTask;
     }
 
