@@ -13,8 +13,8 @@ public class ImmediateRequest
     public DateTime RequestDate { get; set; } // Date when user arrives at the parking
     public decimal RequestedChargeLevel { get; set; } // Requested charge level
     public int ParkingSlotId { get; set; }
-    public ParkingSlot ParkingSlot { get; set; }
+    public ParkingSlot? ParkingSlot { get; set; }
     public string UserId { get; set; }
-    public IdentityUser User { get; set; }
+    public IdentityUser? User { get; set; }
     public bool FromReservation { get; set; } // True if the request comes from a reservation
 }

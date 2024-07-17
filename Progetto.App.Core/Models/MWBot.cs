@@ -24,4 +24,6 @@ public class MwBot
     public int Id { get; set; }
     public decimal BatteryPercentage { get; set; }
     public MwBotStatus Status { get; set; }
+    public int? ParkingId { get; set; }
+    public Parking? Parking { get; set; }
 }

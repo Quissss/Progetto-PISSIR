@@ -40,7 +40,6 @@ namespace Progetto.App.Core.Models
             _logger.BeginScope("Retrieving reservations");
             try
             {
-                await _reservationsSemaphore.WaitAsync();
                 var reservations = await _reservationRepository.GetAllAsync();
                 _reservations = reservations.OrderBy(r => r.ReservationTime).ToList();
                 _logger.LogInformation("Retrieved {count} reservations", _reservations.Count);
@@ -49,10 +48,6 @@ namespace Progetto.App.Core.Models
             {
                 _logger.LogError(ex, "Error while retrieving reservations");
             }
-            finally
-            {
-                _reservationsSemaphore.Release();
-            }
         }
 
         private async Task GetImmediateRequests()
@@ -60,7 +55,6 @@ namespace Progetto.App.Core.Models
             _logger.BeginScope("Retrieving immediate requests");
             try
             {
-                await _immediateRequestsSemaphore.WaitAsync();
                 var immediateRequests = await _immediateRequestRepository.GetAllAsync();
                 _immediateRequests = new Queue<ImmediateRequest>(immediateRequests.OrderBy(ir => ir.RequestDate));
                 _logger.LogInformation("Retrieved {count} immediate requests", _immediateRequests.Count);
@@ -69,37 +63,16 @@ namespace Progetto.App.Core.Models
             {
                 _logger.LogError(ex, "Error while retrieving immediate requests");
             }
-            finally
-            {
-                _immediateRequestsSemaphore.Release();
-            }
         }
 
-        public async Task AddReservation(Reservation reservation)
+        public void AddReservation(Reservation reservation)
         {
-            try
-            {
-                await _reservationsSemaphore.WaitAsync();
-                _reservations?.Add(reservation);
-                _reservations = _reservations?.OrderBy(r => r.ReservationTime).ToList();
-            }
-            finally
-            {
-                _reservationsSemaphore.Release();
-            }
+            _reservations?.Add(reservation);
         }
 
-        public async Task AddImmediateRequest(ImmediateRequest immediateRequest)
+        public void AddImmediateRequest(ImmediateRequest immediateRequest)
         {
-            try
-            {
-                await _immediateRequestsSemaphore.WaitAsync();
-                _immediateRequests?.Enqueue(immediateRequest);
-            }
-            finally
-            {
-                _immediateRequestsSemaphore.Release();
-            }
+            _immediateRequests?.Enqueue(immediateRequest);
         }
 
         private Reservation? GetNextReservation()
@@ -122,23 +95,26 @@ namespace Progetto.App.Core.Models
             return null;
         }
 
-        public async Task<ImmediateRequest?> ServeNext(int mwBotId)
+        public async Task<ImmediateRequest?> ServeNext(MwBot mwBot)
         {
             try
             {
                 await _reservationsSemaphore.WaitAsync();
-                if (_reservations?.Count > 0)
+                var parkingReservations = _reservations?.Where(r => r.ParkingId == mwBot.ParkingId);
+                if (parkingReservations?.Count() > 0)
                 {
+                    _logger.LogInformation("MwBot {mwBot}: Found reservations, checking free slots", mwBot.Id);
+                    var allFreeSlots = await _parkingSlotRepository.GetFreeParkingSlots(mwBot.ParkingId);
+                    if (allFreeSlots is null || allFreeSlots.Count() == 0)
+                        return null;
+
+                    var freeSlot = allFreeSlots.FirstOrDefault();
+
                     var nextReservation = GetNextReservation();
                     if (nextReservation is null)
                         return null;
 
-                    _logger.LogInformation("MwBot {mwBot}: Serving reservation from user {nextReservation?.UserId} for {nextReservation?.ReservationTime}.", mwBotId, nextReservation?.UserId, nextReservation?.ReservationTime);
-
-                    var allFreeSlots = await _parkingSlotRepository.GetFreeParkingSlots();
-                    if (allFreeSlots is null || allFreeSlots.Count() == 0)
-                        return null;
-                    var freeSlot = allFreeSlots.FirstOrDefault();
+                    _logger.LogInformation("MwBot {mwBot}: Generating immediate request", mwBot.Id);
 
                     var immediateRequest = await _immediateRequestRepository.AddAsync(
                         new ImmediateRequest
@@ -153,10 +129,12 @@ namespace Progetto.App.Core.Models
                     if (immediateRequest is null)
                         return null;
 
+                    _logger.LogInformation("MwBot {mwBot}: Serving reservation from user {nextReservation?.UserId} for reservation time {nextReservation?.ReservationTime}.", mwBot.Id, nextReservation?.UserId, nextReservation?.ReservationTime);
+
                     freeSlot.Status = ParkSlotStatus.Occupied;
                     await _parkingSlotRepository.UpdateAsync(freeSlot);
 
-                    _logger.LogInformation("MwBot {mwBot}: Created immediate request for user {immediateRequest.UserId} at {immediateRequest.RequestDate}.", mwBotId, immediateRequest.UserId, immediateRequest.RequestDate);
+                    _logger.LogInformation("MwBot {mwBot}: Created immediate request for user {immediateRequest.UserId} at {immediateRequest.RequestDate}.", mwBot.Id, immediateRequest.UserId, immediateRequest.RequestDate);
 
                     return immediateRequest;
                 }
@@ -172,7 +150,7 @@ namespace Progetto.App.Core.Models
                 if (_immediateRequests?.Count > 0)
                 {
                     var immediateRequest = GetNextImmediateRequest();
-                    _logger.LogInformation("MwBot {mwBot}: Serving immediate request from user {immediateRequest?.UserId} at {immediateRequest?.RequestDate}.", mwBotId, immediateRequest?.UserId, immediateRequest?.RequestDate);
+                    _logger.LogInformation("MwBot {mwBot}: Serving immediate request from user {immediateRequest?.UserId} at {immediateRequest?.RequestDate}.", mwBot.Id, immediateRequest?.UserId, immediateRequest?.RequestDate);
                     return immediateRequest;
                 }
             }
@@ -181,7 +159,7 @@ namespace Progetto.App.Core.Models
                 _immediateRequestsSemaphore.Release();
             }
 
-            _logger.LogInformation("MwBot {mwBot}: No requests to serve.", mwBotId);
+            _logger.LogInformation("MwBot {mwBot}: No requests to serve.", mwBot.Id);
             return null;
         }
     }

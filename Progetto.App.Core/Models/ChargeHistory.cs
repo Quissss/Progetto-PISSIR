@@ -25,4 +25,6 @@ public class ChargeHistory
     public Car? Car { get; set; }
     public int? ParkingSlotId { get; set; }
     public ParkingSlot? ParkingSlot { get; set; }
+    public decimal EnergyConsumed { get; set; }
+    public decimal TotalCost { get; set; }
 }
