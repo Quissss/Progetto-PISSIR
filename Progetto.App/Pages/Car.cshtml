@@ -1,11 +1,9 @@
 ﻿@page
-@model Progetto.App.Pages.DashParkingModel
+@model Progetto.App.Pages.CarModel
 @{
-    ViewData["Title"] = "Dashboard Parking Slot";
+    ViewData["Title"] = "My Cars";
 }
-
-<h2><i class="fas fa-parking"></i> <strong>@ViewData["Title"]</strong></h2>
-
+<h2><i class="fa-solid fa-car"></i> <strong>@ViewData["Title"]</strong></h2>
 
 <div class="container-fluid">
     <div class="row">
@@ -13,8 +11,7 @@
 
         <!-- Main content -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-          
-        <div id="parkingSlotGrid"></div>
+            <div id="jsGridCar"></div>
 
             <!-- Line chart -->
             <canvas class="my-4 w-100" id="myChart" width="900" height="380"></canvas>
@@ -23,12 +20,7 @@
 </div>
 
 
-
-
 @section Scripts {
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.js"></script>
-    <script>
-        const parkings = @Html.Raw(Json.Serialize(Model.Parkings.Select(p => new { value = p.Value, text = p.Text })));
-    </script>
-    <script type="text/javascript" src="~/js/jsGridParkingSlot.js"></script>
+    <script type="text/javascript" src="~/js/jsGridCar.js" asp-append-version="true"></script>
 }

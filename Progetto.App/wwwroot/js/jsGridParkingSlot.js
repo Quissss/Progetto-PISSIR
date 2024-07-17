@@ -12,7 +12,7 @@ let ajax = function (item, verb, json = true) {
 
 $(function () {
     $.getJSON(url + "/statuses", function (statuses) {
-        $("#parkingGrid").jsGrid({
+        $("#parkingSlotGrid").jsGrid({
             width: "100%",
             height: "400px",
             autoload: true,
