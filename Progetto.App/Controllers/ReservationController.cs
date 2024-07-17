@@ -54,6 +54,7 @@ public class ReservationController : ControllerBase
                 _logger.LogWarning("Reservation with id {id} already exists", reservation.Id);
                 return BadRequest();
             }
+
             reservation.ReservationTime = DateTime.Now;
             await _reservationRepository.AddAsync(reservation);
             _chargeManager.AddReservation(reservation);
