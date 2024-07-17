@@ -18,11 +18,15 @@ public class ChargeHistoryConfiguration : IEntityTypeConfiguration<ChargeHistory
     {
         builder.ToTable("ChargeHistory");
         builder.HasKey(ch => ch.Id);
-        builder.Property(ch => ch.ParkStartDate).IsRequired();
-        builder.Property(ch => ch.ParkEndDate).IsRequired();
-        builder.Property(ch => ch.StartChargeLevel).IsRequired();
-        builder.Property(ch => ch.EndChargeLevel).IsRequired();
-        builder.HasOne(ch => ch.MWBot).WithMany().HasForeignKey(ch => ch.MWBotId);
+        builder.Property(ch => ch.StartChargingTime).HasColumnType("datetime").HasDefaultValue(DateTime.Now).IsRequired();
+        builder.Property(ch => ch.EndChargingTime).HasColumnType("datetime").HasDefaultValue(DateTime.Now).IsRequired();
+        builder.HasOne(ch => ch.Car).WithMany().HasForeignKey(ch => ch.CarPlate);
+        builder.HasOne(ch => ch.MwBot).WithMany().HasForeignKey(ch => ch.MwBotId);
         builder.HasOne(ch => ch.User).WithMany().HasForeignKey(ch => ch.UserId);
+        builder.HasOne(ch => ch.ParkingSlot).WithMany().HasForeignKey(ch => ch.ParkingSlotId);
+        builder.Property(cc => cc.StartChargePercentage).HasColumnType("decimal(5, 2)");
+        builder.Property(cc => cc.TargetChargePercentage).HasColumnType("decimal(5, 2)");
+        builder.Property(cc => cc.EnergyConsumed).HasColumnType("decimal(5, 2)").HasDefaultValue(0).IsRequired();
+        builder.Property(cc => cc.TotalCost).HasColumnType("decimal(5, 2)").HasDefaultValue(0).IsRequired();
     }
 }

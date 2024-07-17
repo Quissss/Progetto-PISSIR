@@ -24,6 +24,22 @@ public class CurrentlyChargingRepository : GenericRepository<CurrentlyCharging>
 
     public async Task<CurrentlyCharging?> GetCurrentlyChargingByCarId(string carPlate)
     {
-        return await _context.CurrentlyCharging.Where(c => c.CarPlate == carPlate).FirstOrDefaultAsync();
+        return await _context.CurrentlyCharging
+            .Where(c => c.CarPlate == carPlate)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<CurrentlyCharging?> GetChargingCars()
+    {
+        return await _context.CurrentlyCharging
+            .Where(c => !string.IsNullOrEmpty(c.CarPlate) && c.ParkingSlotId != 0 && !string.IsNullOrEmpty(c.UserId))
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<CurrentlyCharging?> GetChargingBots()
+    {
+        return await _context.CurrentlyCharging
+            .Where(c => string.IsNullOrEmpty(c.CarPlate))
+            .FirstOrDefaultAsync();
     }
 }

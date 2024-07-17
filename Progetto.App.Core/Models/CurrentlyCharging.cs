@@ -13,11 +13,17 @@ namespace Progetto.App.Core.Models;
 public class CurrentlyCharging
 {
     public int Id { get; set; }
-    public DateTime StartDate { get; set; }
+    public DateTime StartChargingTime { get; set; }
+    public decimal? StartChargePercentage { get; set; }
+    public decimal? TargetChargePercentage { get; set; }
     public int MwBotId { get; set; }
     public MwBot? MwBot { get; set; }
-    public string UserId { get; set; }
+    public string? UserId { get; set; }
     public IdentityUser? User { get; set; }
-    public string CarPlate { get; set; }
+    public string? CarPlate { get; set; }
     public Car? Car { get; set; }
+    public int? ParkingSlotId { get; set; }
+    public ParkingSlot? ParkingSlot { get; set; }
+    public decimal EnergyConsumed { get; set; }
+    public decimal TotalCost { get; set; }
 }

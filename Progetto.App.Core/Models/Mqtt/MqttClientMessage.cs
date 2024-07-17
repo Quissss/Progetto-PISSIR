@@ -12,5 +12,8 @@ namespace Progetto.App.Core.Models.Mqtt;
 public class MqttClientMessage : MwBot
 {
     public int? ParkingSlotId { get; set; }
+    public decimal? CurrentCarCharge { get; set; }
     public decimal? TargetBatteryPercentage { get; set; }
+    public string? UserId { get; internal set; }
+    public string? CarPlate { get; internal set; }
 }

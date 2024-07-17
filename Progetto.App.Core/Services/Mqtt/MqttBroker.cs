@@ -21,7 +21,8 @@ public class MqttBroker : IHostedService, IDisposable
     private readonly MqttServer _mqttServer;
     private readonly MqttServerOptions _options;
     private readonly ILogger<MqttBroker> _logger;
-    private readonly IServiceScopeFactory _serviceScopeFactory; // Retrieve scoped services (repository in this case)
+    private readonly IServiceScopeFactory _serviceScopeFactory;
+    private CurrentlyChargingRepository _currentlyChargingRepository;
 
     public MqttBroker(ILogger<MqttBroker> logger, IServiceScopeFactory serviceScopeFactory)
     {
@@ -33,6 +34,9 @@ public class MqttBroker : IHostedService, IDisposable
         _logger = logger;
         _mqttServer = new MqttFactory().CreateMqttServer(_options);
         _serviceScopeFactory = serviceScopeFactory;
+
+        var provider = _serviceScopeFactory.CreateScope().ServiceProvider;
+        _currentlyChargingRepository = provider.GetRequiredService<CurrentlyChargingRepository>();
 
         _mqttServer.ApplicationMessageEnqueuedOrDroppedAsync += MqttServer_ApplicationMessageEnqueuedOrDroppedAsync;
         _mqttServer.ClientConnectedAsync += MqttServer_ClientConnectedAsync;
@@ -48,21 +52,36 @@ public class MqttBroker : IHostedService, IDisposable
     private async Task MqttServer_InterceptingPublishAsync(InterceptingPublishEventArgs arg)
     {
         string payload = Encoding.UTF8.GetString(arg.ApplicationMessage.PayloadSegment);
-        _logger.LogDebug("Message payload: {payload}", payload);
-        var mwBotMessage = JsonSerializer.Deserialize<MqttClientMessage>(payload, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
-        _logger.LogDebug("Message mwBot: {mwBotMessage}", mwBotMessage);
+        var mwBotMessage = JsonSerializer.Deserialize<MqttClientMessage>(payload);
+        _logger.LogDebug("MqttBroker: MwBot message: {mwBotMessage}", mwBotMessage);
 
         if (mwBotMessage != null)
         {
             using var scope = _serviceScopeFactory.CreateScope();
             var mwBotRepository = scope.ServiceProvider.GetRequiredService<MwBotRepository>();
-            _logger.BeginScope("Fetching mwBot by id: {id}", mwBotMessage.Id);
+            _logger.BeginScope("MqttBroker: Handling message by {id}", mwBotMessage.Id);
+
+            if (mwBotMessage.Status == MwBotStatus.ChargingCar)
+            { // TODO: check currently charging, format correct message
+                _logger.LogDebug("MqttBroker: MwBot {id} is charging car", mwBotMessage.Id);
+                var currentlyCharging = new CurrentlyCharging
+                {
+                    StartChargingTime = DateTime.Now,
+                    StartChargePercentage = mwBotMessage.CurrentCarCharge,
+                    TargetChargePercentage = mwBotMessage.TargetBatteryPercentage,
+                    MwBotId = mwBotMessage.Id,
+                    UserId = mwBotMessage.UserId,
+                    CarPlate = mwBotMessage.CarPlate,
+                    ParkingSlotId = mwBotMessage.ParkingSlotId
+                };
+                await _currentlyChargingRepository.AddAsync(currentlyCharging);
+            }
 
             var mwBot = await mwBotRepository.GetByIdAsync(mwBotMessage.Id);
 
             if (mwBot is null)
             {
-                _logger.LogDebug("MwBot doesn't exist");
+                _logger.LogDebug("MqttBroker: MwBot doesn't exist");
                 return;
             }
 

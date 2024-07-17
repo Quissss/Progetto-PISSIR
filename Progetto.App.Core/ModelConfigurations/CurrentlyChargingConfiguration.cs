@@ -18,9 +18,14 @@ public class CurrentlyChargingConfiguration : IEntityTypeConfiguration<Currently
     {
         builder.ToTable("CurrentlyCharging");
         builder.HasKey(cc => cc.Id);
-        builder.Property(cc => cc.StartDate).HasDefaultValue(DateTime.Now).IsRequired();
+        builder.Property(cc => cc.StartChargingTime).HasDefaultValue(DateTime.Now).IsRequired();
         builder.HasOne(cc => cc.Car).WithMany().HasForeignKey(cc => cc.CarPlate);
         builder.HasOne(cc => cc.MwBot).WithMany().HasForeignKey(cc => cc.MwBotId);
         builder.HasOne(cc => cc.User).WithMany().HasForeignKey(cc => cc.UserId);
+        builder.HasOne(cc => cc.ParkingSlot).WithMany().HasForeignKey(cc => cc.ParkingSlotId);
+        builder.Property(cc => cc.StartChargePercentage).HasColumnType("decimal(5, 2)");
+        builder.Property(cc => cc.TargetChargePercentage).HasColumnType("decimal(5, 2)");
+        builder.Property(cc => cc.EnergyConsumed).HasColumnType("decimal(5, 2)").HasDefaultValue(0).IsRequired();
+        builder.Property(cc => cc.TotalCost).HasColumnType("decimal(5, 2)").HasDefaultValue(0).IsRequired();
     }
 }

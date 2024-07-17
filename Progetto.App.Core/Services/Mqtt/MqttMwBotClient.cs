@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using MQTTnet;
 using MQTTnet.Client;
+using MQTTnet.Protocol;
 using MQTTnet.Server;
 using Progetto.App.Core.Data;
 using Progetto.App.Core.Models;
@@ -44,7 +45,7 @@ public class MqttMwBotClient
         _mqttClient.ApplicationMessageReceivedAsync += HandleReceivedApplicationMessage;
 
         // Set timer for processing charge requests
-        //_timer = new Timer(TimedProcessChargeRequest, null, Timeout.Infinite, 10000);
+        _timer = new Timer(TimedProcessChargeRequest, null, Timeout.Infinite, 10000);
     }
 
     private async Task<bool> ChangeBotStatus(MwBotStatus status)
@@ -133,7 +134,10 @@ public class MqttMwBotClient
             return;
         }
 
-        mwBot.Status = MwBotStatus.ChargingCar;
+        var changeSuccess = await ChangeBotStatus(MwBotStatus.ChargingCar);
+        if (!changeSuccess)
+            return;
+
         var mwBotMessage = new MqttClientMessage
         {
             Id = mwBot.Id,
@@ -144,14 +148,6 @@ public class MqttMwBotClient
         };
 
         await PublishClientMessageAsync(mwBotMessage);
-        /* TODO : broker deve 
-         * impostare ChargingCar nel backend
-         * aggiungere il record in CurrentlyCharging
-         * 
-                var changeSuccess = await ChangeBotStatus(MwBotStatus.MovingToSlot);
-                if (!changeSuccess)
-                    return;
-        */
     }
 
     /// <summary>
@@ -166,15 +162,16 @@ public class MqttMwBotClient
             .WithClientId(Guid.NewGuid().ToString())
             .WithTcpServer(brokerAddress, 1883)
             .WithTimeout(TimeSpan.FromSeconds(10))
+            .WithWillQualityOfServiceLevel(MqttQualityOfServiceLevel.AtLeastOnce)
             .WithCleanSession()
             .Build();
 
         await InitializeMwBot(mwBotId);
         var isConnected = await ConnectAsync();
-        //if (isConnected)
-        //{
-        //    _timer.Change(0, 10000); // Initialize timer at 10 seconds
-        //}
+        if (isConnected)
+        {
+            _timer.Change(0, 10000); // Initialize timer at 10 seconds
+        }
         return isConnected;
     }
 
@@ -219,6 +216,7 @@ public class MqttMwBotClient
 
         var message = new MqttApplicationMessageBuilder()
             .WithPayload(payload)
+            .WithTopic("mwbot")
             .Build();
 
         if (!_mqttClient.IsConnected)
