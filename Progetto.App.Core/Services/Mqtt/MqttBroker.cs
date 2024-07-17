@@ -35,8 +35,8 @@ public class MqttBroker : IHostedService, IDisposable
         _mqttServer = new MqttFactory().CreateMqttServer(_options);
         _serviceScopeFactory = serviceScopeFactory;
 
-        using var scope = _serviceScopeFactory.CreateScope();
-        _currentlyChargingRepository = scope.ServiceProvider.GetRequiredService<CurrentlyChargingRepository>();
+        var provider = _serviceScopeFactory.CreateScope().ServiceProvider;
+        _currentlyChargingRepository = provider.GetRequiredService<CurrentlyChargingRepository>();
 
         _mqttServer.ApplicationMessageEnqueuedOrDroppedAsync += MqttServer_ApplicationMessageEnqueuedOrDroppedAsync;
         _mqttServer.ClientConnectedAsync += MqttServer_ClientConnectedAsync;
