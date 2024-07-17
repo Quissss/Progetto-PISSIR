@@ -27,8 +27,6 @@ public class ParkingSlotController : ControllerBase
         _parkingSlotRepository = repository;
     }
 
-
-
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ParkingSlot>>> GetParkingSlots()
     {
@@ -158,9 +156,6 @@ public class ParkingSlotController : ControllerBase
         return BadRequest();
     }
 
-    
-
-
     [HttpGet("{id}")]
     public async Task<ActionResult<ParkingSlot>> GetParkingSlot(int id)
     {
@@ -187,77 +182,6 @@ public class ParkingSlotController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error while getting parking slot with id {id}", id);
-        }
-
-        return BadRequest();
-    }
-
-    [HttpGet("name/{name}")]
-    public async Task<ActionResult<ParkingSlot>> GetParkingSlotByName(int name)
-    {
-        if (name <= 0)
-        {
-            _logger.LogWarning("Invalid name while getting parking slot with name {name}", name);
-            return BadRequest();
-        }
-
-        try
-        {
-            _logger.LogDebug("Getting parking slot with name {name}", name);
-
-            var parkingSlot = await _parkingSlotRepository.GetByIdAsync(name);
-            if (parkingSlot == null)
-            {
-                _logger.LogWarning("Parking slot with name {name} not found", name);
-                return NotFound();
-            }
-
-            _logger.LogDebug("Returning parking slot {name}", name);
-            return Ok(parkingSlot);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error while getting parking slot with name {name}", name);
-        }
-
-        return BadRequest();
-    }
-
-    [HttpGet("free-slots")]
-    public async Task<ActionResult<IEnumerable<ParkingSlot>>> GetFreeParkingSlots()
-    {
-        try
-        {
-            _logger.LogDebug("Getting all free parking slots");
-
-            var parkingSlots = await _parkingSlotRepository.GetFreeParkingSlots();
-            _logger.LogDebug("Returning {count} free parking slots", parkingSlots.Count());
-
-            return Ok(parkingSlots);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error while getting all free parking slots");
-        }
-
-        return BadRequest();
-    }
-
-    [HttpGet("occupied-slots")]
-    public async Task<ActionResult<IEnumerable<ParkingSlot>>> GetOccupiedParkingSlots()
-    {
-        try
-        {
-            _logger.LogDebug("Getting all occupied parking slots");
-
-            var parkingSlots = await _parkingSlotRepository.GetOccupiedParkingSlots();
-            _logger.LogDebug("Returning {count} occupied parking slots", parkingSlots.Count());
-
-            return Ok(parkingSlots);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error while getting all occupied parking slots");
         }
 
         return BadRequest();
