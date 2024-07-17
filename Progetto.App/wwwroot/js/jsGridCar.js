@@ -52,7 +52,6 @@ $(function () {
             { name: "brand", type: "text", title: "Brand", width: 100, validate: "required" },
             { name: "model", type: "text", title: "Model", width: 100, validate: "required" },
             { name: "isElectric", type: "checkbox", title: "Is Electric", sorting: false },
-            { name: "batteryPercentage", type: "number", title: "Battery Percentage", width: 100 },
             {
                 name: "status", type: "select", title: "Status", width: 100, items: [
                     { Id: 0, Name: "In Charge" },
@@ -60,25 +59,7 @@ $(function () {
                     { Id: 2, Name: "Charged" }
                 ], valueField: "Id", textField: "Name"
             },
-            {
-                type: "custom",
-                width: 50,
-                itemTemplate: function (value, item) {
-                    var $button = $("<button>").addClass("btn btn-sm fa fa-power-off");
-                    if (item.status === 0) {
-                        $button.addClass("btn-outline-success")
-                            .on("click", function () {
-                                turnBot(item, "on");
-                            });
-                    } else {
-                        $button.addClass("btn-outline-danger")
-                            .on("click", function () {
-                                turnBot(item, "off");
-                            });
-                    }
-                    return $button;
-                }
-            },
+            
             { type: "control", editButton: true, deleteButton: true }
         ]
     });
