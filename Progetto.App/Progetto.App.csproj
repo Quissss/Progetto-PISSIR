@@ -15,11 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Remove="wwwroot\js\jsGridParking.js" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <_ContentIncludedByDefault Remove="wwwroot\js\jsGridParking.js" />
+    <Content Remove="wwwroot\js\jsGridParkingSlot.js" />
   </ItemGroup>
 
   <ItemGroup>
@@ -49,7 +45,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="wwwroot\js\jsGridParking.js" />
+    <None Include="wwwroot\js\jsGridParkingSlot.js" />
   </ItemGroup>
 
 </Project>
