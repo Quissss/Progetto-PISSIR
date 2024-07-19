@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Models;
 
-public enum ParkSlotStatus
+public enum ParkingSlotStatus
 {
     Free, //green   
     Occupied, //red
@@ -22,7 +22,7 @@ public class ParkingSlot
 {
     public int Id { get; set; }
     public int Number { get; set; }
-    public ParkSlotStatus Status { get; set; }
+    public ParkingSlotStatus Status { get; set; }
     public int ParkingId { get; set; }
     public Parking? Parking { get; set; }
 }

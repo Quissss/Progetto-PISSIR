@@ -190,8 +190,8 @@ public class ParkingSlotController : ControllerBase
     [HttpGet("statuses")]
     public IActionResult GetStatuses()
     {
-        var statuses = Enum.GetValues(typeof(ParkSlotStatus))
-                           .Cast<ParkSlotStatus>()
+        var statuses = Enum.GetValues(typeof(ParkingSlotStatus))
+                           .Cast<ParkingSlotStatus>()
                            .Select(e => new { Id = (int)e, Name = e.ToString() })
                            .ToList();
 

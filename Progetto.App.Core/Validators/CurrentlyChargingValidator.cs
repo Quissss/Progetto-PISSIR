@@ -18,6 +18,7 @@ public class CurrentlyCharingValidator : AbstractValidator<CurrentlyCharging>
         RuleFor(cc => cc.StartChargingTime).LessThanOrEqualTo(DateTime.Now).NotEmpty();
         RuleFor(cc => cc.MwBotId).NotEmpty();
         RuleFor(cc => cc.StartChargePercentage).NotEmpty().Must(c => c >= 0 && c <= 100);
+        RuleFor(cc => cc.CurrentChargePercentage).NotEmpty().Must(c => c >= 0 && c <= 100);
         RuleFor(cc => cc.TargetChargePercentage).NotEmpty().Must(c => c >= 0 && c <= 100);
     }
 }

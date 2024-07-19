@@ -21,7 +21,7 @@ public class ParkingSlotConfiguration : IEntityTypeConfiguration<ParkingSlot>
         builder.Property(p => p.Status).IsRequired()
             .HasConversion(
                 value => (int)value,
-                value => Enum.Parse<ParkSlotStatus>(value.ToString())
+                value => Enum.Parse<ParkingSlotStatus>(value.ToString())
             );
         builder.HasOne(p => p.Parking).WithMany(p => p.ParkingSlots).HasForeignKey(p => p.ParkingId);
     }

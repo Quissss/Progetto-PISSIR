@@ -20,7 +20,7 @@
                 <div class="col-md-auto mb-3">
                     <select id="parkingSlotStatus" name="parkingSlotStatus" class="form-select">
                         <option value="">Tutti gli stati</option>
-                        @foreach (var status in Enum.GetValues(typeof(ParkSlotStatus)))
+                        @foreach (var status in Enum.GetValues(typeof(ParkingSlotStatus)))
                         {
                             <option value="@status">@status</option>
                         }
