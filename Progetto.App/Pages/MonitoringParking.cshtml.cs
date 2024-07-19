@@ -29,7 +29,7 @@ namespace Progetto.App.Pages
 
         public async Task OnGetAsync(
             [FromQuery] string? searchSlotNumber,
-            [FromQuery] ParkSlotStatus? parkingSlotStatus,
+            [FromQuery] ParkingSlotStatus? parkingSlotStatus,
             [FromQuery] int? parkingSlotId)
         {
             var parkingSlots = await _parkingSlotRepository.GetFilteredAsync(searchSlotNumber, parkingSlotStatus, parkingSlotId);
@@ -47,14 +47,14 @@ namespace Progetto.App.Pages
 
         }
 
-        private string GetStatusColor(ParkSlotStatus status)
+        private string GetStatusColor(ParkingSlotStatus status)
         {
             return status switch
             {
-                ParkSlotStatus.Free => "green",
-                ParkSlotStatus.Occupied => "red",
-                ParkSlotStatus.Reserved => "orange",
-                ParkSlotStatus.OutOfService => "grey",
+                ParkingSlotStatus.Free => "green",
+                ParkingSlotStatus.Occupied => "red",
+                ParkingSlotStatus.Reserved => "orange",
+                ParkingSlotStatus.OutOfService => "grey",
                 _ => "black"
             };
         }

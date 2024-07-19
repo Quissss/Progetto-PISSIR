@@ -10,10 +10,10 @@ public enum MwBotStatus
 {
     Offline, // MwBot is offline
     StandBy, // MwBot is waiting for a car / idle
-    ChargingCar, // MwBot is charging a car
-    Recharging, // MwBot is recharging
     MovingToSlot, // MwBot is moving to parking slot to charge a car
+    ChargingCar, // MwBot is charging a car
     MovingToDock, // MwBot is moving to charging station to recharge
+    Recharging, // MwBot is recharging
 }
 
 /// <summary>

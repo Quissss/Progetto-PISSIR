@@ -15,6 +15,7 @@ public class CurrentlyCharging
     public int Id { get; set; }
     public DateTime StartChargingTime { get; set; }
     public decimal? StartChargePercentage { get; set; }
+    public decimal? CurrentChargePercentage { get; set; }
     public decimal? TargetChargePercentage { get; set; }
     public int MwBotId { get; set; }
     public MwBot? MwBot { get; set; }

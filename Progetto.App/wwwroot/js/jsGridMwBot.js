@@ -76,10 +76,10 @@ $(function () {
                     switch (value) {
                         case 0: return "Offline";
                         case 1: return "Standby";
-                        case 2: return "Charging Car";
-                        case 3: return "Recharging";
-                        case 4: return "Moving to Car";
-                        case 5: return "Moving to Recharge";
+                        case 2: return "Moving to Car";
+                        case 3: return "Charging Car";
+                        case 4: return "Moving to Recharge";
+                        case 5: return "Recharging";
                     }
                 }
             },
