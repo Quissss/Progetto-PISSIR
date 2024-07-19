@@ -97,6 +97,7 @@ public class MqttBroker : IHostedService, IDisposable
 
     private async Task HandleCompletedChargeMessageAsync(MqttClientMessage mwBotMessage, InterceptingPublishEventArgs arg, MwBotRepository mwBotRepository)
     {
+        // TODO: Set charge to be payed and free parking slot
         throw new NotImplementedException();
     }
 
@@ -104,17 +105,9 @@ public class MqttBroker : IHostedService, IDisposable
     {
         _logger.LogDebug("MqttBroker: MwBot {id} is charging car", mwBotMessage.Id);
 
-        // Set random start charge percentage
-        Random random = new Random();
-        decimal minValue = 1;
-        decimal maxValue = mwBotMessage.TargetBatteryPercentage ?? 50;
-        decimal randomStartCharge = random.Next((int)minValue, (int)maxValue);
-
         // TODO: get user + car on parking slot
         var currentlyCharging = new CurrentlyCharging
         {
-            StartChargingTime = DateTime.Now,
-            StartChargePercentage = randomStartCharge,
             TargetChargePercentage = mwBotMessage.TargetBatteryPercentage,
             MwBotId = mwBotMessage.Id,
             UserId = mwBotMessage.UserId,
@@ -133,7 +126,6 @@ public class MqttBroker : IHostedService, IDisposable
             TargetBatteryPercentage = mwBotMessage.TargetBatteryPercentage,
             UserId = mwBotMessage.UserId,
             CarPlate = mwBotMessage.CarPlate,
-            CurrentCarCharge = randomStartCharge,
             CurrentlyCharging = currentlyCharging
         };
 

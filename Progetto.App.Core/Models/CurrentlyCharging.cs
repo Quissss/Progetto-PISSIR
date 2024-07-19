@@ -13,7 +13,7 @@ namespace Progetto.App.Core.Models;
 public class CurrentlyCharging
 {
     public int Id { get; set; }
-    public DateTime StartChargingTime { get; set; }
+    public DateTime? StartChargingTime { get; set; }
     public decimal? StartChargePercentage { get; set; }
     public decimal? CurrentChargePercentage { get; set; }
     public decimal? TargetChargePercentage { get; set; }
