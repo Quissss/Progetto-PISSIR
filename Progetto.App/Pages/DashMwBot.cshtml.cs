@@ -33,7 +33,7 @@ namespace Progetto.App.Pages
             List<SelectListItem> ps = new();
             foreach (var p in parkings)
             {
-                ps.Add(new SelectListItem { Text = $"{p.City} - {p.Address} {p.PostalCode}", Value = p.Id.ToString() });
+                ps.Add(new SelectListItem { Text = $"{p.Name} [{p.City} - {p.Address}]", Value = p.Id.ToString() });
             }
             Parkings = ps;
 

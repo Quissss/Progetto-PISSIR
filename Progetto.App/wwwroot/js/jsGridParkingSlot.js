@@ -42,6 +42,7 @@ $(function () {
                 {
                     type: "control",
                     deleteButton: true,
+                    editButton: false,
                 }
             ]
         });

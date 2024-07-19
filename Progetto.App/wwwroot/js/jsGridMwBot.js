@@ -66,6 +66,7 @@ $(function () {
                     });
                     return result.length ? result[0].text : value;
                 }
+
             },
             {
                 name: "status", type: "select", title: "Status", items: [

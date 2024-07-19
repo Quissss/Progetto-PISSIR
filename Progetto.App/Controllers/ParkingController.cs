@@ -138,7 +138,7 @@ public class ParkingController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Parking>>> GetAllParkings()
+    public async Task<ActionResult<IEnumerable<Parking>>> GetAllParkings([FromQuery] string? name, [FromQuery] string? city , [FromQuery] string? address)
     {
         try
         {
@@ -149,6 +149,19 @@ public class ParkingController : ControllerBase
             {
                 _logger.LogWarning("No parkings found");
                 return NotFound();
+            }
+
+            if (name is not null )
+            {
+                parkings = parkings.Where(p => p.Name.Contains(name,StringComparison.InvariantCultureIgnoreCase)).ToList();
+            }
+            else if (city is not null)
+            {
+                parkings = parkings.Where(p => p.City.Contains(city, StringComparison.InvariantCultureIgnoreCase)).ToList();
+            }
+            else if (address is not null)
+            {
+                parkings = parkings.Where(p => p.Address.Contains(address, StringComparison.InvariantCultureIgnoreCase)).ToList();
             }
 
             _logger.LogDebug("Returning {count} parkings", parkings.Count());

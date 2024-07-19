@@ -29,5 +29,5 @@
     <script>
         const parkings = @Html.Raw(Json.Serialize(Model.Parkings));
     </script>
-    <script type="text/javascript" src="~/js/jsGridParking.js"></script>
+    <script type="text/javascript" asp-append-version="true" src="~/js/jsGridParking.js"></script>
 }

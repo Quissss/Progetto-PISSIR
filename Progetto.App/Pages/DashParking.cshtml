@@ -30,5 +30,5 @@
     <script>
         const parkings = @Html.Raw(Json.Serialize(Model.Parkings.Select(p => new { value = p.Value, text = p.Text })));
     </script>
-    <script type="text/javascript" src="~/js/jsGridParkingSlot.js"></script>
+    <script type="text/javascript" asp-append-version="true" src="~/js/jsGridParkingSlot.js"></script>
 }
