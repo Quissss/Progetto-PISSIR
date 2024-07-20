@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MQTTnet;
@@ -25,11 +26,11 @@ public class MqttBroker : IHostedService, IDisposable
     private CurrentlyChargingRepository _currentlyChargingRepository;
     private ChargeHistoryRepository _chargeHistoryRepository;
 
-    public MqttBroker(ILogger<MqttBroker> logger, IServiceScopeFactory serviceScopeFactory)
+    public MqttBroker(ILogger<MqttBroker> logger, IServiceScopeFactory serviceScopeFactory, IConfiguration configuration)
     {
         _options = new MqttServerOptionsBuilder()
             .WithDefaultEndpoint()
-            .WithDefaultEndpointPort(1883) // TODO : Move to appsettings.json
+            .WithDefaultEndpointPort(configuration.GetValue<int>("MqttPort"))
             .Build();
 
         _logger = logger;
@@ -115,6 +116,10 @@ public class MqttBroker : IHostedService, IDisposable
         };
         await _currentlyChargingRepository.AddAsync(currentlyCharging);
 
+        using var scope = _serviceScopeFactory.CreateScope();
+        var parkingRepository = scope.ServiceProvider.GetRequiredService<ParkingRepository>();
+        var parking = await parkingRepository.GetByIdAsync(mwBotMessage.ParkingId.Value);
+
         // Send confirmation message to MwBot
         var confirmMessage = new MqttClientMessage
         {
@@ -122,6 +127,8 @@ public class MqttBroker : IHostedService, IDisposable
             Id = mwBotMessage.Id,
             Status = MwBotStatus.ChargingCar,
             BatteryPercentage = mwBotMessage.BatteryPercentage,
+            Parking = parking,
+            ParkingId = mwBotMessage.ParkingId,
             ParkingSlotId = mwBotMessage.ParkingSlotId,
             TargetBatteryPercentage = mwBotMessage.TargetBatteryPercentage,
             UserId = mwBotMessage.UserId,

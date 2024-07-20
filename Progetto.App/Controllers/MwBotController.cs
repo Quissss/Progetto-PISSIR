@@ -124,7 +124,7 @@ public class MwBotController : ControllerBase
                 return BadRequest();
             }
 
-            client.mwBot.Status = mwBot.Status = MwBotStatus.StandBy;
+            client.MwBot.Status = mwBot.Status = MwBotStatus.StandBy;
             await _mwBotRepository.UpdateAsync(mwBot);
             _connectedClientsService.AddClient(client);
 
@@ -160,7 +160,7 @@ public class MwBotController : ControllerBase
         try
         {
             _logger.LogDebug("Turning off MwBot with id {id}", mwBot.Id);
-            var client = _connectedClientsService.GetConnectedClients().FirstOrDefault(c => c.mwBot?.Id == mwBot.Id);
+            var client = _connectedClientsService.GetConnectedClients().FirstOrDefault(c => c.MwBot?.Id == mwBot.Id);
 
             if (client != null)
             {
