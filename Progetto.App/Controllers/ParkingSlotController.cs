@@ -132,7 +132,7 @@ public class ParkingSlotController : ControllerBase
             await _parkingSlotRepository.DeleteAsync(p => p.Id == parkingSlot.Id);
 
             _logger.LogDebug("Parking slot with id {id} deleted", parkingSlot.Id);
-            return Ok();
+            return Ok(parkingSlot);
         }
         catch (Exception ex)
         {
