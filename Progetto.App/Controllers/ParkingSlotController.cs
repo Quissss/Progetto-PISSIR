@@ -6,6 +6,8 @@ using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Security;
 using Progetto.App.Core.Validators;
+using System.Net;
+using System.Xml.Linq;
 
 namespace Progetto.App.Controllers;
 
@@ -28,13 +30,35 @@ public class ParkingSlotController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ParkingSlot>>> GetParkingSlots()
+    public async Task<ActionResult<IEnumerable<ParkingSlot>>> GetParkingSlots([FromQuery] int? number, int? parkingId , ParkingSlotStatus? status)
     {
         try
         {
             _logger.LogDebug("Getting all parking slots");
 
+
             var parkingSlots = await _parkingSlotRepository.GetAllAsync();
+
+            if (parkingSlots == null)
+            {
+                _logger.LogWarning("No parking slot found");
+                return NotFound();
+            }
+
+            if (number is not null)
+            {
+                parkingSlots = parkingSlots.Where(p => p.Number ==number).ToList();
+            }
+            else if (parkingId is not null)
+            {
+                parkingSlots = parkingSlots.Where(p => p.ParkingId == parkingId).ToList();
+            }
+            if (status is not null)
+            {
+                parkingSlots = parkingSlots.Where(p => p.Status == status).ToList();
+            }
+
+
             _logger.LogDebug("Returning {count} parking slots", parkingSlots.Count());
 
             return Ok(parkingSlots);

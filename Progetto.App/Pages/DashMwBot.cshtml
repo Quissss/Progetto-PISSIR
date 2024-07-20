@@ -27,5 +27,8 @@
 
 @section Scripts {
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.js"></script>
+    <script>
+        const parkings = @Html.Raw(Json.Serialize(Model.Parkings.Select(p => new { value = p.Value, text = p.Text })));
+    </script>
     <script type="text/javascript" src="~/js/jsGridMwBot.js" asp-append-version="true"></script>
 }

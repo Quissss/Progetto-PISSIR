@@ -15,7 +15,7 @@
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
 
           
-            <div id="parkingSlotsGrid"></div>
+            <div id="parkingGrid"></div>
 
             <!-- Line chart -->
             <canvas class="my-4 w-100" id="myChart" width="900" height="380"></canvas>
@@ -29,5 +29,5 @@
     <script>
         const parkings = @Html.Raw(Json.Serialize(Model.Parkings));
     </script>
-    <script type="text/javascript" src="~/js/jsGridParkingSlots.js"></script>
+    <script type="text/javascript" asp-append-version="true" src="~/js/jsGridParking.js"></script>
 }

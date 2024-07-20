@@ -89,6 +89,7 @@ public class ParkingController : ControllerBase
         }
     }
 
+
     [HttpPut]
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult> UpdateParking([FromBody] Parking parking)
@@ -100,7 +101,7 @@ public class ParkingController : ControllerBase
         if (!ModelState.IsValid)
         {
             _logger.LogWarning("Invalid model state while updating parking with name {name}", parking.Name);
-            return BadRequest();
+            return BadRequest(ModelState);
         }
 
         try
@@ -114,21 +115,30 @@ public class ParkingController : ControllerBase
                 return NotFound();
             }
 
+            existingParking.EnergyCostPerKw = parking.EnergyCostPerKw;
+            existingParking.StopCostPerMinute = parking.StopCostPerMinute;
+            existingParking.Name = parking.Name;
+            existingParking.Address = parking.Address;
+            existingParking.City = parking.City;
+            existingParking.Province = parking.Province;
+            existingParking.PostalCode = parking.PostalCode;
+            existingParking.Country = parking.Country;
+            existingParking.ParkingSlots = parking.ParkingSlots;
+
             await _parkingRepository.UpdateAsync(existingParking);
 
             _logger.LogDebug("Parking with id {id} updated", parking.Id);
-            return Ok(parking);
+            return Ok(existingParking);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error while updating parking with id {id}", parking.Id);
+            return StatusCode(500, "Internal server error");
         }
-
-        return BadRequest();
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Parking>>> GetAllParkings()
+    public async Task<ActionResult<IEnumerable<Parking>>> GetAllParkings([FromQuery] string? name, [FromQuery] string? city , [FromQuery] string? address)
     {
         try
         {
@@ -139,6 +149,19 @@ public class ParkingController : ControllerBase
             {
                 _logger.LogWarning("No parkings found");
                 return NotFound();
+            }
+
+            if (name is not null )
+            {
+                parkings = parkings.Where(p => p.Name.Contains(name,StringComparison.InvariantCultureIgnoreCase)).ToList();
+            }
+            else if (city is not null)
+            {
+                parkings = parkings.Where(p => p.City.Contains(city, StringComparison.InvariantCultureIgnoreCase)).ToList();
+            }
+            else if (address is not null)
+            {
+                parkings = parkings.Where(p => p.Address.Contains(address, StringComparison.InvariantCultureIgnoreCase)).ToList();
             }
 
             _logger.LogDebug("Returning {count} parkings", parkings.Count());

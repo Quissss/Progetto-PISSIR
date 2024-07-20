@@ -24,6 +24,6 @@ public class MwBotConfiguration : IEntityTypeConfiguration<MwBot>
                 value => (int)value,
                 value => Enum.Parse<MwBotStatus>(value.ToString())
             );
-        builder.HasOne(b => b.Parking).WithOne().HasForeignKey<MwBot>(b => b.ParkingId);
+        builder.HasOne(b => b.Parking).WithMany().HasForeignKey(b => b.ParkingId);
     }
 }

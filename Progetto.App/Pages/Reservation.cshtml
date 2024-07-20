@@ -34,7 +34,7 @@
                             <select id="parkingId" name="ParkingId" class="form-select" required>
                                 @foreach (var parking in Model.Parkings)
                                 {
-                                    <option value="@parking.Id">@parking.Name - @parking.Address</option>
+                                    <option value="@parking.Id">@parking.Name - @parking.Address - @parking.City</option>
                                 }
                             </select>
                             <span class="error text-danger" id="parkingIdError"></span>
