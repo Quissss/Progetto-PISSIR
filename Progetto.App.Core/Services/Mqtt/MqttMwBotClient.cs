@@ -240,7 +240,9 @@ public class MqttMwBotClient
     {
         decimal chargeRate = 0.5m; // kW/s
         decimal dischargeRate = 0.1m; // kW/s
-        decimal energyCostPerKw = 0.2m; // Esempio di costo energetico per kW
+        decimal energyCostPerKw = mwBotMessage.Parking?.EnergyCostPerKw ?? 0.2m;
+        decimal stopCostPerMinute = mwBotMessage.Parking?.StopCostPerMinute ?? 0.1m;
+
 
         using var scope = _serviceScopeFactory.CreateScope();
         var currentlyChargingRepository = scope.ServiceProvider.GetRequiredService<CurrentlyChargingRepository>();
@@ -248,6 +250,19 @@ public class MqttMwBotClient
         var changeSuccess = await ChangeBotStatus(MwBotStatus.ChargingCar);
         if (!changeSuccess)
             return;
+
+        // Set random start charge percentage
+        Random random = new Random();
+        decimal minValue = 1;
+        decimal maxValue = mwBotMessage.TargetBatteryPercentage ?? 50;
+        decimal randomStartCharge = random.Next((int)minValue, (int)maxValue);
+
+        // Set start time and intial charge percentage
+        var startTime = mwBotMessage.CurrentlyCharging.StartChargingTime = DateTime.Now;
+        mwBotMessage.CurrentlyCharging.StartChargePercentage = randomStartCharge;
+        await currentlyChargingRepository.UpdateAsync(mwBotMessage.CurrentlyCharging);
+
+        _logger.LogInformation("MwBot {id}: [{startDate}] Starting charge from {startingBattery}", mwBotMessage.Id, startTime, randomStartCharge);
 
         // TODO: non far arrivare a 0 mwbot perchè non siamo stronzi
         while (mwBotMessage.CurrentCarCharge < mwBotMessage.TargetBatteryPercentage && mwBot.BatteryPercentage > 0)
@@ -262,14 +277,11 @@ public class MqttMwBotClient
                 mwBotMessage.CurrentCarCharge = mwBotMessage.TargetBatteryPercentage;
             }
 
-            if (mwBot.BatteryPercentage < 0)
-            {
-                mwBot.BatteryPercentage = 0;
-            }
-
             var currentlyCharging = mwBotMessage.CurrentlyCharging;
             currentlyCharging.EnergyConsumed += chargeRate / 3600; // Convert kW/s to kWh
-            currentlyCharging.TotalCost = currentlyCharging.EnergyConsumed * energyCostPerKw;
+
+            var elapsedMinutes = (DateTime.Now - startTime).Value.TotalMinutes;
+            currentlyCharging.TotalCost = (currentlyCharging.EnergyConsumed * energyCostPerKw) + ((decimal)elapsedMinutes * stopCostPerMinute);
 
             _logger.LogInformation("MwBot {botId}: Charging car: {carCharge}% | MwBot battery: {botBattery}% | Energy consumed: {energyConsumed} kWh | Total cost: {totalCost} EUR",
                 mwBot.Id, mwBotMessage.CurrentCarCharge, mwBot.BatteryPercentage, currentlyCharging.EnergyConsumed, currentlyCharging.TotalCost);
@@ -287,6 +299,11 @@ public class MqttMwBotClient
 
     private async Task CompleteChargingProcess(MqttClientMessage mwBotMessage)
     {
+        var endTime = DateTime.Now;
+        var currentlyCharging = mwBotMessage.CurrentlyCharging;
+        var elapsedMinutes = (endTime - currentlyCharging.StartChargingTime).Value.TotalMinutes;
+        currentlyCharging.TotalCost = (currentlyCharging.EnergyConsumed * mwBotMessage.Parking.EnergyCostPerKw) + ((decimal)elapsedMinutes * mwBotMessage.Parking.StopCostPerMinute);
+
         mwBotMessage.Status = MwBotStatus.StandBy;
         await ChangeBotStatus(MwBotStatus.StandBy);
 
@@ -297,7 +314,8 @@ public class MqttMwBotClient
             Status = mwBot.Status,
             BatteryPercentage = mwBot.BatteryPercentage,
             ParkingSlotId = HandlingRequest.ParkingSlotId,
-            TargetBatteryPercentage = HandlingRequest.RequestedChargeLevel
+            TargetBatteryPercentage = HandlingRequest.RequestedChargeLevel,
+            CurrentlyCharging = currentlyCharging
         };
 
         await PublishClientMessageAsync(mwBotMessage);
