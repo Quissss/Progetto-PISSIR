@@ -12,16 +12,22 @@ namespace Progetto.App.Pages
     {
         private readonly UserManager<IdentityUser> _userManager;
         private readonly ParkingRepository _parkingRepository;
+        private readonly ILogger<ReservationModel> _logger;
+        private readonly CarRepository _carRepository;
 
-        public ReservationModel(UserManager<IdentityUser> userManager, ParkingRepository parkingRepository)
+        public ReservationModel(UserManager<IdentityUser> userManager, ParkingRepository parkingRepository, ILogger<ReservationModel> logger, CarRepository carRepository)
         {
             _userManager = userManager;
             _parkingRepository = parkingRepository;
+            _logger = logger;
+            _carRepository = carRepository;
         }
 
         [BindProperty]
         public Reservation Reservation { get; set; } = new ();
         public List<Parking> Parkings { get; set; } = new();
+
+        public IEnumerable<Car> Cars { get; set; } 
 
         public async Task OnGetAsync()
         {
@@ -34,6 +40,7 @@ namespace Progetto.App.Pages
             Reservation.ReservationTime = DateTime.Now;
 
             Parkings = await _parkingRepository.GetAllAsync();
+            Cars = await _carRepository.GetCarsByOwner(currentUser.Id);
 
         }
     }
