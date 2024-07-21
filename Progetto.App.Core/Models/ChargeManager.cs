@@ -113,6 +113,7 @@ namespace Progetto.App.Core.Models
                     var scope = _serviceScopeFactory.CreateScope();
                     var _parkingSlotRepository = scope.ServiceProvider.GetRequiredService<ParkingSlotRepository>();
                     var _immediateRequestRepository = scope.ServiceProvider.GetRequiredService<ImmediateRequestRepository>();
+                    var _reservationsRepository = scope.ServiceProvider.GetRequiredService<ReservationRepository>();
 
                     _logger.LogInformation("MwBot {mwBot}: Found reservations, checking free slots", mwBot.Id);
                     var allFreeSlots = await _parkingSlotRepository.GetFreeParkingSlots(mwBot.ParkingId);
@@ -141,7 +142,7 @@ namespace Progetto.App.Core.Models
                     if (immediateRequest is null)
                         return null;
 
-                    // TODO: Delete reservation
+                    await _reservationsRepository.DeleteAsync(r => r.Id == nextReservation.Id);
                     _logger.LogInformation("MwBot {mwBot}: Serving reservation from user {nextReservation?.UserId} for reservation time {nextReservation?.ReservationTime}.", mwBot.Id, nextReservation?.UserId, nextReservation?.ReservationTime);
 
                     freeSlot.Status = ParkingSlotStatus.Occupied;
