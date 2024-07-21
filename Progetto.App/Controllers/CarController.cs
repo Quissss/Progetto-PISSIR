@@ -108,14 +108,10 @@ public class CarController : ControllerBase
 
         try
         {
-            var licencePlate = car.LicencePlate;
-            _logger.LogDebug("Updating car with licence plate {licencePlate}", licencePlate);
-
-            var existingCar = await _carRepository.GetCarByLicencePlate(licencePlate);
-            if (existingCar == null)
+            if ( !(await _carRepository.CheckEntityExists(car)))
             {
-                _logger.LogWarning("Car with licence plate {licencePlate} not found", licencePlate);
-                return NotFound();
+                _logger.LogWarning("Car with licence plate {licencePlate} not found", car.LicencePlate);
+                return NotFound(car);
             }
 
             await _carRepository.UpdateAsync(car);

@@ -54,9 +54,10 @@ $(function () {
             { name: "isElectric", type: "checkbox", title: "Is Electric", sorting: false,filtering: false },
             {
                 name: "status", type: "select", title: "Status", width: 100, items: [
-                    { Id: 0, Name: "In Charge" },
-                    { Id: 1, Name: "Waiting" },
-                    { Id: 2, Name: "Charged" }
+                    { Id: 0, Name: "Out Of Parking" },
+                    { Id: 1, Name: "In Charge" },
+                    { Id: 2, Name: "Waiting" },
+                    { Id: 3, Name: "Charged" },
                 ], valueField: "Id", textField: "Name"
             },
             
