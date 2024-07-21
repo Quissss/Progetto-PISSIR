@@ -30,10 +30,12 @@ function turnBot(item, action) {
 }
 
 $(function () {
+    const parkingOptions = [{ id: '', name: '' }].concat(parkings);
+
     $("#mwBotGrid").jsGrid({
         width: "100%",
         height: "400px",
-        editing: false,
+        editing: true,
         autoload: true,
         filtering: true,
         inserting: true,
@@ -56,23 +58,23 @@ $(function () {
         },
 
         fields: [
-            { name: "id", type: "number", title: "ID", filtering: false },
-            { name: "batteryPercentage", type: "number", title: "Battery Percentage", filtering: false },
+            { name: "id", type: "number", title: "ID", filtering: false, editing: false },
+            { name: "batteryPercentage", type: "number", title: "Battery Percentage", filtering: false, editing: false },
             {
-                name: "parkingId",  type: "select", width: 100, title: "Location", items: parkings, valueField: "value", textField: "text",
+                name: "parkingId", type: "select", width: 100, title: "Location", items: parkingOptions, valueField: "value", textField: "text",
                 itemTemplate: function (value, item) {
                     let result = $.grep(parkings, function (parking) {
                         return parking.value === value.toString();
                     });
                     return result.length ? result[0].text : value;
                 }
-
             },
             {
                 name: "status", type: "select", title: "Status", items: [
+                    {},
                     { Name: "Offline", Id: 0 },
-                    { Name: "Online", Id: -1 }
-                ], valueField: "Id", textField: "Name",
+                    { Name: "Online", Id: 1 }
+                ], valueField: "Id", textField: "Name", editing: false,
                 itemTemplate: function (value) {
                     switch (value) {
                         case 0: return "Offline";
@@ -104,7 +106,7 @@ $(function () {
                 }
             },
             {
-                type: "control", editButton: false, deleteButton: true,
+                type: "control", editButton: true, deleteButton: true,
             }
         ]
     });

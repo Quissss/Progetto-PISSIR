@@ -236,7 +236,7 @@ public class MwBotController : ControllerBase
 
             IEnumerable<MwBot> mwBots =await _mwBotRepository.GetAllAsync();
 
-            if (status.HasValue && status.Value == -1)
+            if (status.HasValue && status.Value == 1)
             {
                 mwBots = mwBots.Where(p => p.Status != MwBotStatus.Offline);
             }
@@ -244,7 +244,8 @@ public class MwBotController : ControllerBase
             {
                 mwBots = mwBots.Where(p => p.Status == MwBotStatus.Offline);
             }
-            if (parkingId.HasValue && parkingId.Value > -1 )
+
+            if (parkingId.HasValue && parkingId.Value > -1)
             {
                 mwBots = mwBots.Where(b => b.ParkingId == parkingId.Value).ToList();
             }

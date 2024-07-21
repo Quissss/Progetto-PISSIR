@@ -117,14 +117,13 @@ namespace Progetto.App.Core.Models
 
                     _logger.LogInformation("MwBot {mwBot}: Found reservations, checking free slots", mwBot.Id);
                     var allFreeSlots = await _parkingSlotRepository.GetFreeParkingSlots(mwBot.ParkingId);
-                    if (allFreeSlots is null || allFreeSlots.Count() == 0)
-                        return null;
+                    if (allFreeSlots is null || allFreeSlots.Count() == 0) return null;
 
                     var freeSlot = allFreeSlots.FirstOrDefault();
+                    if (freeSlot is null) return null;
 
                     var nextReservation = GetNextReservation();
-                    if (nextReservation is null)
-                        return null;
+                    if (nextReservation is null) return null;
 
                     _logger.LogInformation("MwBot {mwBot}: Generating immediate request", mwBot.Id);
 
@@ -139,8 +138,7 @@ namespace Progetto.App.Core.Models
                             FromReservation = true
                         }
                     );
-                    if (immediateRequest is null)
-                        return null;
+                    if (immediateRequest is null) return null;
 
                     await _reservationsRepository.DeleteAsync(r => r.Id == nextReservation.Id);
                     _logger.LogInformation("MwBot {mwBot}: Serving reservation from user {nextReservation?.UserId} for reservation time {nextReservation?.ReservationTime}.", mwBot.Id, nextReservation?.UserId, nextReservation?.ReservationTime);
