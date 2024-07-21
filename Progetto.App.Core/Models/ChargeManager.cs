@@ -79,8 +79,12 @@ namespace Progetto.App.Core.Models
         {
             if (_reservations?.Count > 0)
             {
-                var nextReservation = _reservations[0];
-                _reservations.RemoveAt(0);
+                var nextReservation = _reservations.FirstOrDefault(r => r.ReservationTime <= DateTime.Now);
+                if (nextReservation is not null)
+                {
+                    _reservations.Remove(nextReservation);
+                    return nextReservation;
+                }
                 return nextReservation;
             }
             return null;
@@ -99,26 +103,27 @@ namespace Progetto.App.Core.Models
         {
             ImmediateRequest? immediateRequest = null;
 
+            // Serve reservations
             try
             {
                 await _reservationsSemaphore.WaitAsync();
-                var parkingReservations = _reservations?.Where(r => r.ParkingId == mwBot.ParkingId);
+                var parkingReservations = _reservations?.Where(r => r.ParkingId == mwBot.ParkingId && r.ReservationTime <= DateTime.Now);
                 if (parkingReservations?.Count() > 0)
                 {
                     var scope = _serviceScopeFactory.CreateScope();
                     var _parkingSlotRepository = scope.ServiceProvider.GetRequiredService<ParkingSlotRepository>();
                     var _immediateRequestRepository = scope.ServiceProvider.GetRequiredService<ImmediateRequestRepository>();
+                    var _reservationsRepository = scope.ServiceProvider.GetRequiredService<ReservationRepository>();
 
                     _logger.LogInformation("MwBot {mwBot}: Found reservations, checking free slots", mwBot.Id);
                     var allFreeSlots = await _parkingSlotRepository.GetFreeParkingSlots(mwBot.ParkingId);
-                    if (allFreeSlots is null || allFreeSlots.Count() == 0)
-                        return null;
+                    if (allFreeSlots is null || allFreeSlots.Count() == 0) return null;
 
                     var freeSlot = allFreeSlots.FirstOrDefault();
+                    if (freeSlot is null) return null;
 
                     var nextReservation = GetNextReservation();
-                    if (nextReservation is null)
-                        return null;
+                    if (nextReservation is null) return null;
 
                     _logger.LogInformation("MwBot {mwBot}: Generating immediate request", mwBot.Id);
 
@@ -133,10 +138,9 @@ namespace Progetto.App.Core.Models
                             FromReservation = true
                         }
                     );
-                    if (immediateRequest is null)
-                        return null;
+                    if (immediateRequest is null) return null;
 
-                    // TODO: Delete reservation
+                    await _reservationsRepository.DeleteAsync(r => r.Id == nextReservation.Id);
                     _logger.LogInformation("MwBot {mwBot}: Serving reservation from user {nextReservation?.UserId} for reservation time {nextReservation?.ReservationTime}.", mwBot.Id, nextReservation?.UserId, nextReservation?.ReservationTime);
 
                     freeSlot.Status = ParkingSlotStatus.Occupied;
@@ -150,6 +154,7 @@ namespace Progetto.App.Core.Models
                 _reservationsSemaphore.Release();
             }
 
+            // Car entered the parking, serve immediate requests
             try
             {
                 await _immediateRequestsSemaphore.WaitAsync();
