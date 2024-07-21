@@ -107,7 +107,7 @@ namespace Progetto.App.Core.Models
             try
             {
                 await _reservationsSemaphore.WaitAsync();
-                var parkingReservations = _reservations?.Where(r => r.ParkingId == mwBot.ParkingId && r.ReservationTime <= DateTime.Now);
+                var parkingReservations = _reservations?.Where(r => r.ParkingId == mwBot.ParkingId && r.RequestDate <= DateTime.Now);
                 if (parkingReservations?.Count() > 0)
                 {
                     var scope = _serviceScopeFactory.CreateScope();

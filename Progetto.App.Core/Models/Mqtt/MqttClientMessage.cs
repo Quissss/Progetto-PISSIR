@@ -17,6 +17,7 @@ public enum MessageType
     UpdateParkingSlot, // client → server
     StartRecharge, // server → client
     RequestRecharge, // client → server
+    RequestResumeCharging,
 }
 
 /// <summary>
@@ -32,4 +33,6 @@ public class MqttClientMessage : MwBot
     public string? UserId { get; set; }
     public string? CarPlate { get; set; }
     public CurrentlyCharging? CurrentlyCharging { get; set; }
+    public int? ImmediateRequestId { get; set; }
+    public ImmediateRequest? ImmediateRequest { get; set; }
 }
