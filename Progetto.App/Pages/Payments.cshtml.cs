@@ -2,23 +2,65 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
+using PayPal.REST.Client;
+using PayPal.REST.Models.Orders;
+using PayPal.REST.Models.PaymentSources;
 
-namespace Progetto.App.Pages
+namespace Progetto.App.Pages;
+
+public class PaymentsModel : PageModel
 {
-    public class PaymentsModel : PageModel
-    {
-        private readonly CurrentlyChargingRepository _currentlyChargingRepository;
+    private readonly CurrentlyChargingRepository _currentlyChargingRepository;
+    private readonly PayPalClient _payPalClient;
 
-        public PaymentsModel(CurrentlyChargingRepository currentlyChargingRepository)
+    public PaymentsModel(CurrentlyChargingRepository currentlyChargingRepository)
+    {
+        _currentlyChargingRepository = currentlyChargingRepository;
+        _payPalClient = new PayPalClient("tuoClientId", "tuoClientSecret", "https://api.sandbox.paypal.com"); // Configura con le tue credenziali PayPal
+    }
+
+    public List<CurrentlyCharging> CurrentCharges { get; private set; }
+
+    public async Task OnGetAsync()
+    {
+        CurrentCharges = await _currentlyChargingRepository.GetAllAsync();
+    }
+
+    public async Task<IActionResult> OnPostPayNowAsync(string carPlate)
+    {
+        // Log the request
+        Console.WriteLine($"Received payment request for car plate: {carPlate}");
+
+        // Trova il dettaglio del pagamento basato sulla carPlate
+        var charge = CurrentCharges.FirstOrDefault(c => c.CarPlate == carPlate);
+        if (charge == null)
         {
-            _currentlyChargingRepository = currentlyChargingRepository;
+            Console.WriteLine("Charge not found.");
+            return NotFound(new { success = false, message = "Charge not found." });
         }
 
-        public List<CurrentlyCharging> CurrentCharges { get; private set; }
-
-        public async Task OnGetAsync()
+        var orderRequest = new OrderRequest
         {
-            CurrentCharges = await _currentlyChargingRepository.GetAllAsync();
+            // Configura i dettagli del tuo ordine qui
+        };
+
+        try
+        {
+            var orderResponse = await _payPalClient.CreateOrder(orderRequest);
+            var paymentSource = new PayPalPaymentSource
+            {
+                // Configura i dettagli della fonte di pagamento qui
+            };
+
+            var confirmedOrder = await _payPalClient.ConfirmOrder(orderResponse.Id, paymentSource);
+            var capturedOrder = await _payPalClient.CapturePayment(confirmedOrder.Id);
+
+            return new JsonResult(new { success = true, message = "Payment completed successfully!" });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+            return new JsonResult(new { success = false, message = ex.Message });
         }
     }
 }
