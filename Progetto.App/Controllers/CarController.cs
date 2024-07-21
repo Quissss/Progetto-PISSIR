@@ -1,5 +1,6 @@
 ﻿using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
@@ -19,15 +20,16 @@ public class CarController : ControllerBase
 {
     private readonly ILogger<CarController> _logger;
     private readonly CarRepository _carRepository;
+    private readonly UserManager<IdentityUser> _userManager;
 
-    public CarController(ILogger<CarController> logger, CarRepository repository)
+    public CarController(ILogger<CarController> logger, CarRepository repository, UserManager<IdentityUser> userManager)
     {
         _logger = logger;
         _carRepository = repository;
+        _userManager = userManager;
     }
 
     [HttpPost]
-    [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<Car>> AddCar([FromBody] Car car)
     {
         var validator = new CarValidator();
@@ -44,17 +46,10 @@ public class CarController : ControllerBase
         {
             _logger.LogDebug("Creating car with licence plate {licencePlate}", car.LicencePlate);
 
-            var existingCar = await _carRepository.GetCarByLicencePlate(car.LicencePlate);
-            if (existingCar != null)
-            {
-                _logger.LogWarning("Car with licence plate {licencePlate} already exists", car.LicencePlate);
-                return BadRequest();
-            }
-
             await _carRepository.AddAsync(car);
 
             _logger.LogDebug("Car with licence plate {licencePlate} created", car.LicencePlate);
-            return Ok(existingCar);
+            return Ok(car);
         }
         catch (Exception ex)
         {
@@ -65,7 +60,6 @@ public class CarController : ControllerBase
     }
 
     [HttpDelete]
-    [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult> DeleteCar([FromBody] string licencePlate)
     {
         if (string.IsNullOrEmpty(licencePlate))
@@ -99,7 +93,6 @@ public class CarController : ControllerBase
     }
 
     [HttpPut]
-    [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<Car>> UpdateCar([FromBody] Car car)
     {
         var validator = new CarValidator();
@@ -128,7 +121,7 @@ public class CarController : ControllerBase
             await _carRepository.UpdateAsync(car);
 
             _logger.LogDebug("Updated car with values: {car}", car);
-            return Ok(existingCar);
+            return Ok(car);
         }
         catch (Exception ex)
         {
@@ -139,14 +132,19 @@ public class CarController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Policy = PolicyNames.IsAdmin)]
-    public async Task<ActionResult<IEnumerable<Car>>> GetAllCars()
+    public async Task<ActionResult<IEnumerable<Car>>> GetAllCars([FromQuery] string? licencePlate,  [FromQuery] CarStatus? status)
     {
         try
         {
             _logger.LogDebug("Getting all cars");
+            var user = await _userManager.GetUserAsync(User);
+            var cars = await _carRepository.GetCarsByOwner(user.Id);
 
-            var cars = await _carRepository.GetAllAsync();
+            if (!string.IsNullOrEmpty(licencePlate))
+                cars=cars.Where(car => car.LicencePlate.Contains(licencePlate)).ToList();
+            if (status is not null)
+                cars = cars.Where(car => car.Status == status).ToList();
+
             _logger.LogDebug("Returning {count} cars", cars.Count());
 
             return Ok(cars);

@@ -26,5 +26,5 @@ public class Car
     public bool IsElectric { get; set; }
     public CarStatus Status { get; set; }
     public string OwnerId { get; set; }
-    public IdentityUser Owner { get; set; }
+    public IdentityUser? Owner { get; set; }
 }
