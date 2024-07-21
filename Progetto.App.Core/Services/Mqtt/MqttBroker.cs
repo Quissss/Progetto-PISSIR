@@ -63,7 +63,6 @@ public class MqttBroker : IHostedService, IDisposable
             _logger.BeginScope("MqttBroker: Handling message by {id}", mwBotMessage.Id);
 
             var mwBot = await mwBotRepository.GetByIdAsync(mwBotMessage.Id);
-
             if (mwBot is null)
             {
                 _logger.LogDebug("MqttBroker: MwBot doesn't exist");
@@ -132,13 +131,7 @@ public class MqttBroker : IHostedService, IDisposable
             BatteryPercentage = mwBot.BatteryPercentage
         };
 
-        var confirmPayload = JsonSerializer.Serialize(confirmMessage);
-        var message = new MqttApplicationMessageBuilder()
-            .WithPayload(confirmPayload)
-            .WithTopic($"mwbot{mwBotMessage.Id}")
-            .Build();
-
-        await _mqttServer.InjectApplicationMessage(new InjectedMqttApplicationMessage(message) { SenderClientId = "MqttServer" });
+        await PublishMessage(confirmMessage);
         _logger.LogDebug("Confirmation sent to MwBot {id} to start recharging", mwBotMessage.Id);
     }
 
@@ -197,14 +190,19 @@ public class MqttBroker : IHostedService, IDisposable
             CurrentlyCharging = currentlyCharging
         };
 
-        var confirmPayload = JsonSerializer.Serialize(confirmMessage);
-        var message = new MqttApplicationMessageBuilder()
-            .WithPayload(confirmPayload)
-            .WithTopic($"mwbot{mwBotMessage.Id}")
+        await PublishMessage(confirmMessage);
+        _logger.LogDebug("Created charging record + confirmation sent to MwBot {id}", mwBotMessage.Id);
+    }
+
+    public async Task PublishMessage(MqttClientMessage message)
+    {
+        var payload = JsonSerializer.Serialize(message);
+        var mqttMessage = new MqttApplicationMessageBuilder()
+            .WithPayload(payload)
+            .WithTopic($"mwbot{message.Id}")
             .Build();
 
-        await _mqttServer.InjectApplicationMessage(new InjectedMqttApplicationMessage(message) { SenderClientId = "MqttServer" });
-        _logger.LogDebug("Created charging record + confirmation sent to MwBot {id}", mwBotMessage.Id);
+        await _mqttServer.InjectApplicationMessage(new InjectedMqttApplicationMessage(mqttMessage) { SenderClientId = "MqttServer" });
     }
 
     /// <summary>
