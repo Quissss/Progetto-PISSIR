@@ -22,7 +22,6 @@
                                 <th>Parking Slot</th>
                                 <th>Start Charging Time</th>
                                 <th>End Charging Time</th>
-                                <th>Energy Consumed (kWh)</th>
                                 <th>Total Cost (€)</th>
                                 <th>Actions</th>
                             </tr>
@@ -35,7 +34,6 @@
                                     <td>@charge.ParkingSlotId</td>
                                     <td>@charge.StartChargingTime?.ToString("g")</td>
                                     <td>@charge.EndChargingTime?.ToString("g")</td>
-                                    <td>@charge.EnergyConsumed</td>
                                     <td>@charge.TotalCost</td>
                                     <td>
                                         @if (charge.ToPay)
