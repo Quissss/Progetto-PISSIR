@@ -14,9 +14,7 @@ namespace Progetto.App.Core.Models
         private List<Reservation>? _reservations;
         private Queue<ImmediateRequest>? _immediateRequests;
         private readonly ILogger<ChargeManager> _logger;
-        private ReservationRepository _reservationRepository;
-        private ImmediateRequestRepository _immediateRequestRepository;
-        private ParkingSlotRepository _parkingSlotRepository;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly SemaphoreSlim _reservationsSemaphore = new SemaphoreSlim(1, 1);
         private readonly SemaphoreSlim _immediateRequestsSemaphore = new SemaphoreSlim(1, 1);
 
@@ -24,12 +22,8 @@ namespace Progetto.App.Core.Models
         {
             _reservations = new List<Reservation>();
             _immediateRequests = new Queue<ImmediateRequest>();
+            _serviceScopeFactory = serviceScopeFactory;
             _logger = logger;
-
-            var provider = serviceScopeFactory.CreateScope().ServiceProvider;
-            _reservationRepository = provider.GetRequiredService<ReservationRepository>();
-            _immediateRequestRepository = provider.GetRequiredService<ImmediateRequestRepository>();
-            _parkingSlotRepository = provider.GetRequiredService<ParkingSlotRepository>();
 
             GetReservations().GetAwaiter().GetResult();
             GetImmediateRequests().GetAwaiter().GetResult();
@@ -40,6 +34,9 @@ namespace Progetto.App.Core.Models
             _logger.BeginScope("Retrieving reservations");
             try
             {
+                var scope = _serviceScopeFactory.CreateScope();
+                var _reservationRepository = scope.ServiceProvider.GetRequiredService<ReservationRepository>();
+
                 var reservations = await _reservationRepository.GetAllAsync();
                 _reservations = reservations.OrderBy(r => r.ReservationTime).ToList();
                 _logger.LogInformation("Retrieved {count} reservations", _reservations.Count);
@@ -55,6 +52,9 @@ namespace Progetto.App.Core.Models
             _logger.BeginScope("Retrieving immediate requests");
             try
             {
+                var scope = _serviceScopeFactory.CreateScope();
+                var _immediateRequestRepository = scope.ServiceProvider.GetRequiredService<ImmediateRequestRepository>();
+
                 var immediateRequests = await _immediateRequestRepository.GetAllAsync();
                 _immediateRequests = new Queue<ImmediateRequest>(immediateRequests.OrderBy(ir => ir.RequestDate));
                 _logger.LogInformation("Retrieved {count} immediate requests", _immediateRequests.Count);
@@ -97,12 +97,18 @@ namespace Progetto.App.Core.Models
 
         public async Task<ImmediateRequest?> ServeNext(MwBot mwBot)
         {
+            ImmediateRequest? immediateRequest = null;
+
             try
             {
                 await _reservationsSemaphore.WaitAsync();
                 var parkingReservations = _reservations?.Where(r => r.ParkingId == mwBot.ParkingId);
                 if (parkingReservations?.Count() > 0)
                 {
+                    var scope = _serviceScopeFactory.CreateScope();
+                    var _parkingSlotRepository = scope.ServiceProvider.GetRequiredService<ParkingSlotRepository>();
+                    var _immediateRequestRepository = scope.ServiceProvider.GetRequiredService<ImmediateRequestRepository>();
+
                     _logger.LogInformation("MwBot {mwBot}: Found reservations, checking free slots", mwBot.Id);
                     var allFreeSlots = await _parkingSlotRepository.GetFreeParkingSlots(mwBot.ParkingId);
                     if (allFreeSlots is null || allFreeSlots.Count() == 0)
@@ -116,7 +122,7 @@ namespace Progetto.App.Core.Models
 
                     _logger.LogInformation("MwBot {mwBot}: Generating immediate request", mwBot.Id);
 
-                    var immediateRequest = await _immediateRequestRepository.AddAsync(
+                    immediateRequest = await _immediateRequestRepository.AddAsync(
                         new ImmediateRequest
                         {
                             RequestDate = DateTime.Now,
@@ -130,14 +136,13 @@ namespace Progetto.App.Core.Models
                     if (immediateRequest is null)
                         return null;
 
+                    // TODO: Delete reservation
                     _logger.LogInformation("MwBot {mwBot}: Serving reservation from user {nextReservation?.UserId} for reservation time {nextReservation?.ReservationTime}.", mwBot.Id, nextReservation?.UserId, nextReservation?.ReservationTime);
 
                     freeSlot.Status = ParkingSlotStatus.Occupied;
                     await _parkingSlotRepository.UpdateAsync(freeSlot);
 
                     _logger.LogInformation("MwBot {mwBot}: Created immediate request for user {immediateRequest.UserId} at {immediateRequest.RequestDate}.", mwBot.Id, immediateRequest.UserId, immediateRequest.RequestDate);
-
-                    return immediateRequest;
                 }
             }
             finally
@@ -150,9 +155,8 @@ namespace Progetto.App.Core.Models
                 await _immediateRequestsSemaphore.WaitAsync();
                 if (_immediateRequests?.Count > 0)
                 {
-                    var immediateRequest = GetNextImmediateRequest();
+                    immediateRequest = GetNextImmediateRequest();
                     _logger.LogInformation("MwBot {mwBot}: Serving immediate request from user {immediateRequest?.UserId} at {immediateRequest?.RequestDate}.", mwBot.Id, immediateRequest?.UserId, immediateRequest?.RequestDate);
-                    return immediateRequest;
                 }
             }
             finally
@@ -160,8 +164,12 @@ namespace Progetto.App.Core.Models
                 _immediateRequestsSemaphore.Release();
             }
 
-            _logger.LogInformation("MwBot {mwBot}: No requests to serve.", mwBot.Id);
-            return null;
+            if (immediateRequest is null)
+            {
+                _logger.LogInformation("MwBot {mwBot}: No requests to serve.", mwBot.Id);
+            }
+
+            return immediateRequest;
         }
     }
 }

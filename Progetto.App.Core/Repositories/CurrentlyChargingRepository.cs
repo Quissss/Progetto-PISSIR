@@ -22,6 +22,13 @@ public class CurrentlyChargingRepository : GenericRepository<CurrentlyCharging>
         _context = context;
     }
 
+    public async Task<CurrentlyCharging?> GetByMwBotId(int mwBotId)
+    {
+        return await _context.CurrentlyCharging
+            .Where(c => c.MwBotId == mwBotId)
+            .FirstOrDefaultAsync();
+    }
+
     public async Task<CurrentlyCharging?> GetCurrentlyChargingByCarId(string carPlate)
     {
         return await _context.CurrentlyCharging

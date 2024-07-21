@@ -14,6 +14,7 @@ public class CurrentlyCharging
 {
     public int Id { get; set; }
     public DateTime? StartChargingTime { get; set; }
+    public DateTime? EndChargingTime { get; set; }
     public decimal? StartChargePercentage { get; set; }
     public decimal? CurrentChargePercentage { get; set; }
     public decimal? TargetChargePercentage { get; set; }
@@ -27,4 +28,5 @@ public class CurrentlyCharging
     public ParkingSlot? ParkingSlot { get; set; }
     public decimal EnergyConsumed { get; set; }
     public decimal TotalCost { get; set; }
+    public bool ToPay { get; set; }
 }
