@@ -12,6 +12,8 @@ public class ImmediateRequest
     public int Id { get; set; }
     public DateTime RequestDate { get; set; } // Date when user arrives at the parking
     public decimal RequestedChargeLevel { get; set; } // Requested charge level
+    public string? CarPlate { get; set; }
+    public Car? Car { get; set; }
     public int ParkingSlotId { get; set; }
     public ParkingSlot? ParkingSlot { get; set; }
     public string UserId { get; set; }

@@ -16,6 +16,8 @@ public class Reservation
     public DateTime? ReservationTime { get; set; } // Time when the reservation was made
     public DateTime? RequestDate { get; set; } // Date when the user wants to charge the vehicle
     public decimal RequestedChargeLevel { get; set; } // Requested charge level
+    public string? CarPlate { get; set; }
+    public Car? Car { get; set; }
     public int ParkingId { get; set; }
     public Parking? Parking { get; set; }
     public string UserId { get; set; }
