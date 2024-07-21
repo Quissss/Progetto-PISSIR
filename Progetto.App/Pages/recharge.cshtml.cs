@@ -5,11 +5,8 @@ using System.Threading.Tasks;
 
 namespace Progetto.App.Pages
 {
-    public class rechargeModel : PageModel
+    public class RechargeModel : PageModel
     {
-     
-       
-
         public async Task OnGetAsync()
         {
 

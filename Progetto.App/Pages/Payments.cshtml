@@ -53,8 +53,22 @@
 </div>
 
 <script>
-    function handlePayment(carPlate) {
-        alert('Initiating payment for car: ' + carPlate);
-        // Add actual payment logic here
+    async function handlePayment(carPlate) {
+        try {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            const response = await fetch('/Payments?handler=PayNow', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify(carPlate)
+            });
+            const result = await response.json();
+            alert(result.message);
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred during the payment process.');
+        }
     }
 </script>

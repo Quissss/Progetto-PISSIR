@@ -37,6 +37,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\PayPal.REST\PayPal.REST.csproj" />
     <ProjectReference Include="..\Progetto.App.Core\Progetto.App.Core.csproj" />
   </ItemGroup>
 
