@@ -48,12 +48,8 @@ public class ReservationController : ControllerBase
         {
             _logger.LogDebug("Creating reservation with id {id} for user {user}", reservation.Id, User.Identity.Name);
 
-            var existingReservation = await _reservationRepository.GetByIdAsync(reservation.Id);
-            if (existingReservation != null)
-            {
-                _logger.LogWarning("Reservation with id {id} already exists", reservation.Id);
-                return BadRequest();
-            }
+            
+          
 
             reservation.ReservationTime = DateTime.Now;
             await _reservationRepository.AddAsync(reservation);

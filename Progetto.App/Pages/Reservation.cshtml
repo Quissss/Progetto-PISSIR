@@ -40,6 +40,17 @@
                             <span class="error text-danger" id="parkingIdError"></span>
                         </div>
 
+                        <div class="form-group mb-4">
+                            <label for="carPlate" class="form-label"><strong>Seleziona Auto:</strong></label>
+                            <select id="carPlate" name="CarPlate" class="form-select" required>
+                                @foreach (var car in Model.Cars)
+                                {
+                                    <option value="@car.LicencePlate">@car.Model - @car.LicencePlate</option>
+                                }
+                            </select>
+                            <span class="error text-danger" id="carPlateError"></span>
+                        </div>
+
                         <input type="hidden" id="userId" name="userId" value="@Model.Reservation.UserId" required>
 
                         <div class="d-flex justify-content-center">
@@ -73,6 +84,7 @@
             const requestDate = document.getElementById('requestDate').value;
             const requestedChargeLevel = document.getElementById('requestedChargeLevel').value;
             const parkingId = document.getElementById('parkingId').value;
+            const carId = document.getElementById('carPlate').value;
             const userId = document.getElementById('userId').value;
 
             if (!requestDate) {
@@ -85,6 +97,10 @@
             }
             if (!parkingId) {
                 document.getElementById('parkingIdError').innerText = 'Seleziona un parcheggio.';
+                isValid = false;
+            }
+            if (!carId) {
+                document.getElementById('carPlateError').innerText = 'Seleziona un\'auto.';
                 isValid = false;
             }
             if (!userId) {
