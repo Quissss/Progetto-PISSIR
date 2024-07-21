@@ -26,6 +26,6 @@ public class ParkingConfiguration : IEntityTypeConfiguration<Parking>
         builder.Property(p => p.Country).HasMaxLength(50).IsRequired();
         builder.Property(p => p.EnergyCostPerKw).HasColumnType("decimal(5, 2)").IsRequired();
         builder.Property(p => p.StopCostPerMinute).HasColumnType("decimal(5, 2)").IsRequired();
-        builder.HasMany(p => p.ParkingSlots).WithOne().HasForeignKey(ps => ps.Id);
+        builder.HasMany(p => p.ParkingSlots).WithOne().HasForeignKey(ps => ps.ParkingId).OnDelete(DeleteBehavior.Cascade);
     }
 }

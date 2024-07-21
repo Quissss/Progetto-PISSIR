@@ -22,5 +22,8 @@
 
 @section Scripts {
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.js"></script>
+    <script>
+        const userId = @Html.Raw(Json.Serialize(Model.UserId));
+    </script>
     <script type="text/javascript" src="~/js/jsGridCar.js" asp-append-version="true"></script>
 }

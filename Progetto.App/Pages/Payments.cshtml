@@ -1,0 +1,60 @@
+﻿@page
+@model Progetto.App.Pages.PaymentsModel
+@{
+    ViewData["Title"] = "Payment";
+}
+
+<h2><i class="fas fa-money-check"></i> <strong>@ViewData["Title"]</strong></h2>
+
+<div class="container-fluid">
+    <div class="row">
+        <partial name="_DashboardPartial" />
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h3 class="card-title mb-0 text-center">Charging Sessions</h3>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped table-hover table-bordered">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Car Plate</th>
+                                <th>Parking Slot</th>
+                                <th>Start Charging Time</th>
+                                <th>End Charging Time</th>
+                                <th>Total Cost (€)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var charge in Model.CurrentCharges)
+                            {
+                                <tr>
+                                    <td>@charge.CarPlate</td>
+                                    <td>@charge.ParkingSlotId</td>
+                                    <td>@charge.StartChargingTime?.ToString("g")</td>
+                                    <td>@charge.EndChargingTime?.ToString("g")</td>
+                                    <td>@charge.TotalCost</td>
+                                    <td>
+                                        @if (charge.ToPay)
+                                        {
+                                            <button class="btn btn-success" onclick="handlePayment('@charge.CarPlate')">Pay Now</button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <canvas class="my-4 w-100" id="myChart" width="900" height="380"></canvas>
+        </main>
+    </div>
+</div>
+
+<script>
+    function handlePayment(carPlate) {
+        alert('Initiating payment for car: ' + carPlate);
+        // Add actual payment logic here
+    }
+</script>
