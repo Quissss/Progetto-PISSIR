@@ -23,9 +23,11 @@ public class MqttMwBotClient
     private readonly IMqttClient _mqttClient;
     private readonly ILogger<MqttMwBotClient> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
-    public MwBot? MwBot { get; private set; }
     private readonly ChargeManager _chargeManager;
     private Timer _timer;
+    private Timer _reconnectTimer;
+    private Timer _batteryMonitorTimer;
+    public MwBot? MwBot { get; private set; }
     public ImmediateRequest? HandlingRequest { get; private set; }
     // TODO: add mqttMessage as property here
 
@@ -39,8 +41,70 @@ public class MqttMwBotClient
         _mqttClient.ApplicationMessageReceivedAsync += HandleReceivedApplicationMessage;
 
         // Set timer for processing charge requests
-        _timer = new Timer();
+        _timer = new Timer(1000);
         _timer.Elapsed += async (sender, e) => await TimedProcessChargeRequest(sender);
+
+        // Set timer for reconnect attempts
+        _reconnectTimer = new Timer(5000); // Try to reconnect every 5 seconds
+        _reconnectTimer.Elapsed += async (sender, e) => await AttemptReconnectAsync();
+
+        // Set timer for monitoring battery
+        _batteryMonitorTimer = new Timer(60000); // Check battery level every 60 seconds
+        _batteryMonitorTimer.Elapsed += async (sender, e) => await CheckBatteryLevelAsync();
+        _batteryMonitorTimer.Start();
+    }
+
+    private async Task CheckBatteryLevelAsync()
+    {
+        _timer.Stop();
+        if (MwBot == null)
+        {
+            _logger.LogWarning("MwBot not initialized, cannot check battery level");
+            return;
+        }
+
+        if (MwBot.BatteryPercentage < 20) // Threshold for low battery
+        {
+            _logger.LogInformation("MwBot {id} battery is low: {batteryPercentage}%", MwBot.Id, MwBot.BatteryPercentage);
+
+            var mwBotMessage = new MqttClientMessage
+            {
+                MessageType = MessageType.RequestRecharge,
+                Id = MwBot.Id,
+                Status = MwBotStatus.MovingToDock,
+                BatteryPercentage = MwBot.BatteryPercentage
+            };
+
+            await PublishClientMessageAsync(mwBotMessage);
+        }
+    }
+
+    private async Task AttemptReconnectAsync()
+    {
+        if (_mqttClient.IsConnected)
+            return;
+
+        _logger.LogInformation("Attempting to reconnect to MQTT broker...");
+        var isConnected = await ConnectAsync();
+        if (isConnected)
+        {
+            _logger.LogInformation("Reconnected to MQTT broker successfully.");
+            _reconnectTimer.Stop();
+            await RecoverStateAsync();
+        }
+    }
+
+    private async Task RecoverStateAsync()
+    {
+        if (MwBot is null)
+            return;
+
+        await InitializeMwBot(MwBot.Id);
+        if (HandlingRequest is not null)
+        {
+            // Resume any ongoing charging
+            await ProcessChargeRequest();
+        }
     }
 
     /// <summary>
@@ -55,6 +119,7 @@ public class MqttMwBotClient
             .WithClientId($"mwbot{mwBotId}")
             .WithTcpServer(brokerAddress, 1883)
             .WithWillQualityOfServiceLevel(MqttQualityOfServiceLevel.ExactlyOnce)
+            .WithKeepAlivePeriod(TimeSpan.FromSeconds(5))
             .WithCleanSession()
             .Build();
 
@@ -63,8 +128,9 @@ public class MqttMwBotClient
         if (isConnected)
         {
             await _mqttClient.SubscribeAsync($"mwbot{mwBotId}");
-            _timer.Interval = 10*1000; // TODO: Move to const
+            _timer.Interval = 10 * 1000; // TODO: Move to const
             _timer.Start();
+            _reconnectTimer.Start();
         }
         return isConnected;
     }
@@ -115,7 +181,7 @@ public class MqttMwBotClient
         }
 
         await _mqttClient.PublishAsync(message);
-        _logger.LogInformation("Published message {payload}", payload);
+        _logger.LogDebug("Published message {payload}", payload);
     }
 
     private async Task<bool> ChangeBotStatus(MwBotStatus status)
@@ -129,36 +195,101 @@ public class MqttMwBotClient
         switch (status)
         {
             case MwBotStatus.Offline:
-                _logger.LogInformation("Disconnecting from MQTT server");
+                _logger.LogInformation("MwBot {id}: Disconnecting from MQTT server", MwBot.Id);
                 await DisconnectAsync();
                 break;
             case MwBotStatus.StandBy:
-                _logger.LogInformation("Awaiting for task");
+                _logger.LogInformation("MwBot {id}: Awaiting for task", MwBot.Id);
                 break;
             case MwBotStatus.ChargingCar:
-                _logger.LogInformation("Charging car");
+                _logger.LogInformation("MwBot {id}: Charging car", MwBot.Id);
                 break;
             case MwBotStatus.Recharging:
-                _logger.LogInformation("Recharging");
+                _logger.LogInformation("MwBot {id}: Recharging", MwBot.Id);
                 break;
             case MwBotStatus.MovingToSlot:
-                _logger.LogInformation("Going to charge car on parking slot");
+                _logger.LogInformation("MwBot {id}: Going to charge car on parking slot", MwBot.Id);
                 break;
             case MwBotStatus.MovingToDock:
-                _logger.LogInformation("Going to dock for recharge");
+                _logger.LogInformation("MwBot {id}: Going to dock for recharge", MwBot.Id);
                 break;
             default:
-                _logger.LogWarning("Invalid status");
+                _logger.LogWarning("MwBot {id}: Invalid status", MwBot.Id);
                 return false;
         }
 
         MwBot.Status = status;
-        // TODO: delegate update operation to broker
-        using var scope = _serviceScopeFactory.CreateScope();
-        var mwBotRepository = scope.ServiceProvider.GetRequiredService<MwBotRepository>();
-        await mwBotRepository.UpdateAsync(MwBot);
+        var mwBotMessage = new MqttClientMessage
+        {
+            MessageType = MessageType.UpdateMwBot,
+            Id = MwBot.Id,
+            Status = MwBot.Status,
+            BatteryPercentage = MwBot.BatteryPercentage,
+            ParkingSlotId = HandlingRequest?.ParkingSlotId,
+            TargetBatteryPercentage = HandlingRequest?.RequestedChargeLevel,
+            UserId = HandlingRequest?.UserId,
+        };
+        await PublishClientMessageAsync(mwBotMessage);
 
         return true;
+    }
+    public async Task StartRechargingAsync()
+    {
+        if (MwBot == null)
+        {
+            _logger.LogWarning("MwBot not initialized, cannot start recharging");
+            return;
+        }
+
+        // Simulate movement to the docking station
+        await SimulateMovement(MwBotStatus.MovingToDock);
+
+        // Simulate recharging process
+        await SimulateRechargingProcessAsync();
+    }
+
+    private async Task SimulateRechargingProcessAsync()
+    {
+        if (MwBot == null)
+        {
+            _logger.LogWarning("MwBot not initialized, cannot recharge");
+            return;
+        }
+
+        decimal rechargeRate = 2.0m; // kW/s
+
+        // Set start time and initial battery percentage
+        var startTime = DateTime.Now;
+        decimal initialBatteryPercentage = MwBot.BatteryPercentage;
+
+        while (MwBot.BatteryPercentage < 100)
+        {
+            await Task.Delay(1000); // Simulate one second
+
+            MwBot.BatteryPercentage += rechargeRate;
+            if (MwBot.BatteryPercentage > 100)
+            {
+                MwBot.BatteryPercentage = 100;
+            }
+
+            // Publish updated status
+            var mwBotMessage = new MqttClientMessage
+            {
+                MessageType = MessageType.UpdateMwBot,
+                Id = MwBot.Id,
+                Status = MwBotStatus.Recharging,
+                BatteryPercentage = MwBot.BatteryPercentage,
+            };
+            await PublishClientMessageAsync(mwBotMessage);
+
+            _logger.LogInformation("MwBot {id} recharging: {batteryPercentage}%", MwBot.Id, MwBot.BatteryPercentage);
+        }
+
+        _logger.LogInformation("MwBot {id} completed recharging", MwBot.Id);
+
+        // Change status to StandBy after recharging
+        await ChangeBotStatus(MwBotStatus.StandBy);
+        _timer.Start();
     }
 
     /// <summary>
@@ -169,30 +300,44 @@ public class MqttMwBotClient
     {
         if (MwBot?.Status == MwBotStatus.StandBy)
         {
+            // TODO: recover charge
             HandlingRequest = await _chargeManager.ServeNext(MwBot);
             if (HandlingRequest is not null)
             {
                 _logger.BeginScope("Processing request {request}", HandlingRequest);
                 _timer.Stop();
-                _ = SimulateMovement();
+                await SimulateMovement(MwBotStatus.MovingToSlot);
+                await ProcessChargeRequest();
             }
         }
     }
 
-    private async Task SimulateMovement()
+    private async Task SimulateMovement(MwBotStatus status)
     {
-        var changeSuccess = await ChangeBotStatus(MwBotStatus.MovingToSlot);
-        if (!changeSuccess)
-            return;
-
         int minDelaySeconds = 5; // minimum seconds
         int maxDelaySeconds = 10; // max seconds
         int delayRange = maxDelaySeconds - minDelaySeconds;
         int delay = minDelaySeconds + (int)(delayRange * (1 - MwBot.BatteryPercentage / 100));
-        _logger.LogInformation("Simulating movement for {delay} seconds...", delay);
-        await Task.Delay(TimeSpan.FromSeconds(delay));
 
-        await ProcessChargeRequest();
+        if (status == MwBotStatus.MovingToSlot)
+        {
+            _logger.LogInformation("Simulating movement to car {delay} seconds...", delay);
+        }
+        else if (status == MwBotStatus.MovingToDock)
+        {
+            _logger.LogInformation("Simulating movement to dock {delay} seconds...", delay);
+        }
+        else
+        {
+            _logger.LogWarning("Invalid status");
+            return;
+        }
+
+        var changeSuccess = await ChangeBotStatus(status);
+        if (!changeSuccess)
+            return;
+
+        await Task.Delay(TimeSpan.FromSeconds(delay));
     }
 
     /// <summary>
@@ -221,9 +366,9 @@ public class MqttMwBotClient
             Status = MwBot.Status,
             BatteryPercentage = MwBot.BatteryPercentage,
             ParkingId = MwBot.ParkingId,
-            ParkingSlotId = HandlingRequest.ParkingSlotId,
-            TargetBatteryPercentage = HandlingRequest.RequestedChargeLevel,
-            UserId = HandlingRequest.UserId,
+            ParkingSlotId = HandlingRequest?.ParkingSlotId,
+            TargetBatteryPercentage = HandlingRequest?.RequestedChargeLevel,
+            UserId = HandlingRequest?.UserId,
         };
 
         await PublishClientMessageAsync(mwBotMessage);
@@ -232,12 +377,9 @@ public class MqttMwBotClient
     private async Task SimulateChargingProcess(MqttClientMessage mwBotMessage)
     {
         decimal chargeRate = 0.5m; // kW/s
-        decimal dischargeRate = 0.1m; // kW/s
+        decimal dischargeRate = 0.3m; // kW/s
         decimal energyCostPerKw = mwBotMessage.Parking?.EnergyCostPerKw ?? 0.2m;
         decimal stopCostPerMinute = mwBotMessage.Parking?.StopCostPerMinute ?? 0.1m;
-
-        using var scope = _serviceScopeFactory.CreateScope();
-        var currentlyChargingRepository = scope.ServiceProvider.GetRequiredService<CurrentlyChargingRepository>();
 
         var changeSuccess = await ChangeBotStatus(MwBotStatus.ChargingCar);
         if (!changeSuccess)
@@ -253,10 +395,12 @@ public class MqttMwBotClient
         var currentlyCharging = mwBotMessage.CurrentlyCharging;
         var startTime = currentlyCharging.StartChargingTime = DateTime.Now;
         currentlyCharging.StartChargePercentage = currentlyCharging.CurrentChargePercentage = mwBotMessage.CurrentCarCharge = randomStartCharge;
-        // TODO: delegate update operation to broker
-        await currentlyChargingRepository.UpdateAsync(currentlyCharging);
 
-        _logger.LogInformation("MwBot {id}: [{startDate}] Starting charge from {startingBattery}", mwBotMessage.Id, startTime, randomStartCharge);
+        mwBotMessage.MessageType = MessageType.UpdateCharging;
+        currentlyCharging.StartChargePercentage = currentlyCharging.StartChargePercentage = Math.Round(currentlyCharging.StartChargePercentage ?? 0, 2);
+        await PublishClientMessageAsync(mwBotMessage);
+
+        _logger.LogInformation("MwBot {id}: [{startDate}] Starting charge from {startingBattery}% to {targetBattery}%", mwBotMessage.Id, startTime, randomStartCharge, currentlyCharging.TargetChargePercentage);
 
         // TODO: non far arrivare a 0 mwbot perchè non siamo stronzi
         while (mwBotMessage.CurrentCarCharge < mwBotMessage.TargetBatteryPercentage && MwBot.BatteryPercentage > 0)
@@ -264,7 +408,6 @@ public class MqttMwBotClient
             await Task.Delay(1000); // Simulate one second
 
             mwBotMessage.CurrentCarCharge += chargeRate;
-            currentlyCharging.CurrentChargePercentage = mwBotMessage.CurrentCarCharge;
             MwBot.BatteryPercentage -= dischargeRate;
 
             if (mwBotMessage.CurrentCarCharge > mwBotMessage.TargetBatteryPercentage)
@@ -277,17 +420,16 @@ public class MqttMwBotClient
             var elapsedMinutes = (DateTime.Now - startTime).Value.TotalMinutes;
             currentlyCharging.TotalCost = (currentlyCharging.EnergyConsumed * energyCostPerKw) + ((decimal)elapsedMinutes * stopCostPerMinute);
 
-            _logger.LogInformation("MwBot {botId}: Charging car: {carCharge}% / {requestedCharge}% | MwBot battery: {botBattery}% | Energy consumed: {energyConsumed} kWh | Total cost: {totalCost} EUR",
+            _logger.LogInformation("MwBot {botId}: Charging car: {carCharge}% / {requestedCharge}% | MwBot battery: {botBattery}% | Energy consumed: {energyConsumed:F7} kWh | Total cost: {totalCost:F2} EUR",
                 MwBot.Id, mwBotMessage.CurrentCarCharge, mwBotMessage.TargetBatteryPercentage, MwBot.BatteryPercentage, currentlyCharging.EnergyConsumed, currentlyCharging.TotalCost);
 
-            var mwBotRepository = scope.ServiceProvider.GetRequiredService<MwBotRepository>();
-            // TODO: delegate update operation to broker
-            await mwBotRepository.UpdateAsync(MwBot);
-            // TODO: FIX currentlyCharging Update
-            await currentlyChargingRepository.UpdateAsync(currentlyCharging);
-
-            // TODO: delegate update operation to broker
-            //await PublishClientMessageAsync(mwBotMessage);
+            currentlyCharging.CurrentChargePercentage = mwBotMessage.CurrentCarCharge;
+            currentlyCharging.CurrentChargePercentage = Math.Round(currentlyCharging.CurrentChargePercentage.Value, 2);
+            currentlyCharging.EnergyConsumed = Math.Round(currentlyCharging.EnergyConsumed, 7);
+            currentlyCharging.TotalCost = Math.Round(currentlyCharging.TotalCost, 2);
+            mwBotMessage.CurrentlyCharging = currentlyCharging;
+            mwBotMessage.BatteryPercentage = MwBot.BatteryPercentage;
+            await PublishClientMessageAsync(mwBotMessage);
         }
 
         await CompleteChargingProcess(mwBotMessage);
@@ -317,7 +459,7 @@ public class MqttMwBotClient
         await PublishClientMessageAsync(mwBotMessage);
         _timer.Start();
 
-        _logger.LogInformation("MwBot {botId}: Completed charging car at parking slot {slotId}. Total energy consumed: {energyConsumed} kWh, Total cost: {totalCost} EUR",
+        _logger.LogInformation("MwBot {botId}: Completed charging car at parking slot {slotId}. Total energy consumed: {energyConsumed:F7} kWh, Total cost: {totalCost:F2} EUR",
             MwBot?.Id, mwBotMessage.ParkingSlotId, currentlyCharging.EnergyConsumed, currentlyCharging.TotalCost);
     }
 
@@ -334,34 +476,43 @@ public class MqttMwBotClient
         string topic = arg.ApplicationMessage.Topic;
         _logger.LogInformation("Received message: {payload} from topic: {message.ApplicationMessage.Topic}", payload, topic);
 
-        var mwBotMessage = JsonSerializer.Deserialize<MqttClientMessage>(payload);
-        if (mwBotMessage is null || MwBot is null)
+        var brokerMessage = JsonSerializer.Deserialize<MqttClientMessage>(payload);
+        if (brokerMessage is null || MwBot is null)
         {
-            _logger.LogWarning("Invalid message received or MwBot not initialized");
+            _logger.LogWarning("Invalid message received");
+            return;
+        }
+
+        if (MwBot is null)
+        {
+            _logger.LogWarning("MwBot not initialized");
             return;
         }
 
         try
         {
-            _logger.BeginScope("Updating MwBot");
-            MwBot.Status = mwBotMessage.Status;
-            MwBot.BatteryPercentage = mwBotMessage.BatteryPercentage;
+            MwBot.Status = brokerMessage.Status;
+            MwBot.BatteryPercentage = brokerMessage.BatteryPercentage;
 
-            // TODO: delegate update operation to broker
-            using (var scope = _serviceScopeFactory.CreateScope())
+            var mwBotMessage = new MqttClientMessage
             {
-                var mwBotRepository = scope.ServiceProvider.GetRequiredService<MwBotRepository>();
-                await mwBotRepository.UpdateAsync(MwBot);
-                _logger.LogInformation("MwBot updated successfully");
-            }
+                MessageType = MessageType.UpdateMwBot,
+                Id = MwBot.Id,
+                Status = MwBot.Status,
+                BatteryPercentage = MwBot.BatteryPercentage,
+            };
+            await PublishClientMessageAsync(mwBotMessage);
 
-            switch (mwBotMessage.MessageType)
+            switch (brokerMessage.MessageType)
             {
                 case MessageType.StartCharging:
-                    await SimulateChargingProcess(mwBotMessage);
+                    await SimulateChargingProcess(brokerMessage);
+                    break;
+                case MessageType.StartRecharge:
+                    await StartRechargingAsync();
                     break;
                 default:
-                    _logger.LogWarning("MwBot {id}: Invalid message type {type}", MwBot.Id, mwBotMessage.MessageType);
+                    _logger.LogWarning("MwBot {id}: Invalid message type {type}", MwBot.Id, brokerMessage.MessageType);
                     break;
             }
         }
@@ -423,19 +574,22 @@ public class MqttMwBotClient
             _logger.BeginScope("Disconnecting from MQTT server");
             _timer.Stop();
 
-            using var scope = _serviceScopeFactory.CreateScope();
-            var mwBotRepository = scope.ServiceProvider.GetRequiredService<MwBotRepository>();
-            var parkingSlotRepository = scope.ServiceProvider.GetRequiredService<ParkingSlotRepository>();
-
             MwBot.Status = MwBotStatus.Offline;
-            // TODO: delegate update operation to broker
-            await mwBotRepository.UpdateAsync(MwBot);
+            var mwBotMessage = new MqttClientMessage
+            {
+                MessageType = MessageType.UpdateMwBot,
+                Id = MwBot.Id,
+                Status = MwBot.Status,
+                BatteryPercentage = MwBot.BatteryPercentage,
+            };
+            await PublishClientMessageAsync(mwBotMessage);
 
-            // TODO: delegate update operation to broker
             if (HandlingRequest?.ParkingSlot is not null)
             {
                 HandlingRequest.ParkingSlot.Status = ParkingSlotStatus.Free;
-                await parkingSlotRepository.UpdateAsync(HandlingRequest.ParkingSlot);
+                mwBotMessage.MessageType = MessageType.UpdateParkingSlot;
+                mwBotMessage.ParkingSlot = HandlingRequest.ParkingSlot;
+                await PublishClientMessageAsync(mwBotMessage);
             }
 
             await _mqttClient.DisconnectAsync();

@@ -136,6 +136,7 @@ namespace Progetto.App.Core.Models
                     if (immediateRequest is null)
                         return null;
 
+                    // TODO: Delete reservation
                     _logger.LogInformation("MwBot {mwBot}: Serving reservation from user {nextReservation?.UserId} for reservation time {nextReservation?.ReservationTime}.", mwBot.Id, nextReservation?.UserId, nextReservation?.ReservationTime);
 
                     freeSlot.Status = ParkingSlotStatus.Occupied;

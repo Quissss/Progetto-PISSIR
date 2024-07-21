@@ -12,6 +12,11 @@ public enum MessageType
     RequestCharge, // client → server
     StartCharging, // server → client
     CompleteCharge, // client → server
+    UpdateCharging, // client → server
+    UpdateMwBot, // client → server
+    UpdateParkingSlot, // client → server
+    StartRecharge, // server → client
+    RequestRecharge, // client → server
 }
 
 /// <summary>
@@ -21,9 +26,10 @@ public class MqttClientMessage : MwBot
 {
     public MessageType MessageType { get; set; }
     public int? ParkingSlotId { get; set; }
+    public ParkingSlot? ParkingSlot { get; set; }
     public decimal? CurrentCarCharge { get; set; }
     public decimal? TargetBatteryPercentage { get; set; }
-    public string? UserId { get; internal set; }
-    public string? CarPlate { get; internal set; }
+    public string? UserId { get; set; }
+    public string? CarPlate { get; set; }
     public CurrentlyCharging? CurrentlyCharging { get; set; }
 }

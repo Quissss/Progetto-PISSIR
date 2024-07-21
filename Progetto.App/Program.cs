@@ -13,6 +13,7 @@ using Progetto.App.Core.Services.MQTT;
 using Progetto.App.Core.Models;
 using Progetto.App.Controllers;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;

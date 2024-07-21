@@ -14,6 +14,11 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
 
     public GenericRepository(ApplicationDbContext context) { DbContext = context; }
 
+    public async Task<bool> CheckEntityExists(T entity)
+    {
+        return await DbContext.Set<T>().ContainsAsync(entity);
+    }
+
     public async Task<List<T>> GetAllAsync()
     {
         return await DbContext.Set<T>().ToListAsync();
@@ -40,7 +45,7 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
 
     public async Task<T> UpdateAsync(T entity)
     {
-        DbContext.Entry(entity).CurrentValues.SetValues(entity);
+        DbContext.Entry(entity).State = EntityState.Modified;
         await SaveAsync();
         return entity;
     }
