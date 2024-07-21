@@ -79,8 +79,12 @@ namespace Progetto.App.Core.Models
         {
             if (_reservations?.Count > 0)
             {
-                var nextReservation = _reservations[0];
-                _reservations.RemoveAt(0);
+                var nextReservation = _reservations.FirstOrDefault(r => r.ReservationTime <= DateTime.Now);
+                if (nextReservation is not null)
+                {
+                    _reservations.Remove(nextReservation);
+                    return nextReservation;
+                }
                 return nextReservation;
             }
             return null;
@@ -99,10 +103,11 @@ namespace Progetto.App.Core.Models
         {
             ImmediateRequest? immediateRequest = null;
 
+            // Serve reservations
             try
             {
                 await _reservationsSemaphore.WaitAsync();
-                var parkingReservations = _reservations?.Where(r => r.ParkingId == mwBot.ParkingId);
+                var parkingReservations = _reservations?.Where(r => r.ParkingId == mwBot.ParkingId && r.ReservationTime <= DateTime.Now);
                 if (parkingReservations?.Count() > 0)
                 {
                     var scope = _serviceScopeFactory.CreateScope();
@@ -150,6 +155,7 @@ namespace Progetto.App.Core.Models
                 _reservationsSemaphore.Release();
             }
 
+            // Car entered the parking, serve immediate requests
             try
             {
                 await _immediateRequestsSemaphore.WaitAsync();
