@@ -24,6 +24,7 @@ public class MqttMwBotClient
     private readonly ILogger<MqttMwBotClient> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly ChargeManager _chargeManager; // TODO: delegate to server
+    private const int _rechargeThreshold = 5; // Battery percentage threshold for recharging
     private Timer _timer;
     private Timer _reconnectTimer;
     private Timer _batteryMonitorTimer;
@@ -61,9 +62,10 @@ public class MqttMwBotClient
             return;
         }
 
-        if (MwBot.BatteryPercentage < 50) // Threshold for low battery
+        if (MwBot.BatteryPercentage < _rechargeThreshold) // Threshold for low battery
         {
             _logger.LogInformation("MwBot {id} battery is low: {batteryPercentage}%", MwBot.Id, MwBot.BatteryPercentage);
+            _batteryMonitorTimer.Stop();
             _timer.Stop();
 
             var mwBotMessage = new MqttClientMessage
@@ -296,7 +298,7 @@ public class MqttMwBotClient
     /// <param name="state"></param>
     private async Task TimedProcessChargeRequest(object? state)
     {
-        if (MwBot?.Status == MwBotStatus.StandBy)
+        if (MwBot?.Status == MwBotStatus.StandBy && MwBot.BatteryPercentage > _rechargeThreshold)
         {
             // TODO: recover charge
             HandlingRequest = await _chargeManager.ServeNext(MwBot);
@@ -399,9 +401,9 @@ public class MqttMwBotClient
         currentlyCharging.StartChargePercentage = currentlyCharging.StartChargePercentage = Math.Round(currentlyCharging.StartChargePercentage ?? 0, 2);
         await PublishClientMessageAsync(mwBotMessage);
 
-        _logger.LogInformation("MwBot {id}: [{startDate}] Starting charge from {startingBattery}% to {targetBattery}%", mwBotMessage.Id, startTime, randomStartCharge, currentlyCharging.TargetChargePercentage);
+        _logger.LogInformation("[{startDate}] MwBot {id}: Starting charge from {startingBattery}% to {targetBattery:F0}%", mwBotMessage.Id, startTime, randomStartCharge, currentlyCharging.TargetChargePercentage);
 
-        while (mwBotMessage.CurrentCarCharge < mwBotMessage.TargetBatteryPercentage && MwBot.BatteryPercentage > 5)
+        while (mwBotMessage.CurrentCarCharge < mwBotMessage.TargetBatteryPercentage && MwBot.BatteryPercentage > _rechargeThreshold)
         {
             await Task.Delay(1000); // Simulate one second
 
@@ -457,6 +459,7 @@ public class MqttMwBotClient
 
         await PublishClientMessageAsync(mwBotMessage);
         _timer.Start();
+        _batteryMonitorTimer.Start();
 
         _logger.LogInformation("MwBot {botId}: Completed charging car at parking slot {slotId}. Total energy consumed: {energyConsumed:F7} kWh, Total cost: {totalCost:F2} EUR",
             MwBot?.Id, mwBotMessage.ParkingSlotId, currentlyCharging.EnergyConsumed, currentlyCharging.TotalCost);
