@@ -2,6 +2,7 @@
 using Progetto.App.Core.Data;
 using Progetto.App.Core.Models;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,5 +21,12 @@ public class ImmediateRequestRepository : GenericRepository<ImmediateRequest>
     public ImmediateRequestRepository(ApplicationDbContext context) : base(context)
     {
         _context = context;
+    }
+
+    public async Task<IEnumerable<ImmediateRequest?>> GetAllWithNoReservation()
+    {
+        return await _context.ImmediateRequests
+            .Where(ir => ir.FromReservation == false)
+            .ToListAsync();
     }
 }

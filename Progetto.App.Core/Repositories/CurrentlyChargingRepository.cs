@@ -22,10 +22,10 @@ public class CurrentlyChargingRepository : GenericRepository<CurrentlyCharging>
         _context = context;
     }
 
-    public async Task<CurrentlyCharging?> GetByImmediateRequestId(int immediateRequestId)
+    public async Task<CurrentlyCharging?> GetByActiveImmediateRequestId(int immediateRequestId)
     {
         return await _context.CurrentlyCharging
-            .Where(c => c.ImmediateRequestId == immediateRequestId)
+            .Where(c => c.ImmediateRequestId == immediateRequestId && c.EndChargingTime == null && !c.ToPay && c.CurrentChargePercentage < c.TargetChargePercentage)
             .FirstOrDefaultAsync();
     }
 
@@ -43,10 +43,10 @@ public class CurrentlyChargingRepository : GenericRepository<CurrentlyCharging>
             .FirstOrDefaultAsync();
     }
 
-    public async Task<CurrentlyCharging?> GetByCurrentlyChargingMwBot(int mwBotId)
+    public async Task<CurrentlyCharging?> GetByActiveMwBot(int mwBotId)
     {
         return await _context.CurrentlyCharging
-            .Where(c => c.MwBotId == mwBotId && c.EndChargingTime == null)
+            .Where(c => c.MwBotId == mwBotId && c.EndChargingTime == null && !c.ToPay && c.CurrentChargePercentage < c.TargetChargePercentage)
             .FirstOrDefaultAsync();
     }
 

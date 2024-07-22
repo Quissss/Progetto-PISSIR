@@ -55,9 +55,10 @@ namespace Progetto.App.Core.Models
                 var scope = _serviceScopeFactory.CreateScope();
                 var _immediateRequestRepository = scope.ServiceProvider.GetRequiredService<ImmediateRequestRepository>();
 
-                var immediateRequests = await _immediateRequestRepository.GetAllAsync();
-                _immediateRequests = new Queue<ImmediateRequest>(immediateRequests.OrderBy(ir => ir.RequestDate));
-                _logger.LogInformation("Retrieved {count} immediate requests", _immediateRequests.Count);
+                var immediateRequests = await _immediateRequestRepository.GetAllWithNoReservation();
+                if (immediateRequests?.Count() > 0)
+                    _immediateRequests = new Queue<ImmediateRequest>(immediateRequests.OrderBy(ir => ir?.RequestDate).Cast<ImmediateRequest>());
+                _logger.LogInformation("Retrieved {count} immediate requests", _immediateRequests?.Count);
             }
             catch (Exception ex)
             {
