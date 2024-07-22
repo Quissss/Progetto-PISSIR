@@ -9,15 +9,16 @@ namespace Progetto.App.Core.Models.Mqtt;
 
 public enum MessageType
 {
-    RequestCharge, // client → server
-    StartCharging, // server → client
-    CompleteCharge, // client → server
-    UpdateCharging, // client → server
-    UpdateMwBot, // client → server
-    UpdateParkingSlot, // client → server
-    StartRecharge, // server → client
-    RequestRecharge, // client → server
-    RequestResumeCharging,
+    RequestCharge, // client → broker
+    StartCharging, // broker → client
+    CompleteCharge, // client → broker
+    UpdateCharging, // client → broker
+    UpdateMwBot, // client → broker
+    UpdateParkingSlot, // client → broker
+    StartRecharge, // broker → client
+    RequestRecharge, // client → broker
+    RequestResumeCharging, // client → broker
+    ResumeCharging, // broker → client
 }
 
 /// <summary>

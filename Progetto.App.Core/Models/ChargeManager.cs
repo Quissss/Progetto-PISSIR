@@ -131,6 +131,7 @@ namespace Progetto.App.Core.Models
                         new ImmediateRequest
                         {
                             RequestDate = DateTime.Now,
+                            CarPlate = nextReservation.CarPlate,
                             RequestedChargeLevel = nextReservation.RequestedChargeLevel,
                             ParkingSlotId = freeSlot.Id,
                             ParkingSlot = _parkingSlotRepository.GetByIdAsync(freeSlot.Id).GetAwaiter().GetResult(),
@@ -140,7 +141,7 @@ namespace Progetto.App.Core.Models
                     );
                     if (immediateRequest is null) return null;
 
-                    await _reservationsRepository.DeleteAsync(r => r.Id == nextReservation.Id);
+                    //await _reservationsRepository.DeleteAsync(r => r.Id == nextReservation.Id);
                     _logger.LogInformation("MwBot {mwBot}: Serving reservation from user {nextReservation?.UserId} for reservation time {nextReservation?.ReservationTime}.", mwBot.Id, nextReservation?.UserId, nextReservation?.ReservationTime);
 
                     freeSlot.Status = ParkingSlotStatus.Occupied;
