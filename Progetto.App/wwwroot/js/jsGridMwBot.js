@@ -11,7 +11,6 @@ let ajax = function (item, verb, json = true) {
     });
 };
 
-
 function turnBot(item, action) {
     var endpoint = action === "on" ? "on" : "off";
     $.ajax({
@@ -21,7 +20,7 @@ function turnBot(item, action) {
         contentType: "application/json",
         success: function (response) {
             console.log("Bot turned " + action);
-            $('#mwBotGrid').jsGrid('loadData'); 
+            $('#mwBotGrid').jsGrid('loadData');
         },
         error: function (xhr, status, error) {
             console.error("Error turning bot " + action + ": " + error);
@@ -110,4 +109,9 @@ $(function () {
             }
         ]
     });
+    
+    setInterval(function () {
+        let filter = $("#mwBotGrid").jsGrid("getFilter");
+        $("#mwBotGrid").jsGrid("loadData", filter);
+    }, 1000);
 });

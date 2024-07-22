@@ -67,4 +67,9 @@ $(function () {
             args.item["ownerId"] = userId;
         },
     });
+
+    setInterval(function () {
+        let filter = $("#jsGridCar").jsGrid("getFilter");
+        $("#jsGridCar").jsGrid("loadData", filter);
+    }, 1000);
 });

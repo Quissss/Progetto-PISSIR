@@ -47,4 +47,9 @@ $(function () {
             ]
         });
     });
+
+    setInterval(function () {
+        let filter = $("#parkingSlotGrid").jsGrid("getFilter");
+        $("#parkingSlotGrid").jsGrid("loadData", filter);
+    }, 1000);
 });
