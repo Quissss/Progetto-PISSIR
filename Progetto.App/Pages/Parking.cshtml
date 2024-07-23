@@ -10,12 +10,8 @@
     <div class="row">
         <partial name="_DashboardPartial" />
 
-        <!-- Main content -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-
             <div id="parkingGrid"></div>
-            
-            <!-- Map container -->
             <div id="map" style="width: 100%; height: 400px; margin-top: 20px;"></div>
         </main>
     </div>
@@ -25,6 +21,8 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+    <script type="text/javascript" src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
     <script>
         const parkings = @Html.Raw(Json.Serialize(Model.Parkings));
     </script>

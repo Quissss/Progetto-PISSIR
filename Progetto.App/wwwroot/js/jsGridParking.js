@@ -12,11 +12,28 @@ let ajax = function (item, verb, json = true) {
 
 $(function () {
     let map = L.map('map').setView([45.4642, 9.1900], 13); // Default to Milan, Italy
+    let routingControl;
+    let userPosition;
 
     // Set up the OSM layer
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
     }).addTo(map);
+
+    // Get user location
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function (position) {
+            userPosition = [position.coords.latitude, position.coords.longitude];
+            map.setView(userPosition, 13);
+            L.marker(userPosition).addTo(map)
+                .bindPopup("You are here")
+                .openPopup();
+        }, function () {
+            console.error("Geolocation is not supported by this browser or permission denied.");
+        });
+    } else {
+        console.error("Geolocation is not supported by this browser.");
+    }
 
     $("#parkingGrid").jsGrid({
         width: "100%",
@@ -69,11 +86,9 @@ $(function () {
         }
 
         // Clear the map
-        map.eachLayer(function (layer) {
-            if (layer instanceof L.Marker) {
-                map.removeLayer(layer);
-            }
-        });
+        if (routingControl) {
+            map.removeControl(routingControl);
+        }
 
         // Use a geocoding service to convert the address to coordinates (e.g., OpenStreetMap's Nominatim)
         $.get(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(item.address + ' ' + item.city + ' ' + item.country)}`, function (data) {
@@ -81,9 +96,19 @@ $(function () {
                 var lat = data[0].lat;
                 var lon = data[0].lon;
                 map.setView([lat, lon], 13);
-                L.marker([lat, lon]).addTo(map)
-                    .bindPopup(`<b>${item.name}</b><br>${item.address}<br>${item.city}, ${item.province} ${item.postalCode}`)
-                    .openPopup();
+
+                // Calculate and display route
+                routingControl = L.Routing.control({
+                    waypoints: [
+                        L.latLng(userPosition), // User's current position
+                        L.latLng(lat, lon)
+                    ],
+                    createMarker: function (i, waypoint, n) {
+                        var marker = L.marker(waypoint.latLng).bindPopup(`<b>${item.name}</b><br>${item.address}<br>${item.city}, ${item.province} ${item.postalCode}`);
+                        return marker;
+                    },
+                    routeWhileDragging: true
+                }).addTo(map);
             } else {
                 console.error("Address not found: " + item.address);
             }
