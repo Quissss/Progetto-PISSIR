@@ -32,6 +32,8 @@ public class MqttMwBotClient
     public ImmediateRequest? HandlingRequest { get; private set; }
     private CancellationTokenSource _cancellationTokenSource;
     private CancellationToken _cancellationToken;
+    private const int _chargeDelay = 1000;
+    private const int _rechargeDelay = 1000;
 
     // TODO: add mqttMessage as property here and handle it
 
@@ -367,7 +369,7 @@ public class MqttMwBotClient
 
         while (MwBot.BatteryPercentage < 100)
         {
-            await Task.Delay(100, cancellationToken); // Simulate one second
+            await Task.Delay(_rechargeDelay, cancellationToken); // Simulate one second
 
             if (cancellationToken.IsCancellationRequested)
             {
@@ -572,7 +574,7 @@ public class MqttMwBotClient
 
         while (mwBotMessage.CurrentCarCharge < mwBotMessage.TargetBatteryPercentage && MwBot.BatteryPercentage > _rechargeThreshold)
         {
-            await Task.Delay(100, cancellationToken); // Simulate one second
+            await Task.Delay(_chargeDelay, cancellationToken); // Simulate one second
 
             mwBotMessage.CurrentCarCharge += chargeRate;
             MwBot.BatteryPercentage -= dischargeRate;
