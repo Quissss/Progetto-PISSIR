@@ -9,7 +9,6 @@ using Serilog;
 using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Validators;
 using FluentValidation;
-using Progetto.App.Core.Services.MQTT;
 using Progetto.App.Core.Models;
 using Progetto.App.Controllers;
 using Microsoft.Extensions.DependencyInjection;
