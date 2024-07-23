@@ -6,7 +6,6 @@
 
 <h2><i class="fas fa-car"></i> <strong>@ViewData["Title"]</strong></h2>
 
-
 <div class="container-fluid">
     <div class="row">
         <partial name="_DashboardPartial" />
@@ -14,18 +13,18 @@
         <!-- Main content -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
 
-          
             <div id="parkingGrid"></div>
-
-            <!-- Line chart -->
-            <canvas class="my-4 w-100" id="myChart" width="900" height="380"></canvas>
+            
+            <!-- Map container -->
+            <div id="map" style="width: 100%; height: 400px; margin-top: 20px;"></div>
         </main>
     </div>
 </div>
 
-
 @section Scripts {
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
     <script>
         const parkings = @Html.Raw(Json.Serialize(Model.Parkings));
     </script>
