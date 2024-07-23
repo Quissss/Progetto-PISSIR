@@ -1,5 +1,5 @@
 
-﻿using FluentValidation;
+using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -9,7 +9,6 @@ using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Security;
 using Progetto.App.Core.Services.Mqtt;
-using Progetto.App.Core.Services.MQTT;
 using Progetto.App.Core.Validators;
 
 namespace Progetto.App.Controllers;
