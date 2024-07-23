@@ -29,12 +29,17 @@ namespace Progetto.App.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetRecharges()
+        public async Task<IActionResult> GetRecharges([FromQuery] string? carPlate)
         {
             var currentUser = await _userManager.GetUserAsync(User);
-           
-
+          
             var recharges = await _currentlyCharging.GetByUserId(currentUser.Id);
+              
+            if (!(string.IsNullOrEmpty(carPlate)))
+            {
+                recharges = recharges.Where(r => r.CarPlate.Contains(carPlate,StringComparison.InvariantCultureIgnoreCase)).ToList();
+            }
+
             return Ok(recharges);
         }
     }
