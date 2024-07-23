@@ -70,4 +70,18 @@ public class CurrentlyChargingRepository : GenericRepository<CurrentlyCharging>
             .Where(c => string.IsNullOrEmpty(c.CarPlate))
             .FirstOrDefaultAsync();
     }
+
+    public async Task<IEnumerable<CurrentlyCharging?>> GetByUserId(string userId)
+    {
+        return await _context.CurrentlyCharging
+            .Where(c => c.UserId == userId).ToListAsync();
+    }
+
+    public async Task<CurrentlyCharging?> GetByImmediateRequestId(int immediateRequestId)
+    {
+        return await _context.CurrentlyCharging
+            .Where(c => c.ImmediateRequestId == immediateRequestId)
+            .FirstOrDefaultAsync();
+    }
+
 }
