@@ -13,6 +13,8 @@ using Progetto.App.Core.Models;
 using Progetto.App.Controllers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using PayPal.REST.Client;
+using PayPal.REST.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -32,6 +34,16 @@ services.AddLogging(loggingBuilder =>
 //        googleOptions.ClientId = configuration["Authentication:Google:ClientId"]!;
 //        googleOptions.ClientSecret = configuration["Authentication:Google:ClientSecret"]!;
 //    });
+
+#region PayPal
+services.AddSingleton<IPayPalClient, PayPalClient>();
+services.Configure<PayPalClientOptions>(options =>
+{
+    options.ClientId = configuration.GetRequiredSection("PayPal")["ClientId"]!;
+    options.ClientSecret = configuration.GetRequiredSection("PayPal")["ClientSecret"]!;
+    options.PayPalUrl = configuration.GetRequiredSection("PayPal")["PayPalUrl"]!;
+});
+#endregion
 
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
