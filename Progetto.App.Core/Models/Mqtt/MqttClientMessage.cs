@@ -19,6 +19,7 @@ public enum MessageType
     RequestRecharge, // client → broker
     RequestResumeCharging, // client → broker
     ResumeCharging, // broker → client
+    DisconnectClient, // client → broker
 }
 
 /// <summary>
