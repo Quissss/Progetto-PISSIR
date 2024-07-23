@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
-using Progetto.App.Core.Services.MQTT;
+using Progetto.App.Core.Security;
 using System;
 using System.Collections.Generic;
 using System.Linq;
