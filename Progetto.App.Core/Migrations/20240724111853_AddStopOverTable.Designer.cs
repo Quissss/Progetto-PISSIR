@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Progetto.App.Core.Data;
 
@@ -10,9 +11,11 @@ using Progetto.App.Core.Data;
 namespace Progetto.App.Core.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240724111853_AddStopOverTable")]
+    partial class AddStopOverTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.6");
@@ -260,7 +263,7 @@ namespace Progetto.App.Core.Migrations
                     b.Property<DateTime>("EndChargingTime")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime")
-                        .HasDefaultValue(new DateTime(2024, 7, 24, 13, 25, 18, 828, DateTimeKind.Local).AddTicks(3811));
+                        .HasDefaultValue(new DateTime(2024, 7, 24, 13, 18, 49, 31, DateTimeKind.Local).AddTicks(47));
 
                     b.Property<decimal>("EnergyConsumed")
                         .ValueGeneratedOnAdd()
@@ -279,7 +282,7 @@ namespace Progetto.App.Core.Migrations
                     b.Property<DateTime>("StartChargingTime")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime")
-                        .HasDefaultValue(new DateTime(2024, 7, 24, 13, 25, 18, 828, DateTimeKind.Local).AddTicks(2092));
+                        .HasDefaultValue(new DateTime(2024, 7, 24, 13, 18, 49, 30, DateTimeKind.Local).AddTicks(9003));
 
                     b.Property<decimal?>("TargetChargePercentage")
                         .HasColumnType("decimal(5, 2)");
@@ -341,7 +344,7 @@ namespace Progetto.App.Core.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 7, 24, 13, 25, 18, 831, DateTimeKind.Local).AddTicks(7654));
+                        .HasDefaultValue(new DateTime(2024, 7, 24, 13, 18, 49, 52, DateTimeKind.Local).AddTicks(8783));
 
                     b.Property<decimal?>("TargetChargePercentage")
                         .HasColumnType("decimal(5, 2)");
@@ -510,9 +513,6 @@ namespace Progetto.App.Core.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<bool>("CarIsInside")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("CarPlate")
                         .HasColumnType("TEXT");
 
@@ -564,7 +564,7 @@ namespace Progetto.App.Core.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 7, 24, 13, 25, 18, 882, DateTimeKind.Local).AddTicks(8532));
+                        .HasDefaultValue(new DateTime(2024, 7, 24, 13, 18, 49, 86, DateTimeKind.Local).AddTicks(4603));
 
                     b.Property<bool>("ToPay")
                         .ValueGeneratedOnAdd()

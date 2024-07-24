@@ -108,7 +108,8 @@ namespace Progetto.App.Core.Models
             try
             {
                 await _reservationsSemaphore.WaitAsync();
-                var parkingReservations = _reservations?.Where(r => r.ParkingId == mwBot.ParkingId && r.RequestDate <= DateTime.Now);
+                // TODO: is car inside flagged true on car arrival (cam reads carplate + user accepts)
+                var parkingReservations = _reservations?.Where(r => r.ParkingId == mwBot.ParkingId && r.RequestDate <= DateTime.Now && r.CarIsInside);
                 if (parkingReservations?.Count() > 0)
                 {
                     var scope = _serviceScopeFactory.CreateScope();
@@ -142,7 +143,7 @@ namespace Progetto.App.Core.Models
                     );
                     if (immediateRequest is null) return null;
 
-                    //await _reservationsRepository.DeleteAsync(r => r.Id == nextReservation.Id);
+                    await _reservationsRepository.DeleteAsync(r => r.Id == nextReservation.Id);
                     _logger.LogInformation("MwBot {mwBot}: Serving reservation from user {nextReservation?.UserId} for reservation time {nextReservation?.ReservationTime}.", mwBot.Id, nextReservation?.UserId, nextReservation?.ReservationTime);
 
                     freeSlot.Status = ParkingSlotStatus.Occupied;

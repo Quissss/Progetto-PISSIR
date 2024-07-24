@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace Progetto.App.Core.ModelConfigurations;
 
 /// <summary>
-/// Configuration for the ChargeHistory entity (table) in the database (EF Core)
+/// Configuration for the CurrentlyCharging entity (table) in the database (EF Core)
 /// </summary>
 public class CurrentlyChargingConfiguration : IEntityTypeConfiguration<CurrentlyCharging>
 {

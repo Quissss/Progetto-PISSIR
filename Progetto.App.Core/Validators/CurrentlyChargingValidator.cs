@@ -21,6 +21,7 @@ public class CurrentlyCharingValidator : AbstractValidator<CurrentlyCharging>
         RuleFor(cc => cc.StartChargePercentage).NotEmpty().Must(c => c >= 0 && c <= 100);
         RuleFor(cc => cc.CurrentChargePercentage).NotEmpty().Must(c => c >= 0 && c <= 100);
         RuleFor(cc => cc.TargetChargePercentage).NotEmpty().Must(c => c >= 0 && c <= 100);
+        RuleFor(cc => cc.ImmediateRequestId).NotEmpty();
         //RuleFor(cc => cc.UserId).NotEmpty();
         //RuleFor(cc => cc.CarPlate).NotEmpty();
         //RuleFor(cc => cc.ParkingSlotId).NotEmpty();
