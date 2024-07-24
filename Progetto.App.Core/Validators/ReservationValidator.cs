@@ -26,5 +26,9 @@ public class ReservationValidator : AbstractValidator<Reservation>
             .NotEmpty().WithMessage("User is required");
         RuleFor(r => r.ParkingId)
             .NotEmpty().WithMessage("Parking is required");
+        RuleFor(r => r.CarPlate)
+            .NotEmpty().WithMessage("Car plate is required");
+        RuleFor(r => r.CarIsInside)
+            .NotEmpty().WithMessage("Car is inside flag is required");
     }
 }
