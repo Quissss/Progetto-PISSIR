@@ -1,0 +1,70 @@
+﻿@page
+@model Progetto.App.Pages.ServicesModel
+@{
+    ViewData["Title"] = "Services";
+}
+<h2><i class="fa-solid fa-clipboard-check"></i> <strong>@ViewData["Title"]</strong></h2>
+
+<div class="container-fluid">
+    <div class="row">
+        <partial name="_DashboardPartial" />
+
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+
+            <!-- inserisci qua la pagina-->
+            @if (Model.Cars.Any())
+            {
+                <div class="row">
+                    @foreach (var car in Model.Cars)
+                    {
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card mt-4 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fa-solid fa-car"></i>
+                                        Auto: <span>@car.LicencePlate</span>
+                                    </h5>
+                                    <h6 class="card-subtitle mb-2 text-muted">
+                                        <i class="fa-solid fa-car-side"></i>
+                                        Marca: <span>@car.Brand</span>, Modello: <span>@car.Model</span>
+                                    </h6>
+                                    <p class="card-text">
+                                        <span class="badge bg-info text-dark">@car.Status</span>
+                                    </p>
+                                    <div class="d-flex justify-content-around mt-3">
+                                        <button class="btn btn-primary" onclick="recharge('@car.LicencePlate')">
+                                            <i class="fa-solid fa-battery-full"></i> Ricarica
+                                        </button>
+                                        <button class="btn btn-secondary" onclick="park('@car.LicencePlate')">
+                                            <i class="fa-solid fa-parking"></i> Sosta
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info mt-4" role="alert">
+                    Nessuna auto in attesa trovata.
+                </div>
+            }
+
+            <!-- Line chart -->
+            <canvas class="my-4 w-100" id="myChart" width="900" height="380"></canvas>
+        </main>
+    </div>
+</div>
+
+<script>
+    function recharge(licencePlate) {
+        alert('Ricarica button clicked for car with Licence Plate: ' + licencePlate);
+    }
+
+    function park(licencePlate) {
+        alert('Sosta button clicked for car with Licence Plate: ' + licencePlate);
+    }
+</script>

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
 
 namespace Progetto.App.Controllers
@@ -29,13 +30,7 @@ namespace Progetto.App.Controllers
             // Simulazione dell'elaborazione della targa
             string responseMessage = $"Targa ricevuta: {request.LicensePlate}, ParkingId ricevuto: {request.ParkingId}";
 
-            var car = await _carRepository.GetCarByLicencePlate(request.LicensePlate);
-
-
-            if (request.LicensePlate != car.LicencePlate)
-                return BadRequest();
-
-            
+            var car = await _carRepository.UpdateCarStatus(request.LicensePlate, CarStatus.Waiting);
 
             return Ok(responseMessage);
         }

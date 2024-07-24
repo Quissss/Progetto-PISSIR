@@ -58,6 +58,7 @@ $(function () {
                     { Id: 1, Name: "In Charge" },
                     { Id: 2, Name: "Waiting" },
                     { Id: 3, Name: "Charged" },
+                    { Id: 4, Name: "Parked" },
                 ], valueField: "Id", textField: "Name"
             },
             

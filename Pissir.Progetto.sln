@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Progetto.App.Core", "Proget
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PayPal.REST", "PayPal.REST\PayPal.REST.csproj", "{383EC78B-262F-44AC-83E1-62F4A9C3B0A6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CamSimulator", "CamSimulator\CamSimulator.csproj", "{CAEA18D4-1E2B-4BF3-A36D-7530DEA994BE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CamSimulator", "CamSimulator\CamSimulator.csproj", "{CAEA18D4-1E2B-4BF3-A36D-7530DEA994BE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

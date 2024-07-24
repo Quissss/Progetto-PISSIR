@@ -32,4 +32,13 @@ public class CarRepository : GenericRepository<Car>
     {
         return await _context.Cars.Where(c => c.OwnerId == ownerId).ToListAsync();
     }
+
+    public async Task<Car> UpdateCarStatus(string LicensePlate, CarStatus status)
+    {
+        var car =await _context.Cars.Where(c => c.LicencePlate == LicensePlate).FirstAsync();
+        car.Status = status;
+        await _context.SaveChangesAsync();
+        return car;
+    }
+
 }
