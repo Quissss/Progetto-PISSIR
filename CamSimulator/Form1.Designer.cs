@@ -5,6 +5,7 @@
         private System.ComponentModel.IContainer components = null;
         private System.Windows.Forms.TextBox txtLicensePlate;
         private System.Windows.Forms.Button btnSend;
+        private System.Windows.Forms.ComboBox cmbParkings;
 
         protected override void Dispose(bool disposing)
         {
@@ -17,42 +18,52 @@
 
         private void InitializeComponent()
         {
-            txtLicensePlate = new TextBox();
-            btnSend = new Button();
-            SuspendLayout();
+            this.txtLicensePlate = new System.Windows.Forms.TextBox();
+            this.btnSend = new System.Windows.Forms.Button();
+            this.cmbParkings = new System.Windows.Forms.ComboBox();
+            this.SuspendLayout();
             // 
             // txtLicensePlate
             // 
-            txtLicensePlate.Location = new Point(15, 15);
-            txtLicensePlate.Margin = new Padding(4, 3, 4, 3);
-            txtLicensePlate.Name = "txtLicensePlate";
-            txtLicensePlate.Size = new Size(302, 23);
-            txtLicensePlate.TabIndex = 0;
-            txtLicensePlate.TextChanged += txtLicensePlate_TextChanged;
+            this.txtLicensePlate.Location = new System.Drawing.Point(15, 15);
+            this.txtLicensePlate.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.txtLicensePlate.Name = "txtLicensePlate";
+            this.txtLicensePlate.Size = new System.Drawing.Size(302, 23);
+            this.txtLicensePlate.TabIndex = 0;
+            this.txtLicensePlate.TextChanged += new System.EventHandler(this.txtLicensePlate_TextChanged);
             // 
             // btnSend
             // 
-            btnSend.Location = new Point(15, 46);
-            btnSend.Margin = new Padding(4, 3, 4, 3);
-            btnSend.Name = "btnSend";
-            btnSend.Size = new Size(302, 27);
-            btnSend.TabIndex = 1;
-            btnSend.Text = "Invia";
-            btnSend.UseVisualStyleBackColor = true;
-            btnSend.Click += btnSend_Click;
+            this.btnSend.Location = new System.Drawing.Point(15, 76);
+            this.btnSend.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnSend.Name = "btnSend";
+            this.btnSend.Size = new System.Drawing.Size(302, 27);
+            this.btnSend.TabIndex = 1;
+            this.btnSend.Text = "Invia";
+            this.btnSend.UseVisualStyleBackColor = true;
+            this.btnSend.Click += new System.EventHandler(this.btnSend_Click);
+            // 
+            // cmbParkings
+            // 
+            this.cmbParkings.Location = new System.Drawing.Point(15, 46);
+            this.cmbParkings.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.cmbParkings.Name = "cmbParkings";
+            this.cmbParkings.Size = new System.Drawing.Size(302, 23);
+            this.cmbParkings.TabIndex = 2;
             // 
             // Form1
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
-            AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(331, 93);
-            Controls.Add(btnSend);
-            Controls.Add(txtLicensePlate);
-            Margin = new Padding(4, 3, 4, 3);
-            Name = "Form1";
-            Text = "Simulazione Telecamera Parcheggio";
-            ResumeLayout(false);
-            PerformLayout();
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.ClientSize = new System.Drawing.Size(331, 113);
+            this.Controls.Add(this.cmbParkings);
+            this.Controls.Add(this.btnSend);
+            this.Controls.Add(this.txtLicensePlate);
+            this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.Name = "Form1";
+            this.Text = "Simulazione Telecamera Parcheggio";
+            this.ResumeLayout(false);
+            this.PerformLayout();
         }
     }
 }

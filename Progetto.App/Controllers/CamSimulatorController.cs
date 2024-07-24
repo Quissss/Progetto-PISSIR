@@ -19,7 +19,7 @@ namespace Progetto.App.Controllers
         }
 
         [HttpPost("arrival")]
-        public async Task<IActionResult> Entrata([FromBody] PlateRequest request)
+        public async Task<IActionResult> Entrata([FromBody] Request request)
         {
             if (request == null || string.IsNullOrWhiteSpace(request.LicensePlate))
             {
@@ -27,7 +27,7 @@ namespace Progetto.App.Controllers
             }
 
             // Simulazione dell'elaborazione della targa
-            string responseMessage = $"Targa ricevuta: {request.LicensePlate}";
+            string responseMessage = $"Targa ricevuta: {request.LicensePlate}, ParkingId ricevuto: {request.ParkingId}";
 
             var car = await _carRepository.GetCarByLicencePlate(request.LicensePlate);
 
@@ -41,8 +41,9 @@ namespace Progetto.App.Controllers
         }
     }
 
-    public class PlateRequest
+    public class Request
     {
         public string LicensePlate { get; set; }
+        public int ParkingId {  get; set; } 
     }
 }
