@@ -12,18 +12,23 @@ public class PaymentsModel : PageModel
 {
     private readonly CurrentlyChargingRepository _currentlyChargingRepository;
     private readonly PayPalClient _payPalClient;
+    private readonly StopoverRepository _stopoverRepository;
 
-    public PaymentsModel(CurrentlyChargingRepository currentlyChargingRepository)
+    public PaymentsModel(CurrentlyChargingRepository currentlyChargingRepository, StopoverRepository stopoverRepository)
     {
         _currentlyChargingRepository = currentlyChargingRepository;
         _payPalClient = new PayPalClient("tuoClientId", "tuoClientSecret", "https://api.sandbox.paypal.com"); // Configura con le tue credenziali PayPal
+        _stopoverRepository = stopoverRepository;
     }
 
     public List<CurrentlyCharging> CurrentCharges { get; private set; }
+    public List<Stopover> StopCharges { get; private set; }
 
     public async Task OnGetAsync()
     {
         CurrentCharges = await _currentlyChargingRepository.GetAllAsync();
+        StopCharges = await _stopoverRepository.GetAllAsync();
+
     }
 
     public async Task<IActionResult> OnPostPayNowAsync(string carPlate)

@@ -46,6 +46,39 @@
                         </tbody>
                     </table>
                 </div>
+
+                <div class="card-body">
+                    <table class="table table-striped table-hover table-bordered">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Car Plate</th>
+                                <th>Parking Slot</th>
+                                <th>Start Charging Time</th>
+                                <th>End Charging Time</th>
+                                <th>Total Cost (€)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var charge in Model.StopCharges)
+                            {
+                                <tr>
+                                    <td>@charge.CarPlate</td>
+                                    <td>@charge.ParkingSlotId</td>
+                                    <td>@charge.StartStopoverTime?.ToString("g")</td>
+                                    <td>@charge.EndStopoverTime?.ToString("g")</td>
+                                    <td>@charge.TotalCost</td>
+                                    <td>
+                                        @if (charge.ToPay)
+                                        {
+                                            <button class="btn btn-success" onclick="handlePayment('@charge.CarPlate')">Pay Now</button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <canvas class="my-4 w-100" id="myChart" width="900" height="380"></canvas>
         </main>
