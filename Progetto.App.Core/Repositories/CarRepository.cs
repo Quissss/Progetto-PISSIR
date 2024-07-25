@@ -35,7 +35,7 @@ public class CarRepository : GenericRepository<Car>
 
     public async Task<Car> UpdateCarStatus(string LicencePlate, CarStatus status)
     {
-        var car =await _context.Cars.Where(c => c.LicencePlate == LicencePlate).FirstAsync();
+        var car = await _context.Cars.Where(c => c.LicencePlate == LicencePlate).FirstAsync();
         car.Status = status;
         await _context.SaveChangesAsync();
         return car;

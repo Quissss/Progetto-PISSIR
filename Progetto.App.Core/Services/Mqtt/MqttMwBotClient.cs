@@ -28,13 +28,13 @@ public class MqttMwBotClient
     private Timer _timer;
     private Timer _reconnectTimer;
     private Timer _batteryMonitorTimer;
-    public MwBot? MwBot { get; private set; }
-    public ImmediateRequest? HandlingRequest { get; private set; }
     private CancellationTokenSource _cancellationTokenSource;
     private CancellationToken _cancellationToken;
     private const int _chargeDelay = 1000;
     private const int _rechargeDelay = 1000;
     // TODO: add mqttMessage as property here and handle it
+    public MwBot? MwBot { get; private set; }
+    public ImmediateRequest? HandlingRequest { get; private set; }
 
     public MqttMwBotClient(ILogger<MqttMwBotClient> logger, IServiceScopeFactory serviceScopeFactory, ChargeManager chargeManager)
     {
@@ -100,6 +100,7 @@ public class MqttMwBotClient
             return;
         }
 
+        // TODO: FIX if bot battery starts 5% it stays still
         if (MwBot.BatteryPercentage <= _rechargeThreshold) // Threshold for low battery
         {
             _logger.LogInformation("MwBot {id} battery is low: {batteryPercentage}%", MwBot.Id, MwBot.BatteryPercentage);
@@ -422,7 +423,7 @@ public class MqttMwBotClient
                 return;
             }
 
-            // TODO: resume recharge when status is StandBy (1) if there is one
+            // TODO: FIX resume recharge when status is StandBy (1) if there is one
             if (HandlingRequest is not null)
             {
                 _logger.LogInformation("MwBot {id}: Resuming request {request}", MwBot.Id, HandlingRequest);
@@ -548,7 +549,7 @@ public class MqttMwBotClient
         var currentlyCharging = mwBotMessage.CurrentlyCharging;
         mwBotMessage.MessageType = MessageType.UpdateCharging;
 
-        if (currentlyCharging.StartChargePercentage is null)
+        if (currentlyCharging.StartChargePercentage == 0 && currentlyCharging.CurrentChargePercentage == 0)
         {
             // Set random start charge percentage
             Random random = new Random();
@@ -638,10 +639,10 @@ public class MqttMwBotClient
             UserId = HandlingRequest.UserId,
             ParkingId = MwBot.ParkingId,
             ImmediateRequestId = HandlingRequest.Id,
-            Parking = MwBot.Parking
+            Parking = MwBot.Parking,
+            CarPlate = HandlingRequest.CarPlate,
         };
 
-        // TODO: delegate updating car status to "Charged" to broker
         await PublishClientMessageAsync(mwBotMessage, _cancellationTokenSource.Token);
         HandlingRequest = null;
         if (!_timer.Enabled) _timer.Start();
@@ -691,6 +692,8 @@ public class MqttMwBotClient
                     break;
                 case MessageType.ResumeCharging:
                     _logger.LogInformation("MwBot {id}: Received MessageType.ResumeCharging", MwBot.Id);
+
+                    var previousMwBotStatus = MwBot.Status;
                     if (brokerMessage.ImmediateRequest is null)
                     {
                         await ChangeBotStatus(MwBotStatus.StandBy);
@@ -698,6 +701,10 @@ public class MqttMwBotClient
                     }
 
                     HandlingRequest = brokerMessage.ImmediateRequest;
+                    if (previousMwBotStatus == MwBotStatus.Recharging || previousMwBotStatus == MwBotStatus.MovingToDock)
+                    {
+                        await SimulateMovement(MwBotStatus.MovingToSlot, cancellationToken);
+                    }
                     await SimulateChargingProcess(brokerMessage, cancellationToken);
                     break;
                 case MessageType.StartRecharge:

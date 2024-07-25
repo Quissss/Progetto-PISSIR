@@ -134,7 +134,7 @@ public class CamSimulatorController : ControllerBase
         var freeSlot = await _parkingSlotRepository.GetFreeParkingSlot(request.ParkingId);
         if (freeSlot is null)
         {
-            return BadRequest("Nessun posto libero disponibile");
+            return Ok("Nessun posto libero disponibile, riprova più tardi");
         }
         freeSlot.Status = ParkingSlotStatus.Occupied;
         await _parkingSlotRepository.UpdateAsync(freeSlot);
@@ -153,16 +153,16 @@ public class CamSimulatorController : ControllerBase
             UserId = userId,
             CarPlate = request.LicencePlate,
             ParkingSlotId = freeSlot?.Id,
-            //ParkingSlot = freeSlot,
             TotalCost = 0,
             ToPay = false,
         };
         await _stopoverRepository.AddAsync(stopover);
+        stopover.ParkingSlot = freeSlot;
 
         // TODO: implement update elsewhere
         await _carRepository.UpdateCarStatus(request.LicencePlate, CarStatus.Parked);
 
-        return Ok(stopover);
+        return Ok("Selezionata sosta. Riservato posto numero: " + stopover.ParkingSlot.Number);
     }
 
     [HttpPost("recharge")]
@@ -181,21 +181,18 @@ public class CamSimulatorController : ControllerBase
         var _immediateRequestRepository = scope.ServiceProvider.GetRequiredService<ImmediateRequestRepository>();
 
         var reservations = await _reservationRepository.UpdateCarIsInside(request.LicencePlate, request.ParkingId, true);
+        await _chargeManager.UpdateReservationsCarIsInside(request.LicencePlate, request.ParkingId, true);
         if (!reservations.Any())
         {
             _logger.LogDebug("No reservation found for car {car}, proceding to create ImmediateRequest", request.LicencePlate);
-
-            var freeSlot = await _parkingSlotRepository.GetFreeParkingSlot(request.ParkingId);
 
             var immediateRequest = new ImmediateRequest
             {
                 RequestDate = DateTime.Now,
                 RequestedChargeLevel = request.ChargeLevel ?? 100,
                 CarPlate = request.LicencePlate,
-                ParkingSlotId = freeSlot.Id,
-                ParkingSlot = freeSlot,
                 UserId = userId,
-                FromReservation = false
+                FromReservation = false,
             };
             await _immediateRequestRepository.AddAsync(immediateRequest);
             var chargeIR = await _chargeManager.AddImmediateRequest(immediateRequest, request.ParkingId);

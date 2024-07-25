@@ -198,7 +198,7 @@ public class MqttBroker : IHostedService, IDisposable
         var currentlyCharging = await currentlyChargingRepository.GetActiveByMwBot(mwBotMessage.Id);
         if (currentlyCharging is not null)
         {
-            immediateRequest = await immediateRequestRepository.GetByIdAsync(currentlyCharging.ImmediateRequestId);
+            immediateRequest = await immediateRequestRepository.GetByIdAsync(currentlyCharging.ImmediateRequestId.Value);
             if (immediateRequest is null)
             {
                 _logger.LogWarning("MqttBroker: Immediate request not found");
@@ -225,8 +225,12 @@ public class MqttBroker : IHostedService, IDisposable
 
         using var scope = _serviceScopeFactory.CreateScope();
         var currentlyChargingRepository = scope.ServiceProvider.GetRequiredService<CurrentlyChargingRepository>();
+        var immediateRequestRepository = scope.ServiceProvider.GetRequiredService<ImmediateRequestRepository>();
         var parkingSlotRepository = scope.ServiceProvider.GetRequiredService<ParkingSlotRepository>();
         var parkingRepository = scope.ServiceProvider.GetRequiredService<ParkingRepository>();
+        var carRepository = scope.ServiceProvider.GetRequiredService<CarRepository>();
+
+        await immediateRequestRepository.DeleteAsync(ir => ir.Id == mwBotMessage.ImmediateRequestId);
 
         var parking = await parkingRepository.GetByIdAsync(mwBotMessage.ParkingId.Value);
         if (parking is null)
@@ -235,10 +239,12 @@ public class MqttBroker : IHostedService, IDisposable
             return;
         }
 
+        mwBotMessage.CurrentlyCharging.ImmediateRequestId = null;
         mwBotMessage.CurrentlyCharging.EndChargingTime = DateTime.Now;
         mwBotMessage.CurrentlyCharging.ToPay = true;
         mwBotMessage.Parking = parking;
         await currentlyChargingRepository.UpdateAsync(mwBotMessage.CurrentlyCharging);
+        await carRepository.UpdateCarStatus(mwBotMessage.CarPlate, CarStatus.Charged);
 
         var parkingSlot = await parkingSlotRepository.GetByIdAsync(mwBotMessage.CurrentlyCharging.ParkingSlotId.Value);
         parkingSlot.Status = ParkingSlotStatus.Free;
@@ -252,14 +258,13 @@ public class MqttBroker : IHostedService, IDisposable
         _logger.LogDebug("MqttBroker: MwBot {id} is charging car", mwBotMessage.Id);
 
         using var scope = _serviceScopeFactory.CreateScope();
+        var carRepository = scope.ServiceProvider.GetRequiredService<CarRepository>();
         var parkingRepository = scope.ServiceProvider.GetRequiredService<ParkingRepository>();
         var currentlyChargingRepository = scope.ServiceProvider.GetRequiredService<CurrentlyChargingRepository>();
 
-        // Controlla se esiste già un record CurrentlyCharging attivo per questa richiesta immediata
         var currentlyCharging = await currentlyChargingRepository.GetActiveByImmediateRequest(mwBotMessage.ImmediateRequestId.Value);
-        if (currentlyCharging == null)
+        if (currentlyCharging == null) // record doesn't exist, create new
         {
-            // Se non esiste, crea un nuovo record
             currentlyCharging = new CurrentlyCharging
             {
                 TargetChargePercentage = mwBotMessage.TargetBatteryPercentage,
@@ -273,15 +278,15 @@ public class MqttBroker : IHostedService, IDisposable
             };
             await currentlyChargingRepository.AddAsync(currentlyCharging);
         }
-        else
+        else // record exists, update it
         {
-            // Se esiste, aggiorna solo i campi necessari
             currentlyCharging.CurrentChargePercentage = mwBotMessage.BatteryPercentage;
             currentlyCharging.TargetChargePercentage = mwBotMessage.TargetBatteryPercentage;
             await currentlyChargingRepository.UpdateAsync(currentlyCharging);
         }
 
-        // Prepara e invia il messaggio di conferma al MwBot
+        await carRepository.UpdateCarStatus(mwBotMessage.CarPlate, CarStatus.InCharge);
+
         var confirmMessage = mwBotMessage;
         confirmMessage.CurrentlyCharging = currentlyCharging;
 

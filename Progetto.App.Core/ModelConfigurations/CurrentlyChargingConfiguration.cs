@@ -24,7 +24,8 @@ public class CurrentlyChargingConfiguration : IEntityTypeConfiguration<Currently
         builder.HasOne(cc => cc.MwBot).WithMany().HasForeignKey(cc => cc.MwBotId);
         builder.HasOne(cc => cc.User).WithMany().HasForeignKey(cc => cc.UserId);
         builder.HasOne(cc => cc.ParkingSlot).WithMany().HasForeignKey(cc => cc.ParkingSlotId);
-        builder.HasOne(cc => cc.ImmediateRequest).WithMany().HasForeignKey(cc => cc.ImmediateRequestId);
+        builder.HasOne(cc => cc.ImmediateRequest).WithMany().HasForeignKey(cc => cc.ImmediateRequestId).OnDelete(DeleteBehavior.SetNull);
+        builder.Property(cc => cc.ImmediateRequestId).IsRequired(false);
         builder.Property(cc => cc.StartChargePercentage).HasColumnType("decimal(5, 2)");
         builder.Property(cc => cc.CurrentChargePercentage).HasColumnType("decimal(5, 2)");
         builder.Property(cc => cc.TargetChargePercentage).HasColumnType("decimal(5, 2)");

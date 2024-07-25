@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Progetto.App.Core.Data;
 
@@ -10,9 +11,11 @@ using Progetto.App.Core.Data;
 namespace Progetto.App.Core.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240725212133_AddOnDelete_ImmReqOnCurrCharg")]
+    partial class AddOnDelete_ImmReqOnCurrCharg
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.6");
@@ -268,7 +271,7 @@ namespace Progetto.App.Core.Migrations
                     b.Property<DateTime>("EndChargingTime")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime")
-                        .HasDefaultValue(new DateTime(2024, 7, 26, 1, 9, 47, 773, DateTimeKind.Local).AddTicks(1750));
+                        .HasDefaultValue(new DateTime(2024, 7, 25, 23, 21, 33, 187, DateTimeKind.Local).AddTicks(6858));
 
                     b.Property<decimal>("EnergyConsumed")
                         .ValueGeneratedOnAdd()
@@ -287,7 +290,7 @@ namespace Progetto.App.Core.Migrations
                     b.Property<DateTime>("StartChargingTime")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime")
-                        .HasDefaultValue(new DateTime(2024, 7, 26, 1, 9, 47, 773, DateTimeKind.Local).AddTicks(1150));
+                        .HasDefaultValue(new DateTime(2024, 7, 25, 23, 21, 33, 187, DateTimeKind.Local).AddTicks(6341));
 
                     b.Property<decimal?>("TargetChargePercentage")
                         .HasColumnType("decimal(5, 2)");
@@ -349,7 +352,7 @@ namespace Progetto.App.Core.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 7, 26, 1, 9, 47, 774, DateTimeKind.Local).AddTicks(2438));
+                        .HasDefaultValue(new DateTime(2024, 7, 25, 23, 21, 33, 188, DateTimeKind.Local).AddTicks(6247));
 
                     b.Property<decimal?>("TargetChargePercentage")
                         .HasColumnType("decimal(5, 2)");
@@ -572,7 +575,7 @@ namespace Progetto.App.Core.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 7, 26, 1, 9, 47, 777, DateTimeKind.Local).AddTicks(7246));
+                        .HasDefaultValue(new DateTime(2024, 7, 25, 23, 21, 33, 192, DateTimeKind.Local).AddTicks(137));
 
                     b.Property<bool>("ToPay")
                         .ValueGeneratedOnAdd()
@@ -594,40 +597,6 @@ namespace Progetto.App.Core.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Stopover", (string)null);
-                });
-
-            modelBuilder.Entity("Progetto.App.Core.Models.StopoverHistory", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("CarPlate")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("EndStopoverTime")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("StartStopoverTime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 7, 26, 1, 9, 47, 780, DateTimeKind.Local).AddTicks(5975));
-
-                    b.Property<decimal>("TotalCost")
-                        .HasColumnType("decimal(5, 2)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CarPlate");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("StopoverHistory", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -848,25 +817,6 @@ namespace Progetto.App.Core.Migrations
                     b.Navigation("Car");
 
                     b.Navigation("ParkingSlot");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Progetto.App.Core.Models.StopoverHistory", b =>
-                {
-                    b.HasOne("Progetto.App.Core.Models.Car", "Car")
-                        .WithMany()
-                        .HasForeignKey("CarPlate")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Car");
 
                     b.Navigation("User");
                 });

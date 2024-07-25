@@ -29,6 +29,6 @@ public class CurrentlyCharging
     public decimal EnergyConsumed { get; set; }
     public decimal TotalCost { get; set; }
     public bool ToPay { get; set; }
-    public int ImmediateRequestId { get; set; }
+    public int? ImmediateRequestId { get; set; }
     public ImmediateRequest? ImmediateRequest { get; set; }
 }

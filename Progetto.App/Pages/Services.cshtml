@@ -62,7 +62,15 @@
 @section Scripts {
     <script>
         function recharge(licencePlate, parkingId) {
-            alert('Ricarica button clicked for car with Licence Plate: ' + licencePlate);
+            var rechargePercentage = prompt('Inserisci la percentuale di ricarica desiderata (0-100): ');
+
+            rechargePercentage = parseFloat(rechargePercentage);
+            if (isNaN(rechargePercentage) || rechargePercentage < 0 || rechargePercentage > 100) {
+                alert('Valore non valido. Inserisci un numero tra 0 e 100.');
+                return;
+            }
+
+            alert('Ricarica richiesta per la macchina con targa: ' + licencePlate + ' con percentuale di ricarica: ' + rechargePercentage + '%');
 
             fetch(`api/CamSimulator/recharge`, {
                 method: 'POST',
@@ -70,14 +78,15 @@
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ 
-                    licencePlate: licencePlate, 
-                    parkingId: parkingId 
+                    licencePlate: licencePlate,
+                    parkingId: parkingId,
+                    chargeLevel: rechargePercentage
                 }),
             })
                 .then(response => response.json())
                 .then(data => {
-                    console.log('Success:', data);
-                    alert('Ricarica richiesta per l\'auto con targa: ' + licencePlate);
+                    console.log('Success:', data)
+                    alert("La tua ricarica verrà presa in carico");
                 })
                 .catch((error) => {
                     console.error('Error:', error);
@@ -86,7 +95,7 @@
         }
 
         function park(licencePlate, parkingId) {
-            alert('Sosta button clicked for car with Licence Plate: ' + licencePlate);
+            alert('Sosta richiesta per macchina con targa: ' + licencePlate);
 
             fetch(`api/CamSimulator/park`, {
                 method: 'POST',
@@ -100,8 +109,7 @@
             })
                 .then(response => response.json())
                 .then(data => {
-                    console.log('Success:', data);
-                    alert('Sosta richiesta per l\'auto con targa: ' + licencePlate);
+                    alert(data);
                 })
                 .catch((error) => {
                     console.error('Error:', error);
