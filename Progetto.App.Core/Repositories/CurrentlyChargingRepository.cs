@@ -84,4 +84,12 @@ public class CurrentlyChargingRepository : GenericRepository<CurrentlyCharging>
             .FirstOrDefaultAsync();
     }
 
+    public async Task<List<CurrentlyCharging>> GetPaymentsWithinDateRange(DateTime startDate, DateTime endDate)
+    {
+        return await _context.CurrentlyCharging
+            .Where(c => c.StartChargingTime >= startDate && c.EndChargingTime <= endDate)
+            .OrderBy(c => c.StartChargingTime)
+            .ToListAsync();
+    }
+
 }

@@ -1,0 +1,83 @@
+﻿@page
+@model Progetto.App.Pages.DashPaymentModel
+@{
+    ViewData["Title"] = "Payment Report";
+}
+
+<h2><i class="fas fa-money-check-alt"></i> <strong>@ViewData["Title"]</strong></h2>
+
+<div class="container-fluid">
+    <div class="row">
+        <partial name="_DashboardPartial" />
+
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <!-- Filter Form -->
+            <div class="card mb-4 shadow-lg border-info">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0"><strong>Filter Payments</strong></h3>
+                    <i class="fas fa-filter"></i>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="startDate">Start Date</label>
+                                <input type="datetime-local" id="startDate" asp-for="StartDate" class="form-control" />
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="endDate">End Date</label>
+                                <input type="datetime-local" id="endDate" asp-for="EndDate" class="form-control" />
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-3"><i class="fas fa-search"></i> Filter</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Payment Report Table -->
+            <div class="card shadow-lg border-success">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0"><strong>Payment Report</strong></h3>
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+                <div class="card-body">
+                    @if (Model.Payments.Any())
+                    {
+                        <table class="table table-hover">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th scope="col">User ID</th>
+                                    <th scope="col">Car Plate</th>
+                                    <th scope="col">Total Cost</th>
+                                    <th scope="col">Start Charging Time</th>
+                                    <th scope="col">End Charging Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var payment in Model.Payments)
+                                {
+                                    <tr>
+                                        <td>@payment.UserId</td>
+                                        <td>@payment.CarPlate</td>
+                                        <td>@payment.TotalCost.ToString("C")</td>
+                                        <td>@payment.StartChargingTime?.ToString("g")</td>
+                                        <td>@payment.EndChargingTime?.ToString("g")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning" role="alert">
+                            <i class="fas fa-exclamation-circle"></i> No payments found for the selected date range.
+                        </div>
+                    }
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+
