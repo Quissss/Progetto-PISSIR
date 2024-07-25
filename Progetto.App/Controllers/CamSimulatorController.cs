@@ -181,6 +181,7 @@ public class CamSimulatorController : ControllerBase
         var _immediateRequestRepository = scope.ServiceProvider.GetRequiredService<ImmediateRequestRepository>();
 
         var reservations = await _reservationRepository.UpdateCarIsInside(request.LicencePlate, request.ParkingId, true);
+        await _chargeManager.UpdateReservationsCarIsInside(request.LicencePlate, request.ParkingId, true);
         if (!reservations.Any())
         {
             _logger.LogDebug("No reservation found for car {car}, proceding to create ImmediateRequest", request.LicencePlate);

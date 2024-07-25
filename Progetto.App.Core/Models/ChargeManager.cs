@@ -29,6 +29,17 @@ namespace Progetto.App.Core.Models
             GetImmediateRequests().GetAwaiter().GetResult();
         }
 
+        public async Task UpdateReservationsCarIsInside(string licencePlate, int parkingId, bool carInside)
+        {
+            _reservations?.ForEach(r => 
+            {
+                if (r.CarPlate == licencePlate && r.ParkingId == parkingId)
+                {
+                    r.CarIsInside = carInside;
+                }
+            });
+        }
+
         private async Task GetReservations()
         {
             _logger.BeginScope("Retrieving reservations");
