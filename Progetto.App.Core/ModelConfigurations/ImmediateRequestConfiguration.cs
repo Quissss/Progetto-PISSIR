@@ -12,7 +12,7 @@ public class ImmediateRequestConfiguration
         builder.HasKey(r => r.Id);
         builder.Property(r => r.RequestDate).IsRequired();
         builder.Property(r => r.RequestedChargeLevel).HasDefaultValue(100).IsRequired();
-        builder.HasOne(r => r.ParkingSlot).WithMany().HasForeignKey(r => r.ParkingSlotId);
+        builder.HasOne(r => r.ParkingSlot).WithMany().HasForeignKey(r => r.ParkingSlotId).IsRequired(false);
         builder.HasOne(r => r.Car).WithMany().HasForeignKey(r => r.CarPlate);
         builder.HasOne(r => r.User).WithMany().HasForeignKey(r => r.UserId);
         builder.Property(r => r.FromReservation).HasDefaultValue(false).IsRequired();

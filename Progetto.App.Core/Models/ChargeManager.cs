@@ -90,7 +90,7 @@ namespace Progetto.App.Core.Models
                 var _parkingSlotRepository = provider.GetRequiredService<ParkingSlotRepository>();
 
                 var allFreeSlots = await _parkingSlotRepository.GetFreeParkingSlots(parkingId);
-                if (allFreeSlots != null && allFreeSlots.Any())
+                if (allFreeSlots.Any())
                 {
                     var freeSlot = allFreeSlots.FirstOrDefault();
                     if (freeSlot != null)
@@ -99,7 +99,10 @@ namespace Progetto.App.Core.Models
                         immediateRequest.ParkingSlotId = freeSlot.Id;
 
                         _immediateRequests?.Enqueue(immediateRequest);
-                        await _immediateRequestRepository.AddAsync(immediateRequest);
+                        await _immediateRequestRepository.UpdateAsync(immediateRequest);
+
+                        freeSlot.Status = ParkingSlotStatus.Occupied;
+                        await _parkingSlotRepository.UpdateAsync(freeSlot);
 
                         return immediateRequest;
                     }
@@ -136,7 +139,7 @@ namespace Progetto.App.Core.Models
         public async Task<ImmediateRequest?> ServeNext(MwBot mwBot)
         {
             ImmediateRequest? immediateRequest = null;
-            // TODO: update car status (charging)
+
             // Serve reservations
             try
             {
@@ -168,7 +171,7 @@ namespace Progetto.App.Core.Models
                             CarPlate = nextReservation.CarPlate,
                             RequestedChargeLevel = nextReservation.RequestedChargeLevel,
                             ParkingSlotId = freeSlot.Id,
-                            ParkingSlot = _parkingSlotRepository.GetByIdAsync(freeSlot.Id).GetAwaiter().GetResult(),
+                            ParkingSlot = await _parkingSlotRepository.GetByIdAsync(freeSlot.Id),
                             UserId = nextReservation.UserId,
                             FromReservation = true
                         }
