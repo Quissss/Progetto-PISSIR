@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Progetto.App.Core.Migrations
 {
     /// <inheritdoc />
-    public partial class CarIsInsideFlagOnReservation : Migration
+    public partial class AddToTableParkingSlots : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -16,95 +16,84 @@ namespace Progetto.App.Core.Migrations
                 table: "Stopover",
                 type: "TEXT",
                 nullable: false,
-                defaultValue: new DateTime(2024, 7, 24, 13, 25, 18, 882, DateTimeKind.Local).AddTicks(8532),
+                defaultValue: new DateTime(2024, 7, 25, 2, 29, 1, 224, DateTimeKind.Local).AddTicks(7442),
                 oldClrType: typeof(DateTime),
                 oldType: "TEXT",
-                oldDefaultValue: new DateTime(2024, 7, 24, 13, 18, 49, 86, DateTimeKind.Local).AddTicks(4603));
-
-            migrationBuilder.AddColumn<bool>(
-                name: "CarIsInside",
-                table: "Reservations",
-                type: "INTEGER",
-                nullable: false,
-                defaultValue: false);
+                oldDefaultValue: new DateTime(2024, 7, 25, 2, 10, 53, 25, DateTimeKind.Local).AddTicks(8635));
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "StartChargingTime",
                 table: "CurrentlyCharging",
                 type: "TEXT",
                 nullable: false,
-                defaultValue: new DateTime(2024, 7, 24, 13, 25, 18, 831, DateTimeKind.Local).AddTicks(7654),
+                defaultValue: new DateTime(2024, 7, 25, 2, 29, 1, 221, DateTimeKind.Local).AddTicks(2760),
                 oldClrType: typeof(DateTime),
                 oldType: "TEXT",
-                oldDefaultValue: new DateTime(2024, 7, 24, 13, 18, 49, 52, DateTimeKind.Local).AddTicks(8783));
+                oldDefaultValue: new DateTime(2024, 7, 25, 2, 10, 53, 22, DateTimeKind.Local).AddTicks(3719));
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "StartChargingTime",
                 table: "ChargeHistory",
                 type: "datetime",
                 nullable: false,
-                defaultValue: new DateTime(2024, 7, 24, 13, 25, 18, 828, DateTimeKind.Local).AddTicks(2092),
+                defaultValue: new DateTime(2024, 7, 25, 2, 29, 1, 220, DateTimeKind.Local).AddTicks(2688),
                 oldClrType: typeof(DateTime),
                 oldType: "datetime",
-                oldDefaultValue: new DateTime(2024, 7, 24, 13, 18, 49, 30, DateTimeKind.Local).AddTicks(9003));
+                oldDefaultValue: new DateTime(2024, 7, 25, 2, 10, 53, 21, DateTimeKind.Local).AddTicks(2909));
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "EndChargingTime",
                 table: "ChargeHistory",
                 type: "datetime",
                 nullable: false,
-                defaultValue: new DateTime(2024, 7, 24, 13, 25, 18, 828, DateTimeKind.Local).AddTicks(3811),
+                defaultValue: new DateTime(2024, 7, 25, 2, 29, 1, 220, DateTimeKind.Local).AddTicks(3195),
                 oldClrType: typeof(DateTime),
                 oldType: "datetime",
-                oldDefaultValue: new DateTime(2024, 7, 24, 13, 18, 49, 31, DateTimeKind.Local).AddTicks(47));
+                oldDefaultValue: new DateTime(2024, 7, 25, 2, 10, 53, 21, DateTimeKind.Local).AddTicks(3462));
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "CarIsInside",
-                table: "Reservations");
-
             migrationBuilder.AlterColumn<DateTime>(
                 name: "StartStopoverTime",
                 table: "Stopover",
                 type: "TEXT",
                 nullable: false,
-                defaultValue: new DateTime(2024, 7, 24, 13, 18, 49, 86, DateTimeKind.Local).AddTicks(4603),
+                defaultValue: new DateTime(2024, 7, 25, 2, 10, 53, 25, DateTimeKind.Local).AddTicks(8635),
                 oldClrType: typeof(DateTime),
                 oldType: "TEXT",
-                oldDefaultValue: new DateTime(2024, 7, 24, 13, 25, 18, 882, DateTimeKind.Local).AddTicks(8532));
+                oldDefaultValue: new DateTime(2024, 7, 25, 2, 29, 1, 224, DateTimeKind.Local).AddTicks(7442));
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "StartChargingTime",
                 table: "CurrentlyCharging",
                 type: "TEXT",
                 nullable: false,
-                defaultValue: new DateTime(2024, 7, 24, 13, 18, 49, 52, DateTimeKind.Local).AddTicks(8783),
+                defaultValue: new DateTime(2024, 7, 25, 2, 10, 53, 22, DateTimeKind.Local).AddTicks(3719),
                 oldClrType: typeof(DateTime),
                 oldType: "TEXT",
-                oldDefaultValue: new DateTime(2024, 7, 24, 13, 25, 18, 831, DateTimeKind.Local).AddTicks(7654));
+                oldDefaultValue: new DateTime(2024, 7, 25, 2, 29, 1, 221, DateTimeKind.Local).AddTicks(2760));
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "StartChargingTime",
                 table: "ChargeHistory",
                 type: "datetime",
                 nullable: false,
-                defaultValue: new DateTime(2024, 7, 24, 13, 18, 49, 30, DateTimeKind.Local).AddTicks(9003),
+                defaultValue: new DateTime(2024, 7, 25, 2, 10, 53, 21, DateTimeKind.Local).AddTicks(2909),
                 oldClrType: typeof(DateTime),
                 oldType: "datetime",
-                oldDefaultValue: new DateTime(2024, 7, 24, 13, 25, 18, 828, DateTimeKind.Local).AddTicks(2092));
+                oldDefaultValue: new DateTime(2024, 7, 25, 2, 29, 1, 220, DateTimeKind.Local).AddTicks(2688));
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "EndChargingTime",
                 table: "ChargeHistory",
                 type: "datetime",
                 nullable: false,
-                defaultValue: new DateTime(2024, 7, 24, 13, 18, 49, 31, DateTimeKind.Local).AddTicks(47),
+                defaultValue: new DateTime(2024, 7, 25, 2, 10, 53, 21, DateTimeKind.Local).AddTicks(3462),
                 oldClrType: typeof(DateTime),
                 oldType: "datetime",
-                oldDefaultValue: new DateTime(2024, 7, 24, 13, 25, 18, 828, DateTimeKind.Local).AddTicks(3811));
+                oldDefaultValue: new DateTime(2024, 7, 25, 2, 29, 1, 220, DateTimeKind.Local).AddTicks(3195));
         }
     }
 }

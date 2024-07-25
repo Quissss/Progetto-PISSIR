@@ -22,6 +22,11 @@ public class ParkingRepository : GenericRepository<Parking>
         _context = context;
     }
 
+    public async Task<Parking?> GetByParkingSlotId(int parkingSlotId)
+    {
+        return await _context.Parkings.Where(p => p.ParkingSlots.Any(ps => ps.Id == parkingSlotId)).FirstOrDefaultAsync();
+    }
+
     public async Task<Parking?> GetParkingByName(string name)
     {
         return await _context.Parkings.Where(p => p.Name == name).FirstOrDefaultAsync();

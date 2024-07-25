@@ -30,7 +30,6 @@
             this.txtLicensePlate.Name = "txtLicensePlate";
             this.txtLicensePlate.Size = new System.Drawing.Size(302, 23);
             this.txtLicensePlate.TabIndex = 0;
-            this.txtLicensePlate.TextChanged += new System.EventHandler(this.txtLicensePlate_TextChanged);
             // 
             // btnSend
             // 

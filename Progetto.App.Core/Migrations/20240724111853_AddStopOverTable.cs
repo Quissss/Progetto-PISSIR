@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Progetto.App.Core.Migrations
 {
     /// <inheritdoc />
-    public partial class AddStopOverTable : Migration
+    public partial class AddStopoverTable : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -42,12 +42,12 @@ namespace Progetto.App.Core.Migrations
                 oldDefaultValue: new DateTime(2024, 7, 21, 20, 25, 22, 465, DateTimeKind.Local).AddTicks(7284));
 
             migrationBuilder.CreateTable(
-                name: "StopOver",
+                name: "Stopover",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    StartStopOverTime = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValue: new DateTime(2024, 7, 24, 13, 18, 49, 86, DateTimeKind.Local).AddTicks(4603)),
+                    StartStopoverTime = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValue: new DateTime(2024, 7, 24, 13, 18, 49, 86, DateTimeKind.Local).AddTicks(4603)),
                     EndStopoverTime = table.Column<DateTime>(type: "TEXT", nullable: true),
                     UserId = table.Column<string>(type: "TEXT", nullable: true),
                     CarPlate = table.Column<string>(type: "TEXT", nullable: true),
@@ -57,37 +57,37 @@ namespace Progetto.App.Core.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_StopOver", x => x.Id);
+                    table.PrimaryKey("PK_Stopover", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_StopOver_AspNetUsers_UserId",
+                        name: "FK_Stopover_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_StopOver_Cars_CarPlate",
+                        name: "FK_Stopover_Cars_CarPlate",
                         column: x => x.CarPlate,
                         principalTable: "Cars",
                         principalColumn: "LicencePlate");
                     table.ForeignKey(
-                        name: "FK_StopOver_Parkings_ParkingId",
+                        name: "FK_Stopover_Parkings_ParkingId",
                         column: x => x.ParkingId,
                         principalTable: "Parkings",
                         principalColumn: "Id");
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_StopOver_CarPlate",
-                table: "StopOver",
+                name: "IX_Stopover_CarPlate",
+                table: "Stopover",
                 column: "CarPlate");
 
             migrationBuilder.CreateIndex(
-                name: "IX_StopOver_ParkingId",
-                table: "StopOver",
+                name: "IX_Stopover_ParkingId",
+                table: "Stopover",
                 column: "ParkingId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_StopOver_UserId",
-                table: "StopOver",
+                name: "IX_Stopover_UserId",
+                table: "Stopover",
                 column: "UserId");
         }
 
@@ -95,7 +95,7 @@ namespace Progetto.App.Core.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "StopOver");
+                name: "Stopover");
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "StartChargingTime",

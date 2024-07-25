@@ -34,7 +34,6 @@ public class MqttMwBotClient
     private CancellationToken _cancellationToken;
     private const int _chargeDelay = 1000;
     private const int _rechargeDelay = 1000;
-
     // TODO: add mqttMessage as property here and handle it
 
     public MqttMwBotClient(ILogger<MqttMwBotClient> logger, IServiceScopeFactory serviceScopeFactory, ChargeManager chargeManager)
@@ -423,8 +422,7 @@ public class MqttMwBotClient
                 return;
             }
 
-
-            // TODO: resume recharge when status is StandBy if there is one
+            // TODO: resume recharge when status is StandBy (1) if there is one
             if (HandlingRequest is not null)
             {
                 _logger.LogInformation("MwBot {id}: Resuming request {request}", MwBot.Id, HandlingRequest);
@@ -643,6 +641,7 @@ public class MqttMwBotClient
             Parking = MwBot.Parking
         };
 
+        // TODO: delegate updating car status to "Charged" to broker
         await PublishClientMessageAsync(mwBotMessage, _cancellationTokenSource.Token);
         HandlingRequest = null;
         if (!_timer.Enabled) _timer.Start();

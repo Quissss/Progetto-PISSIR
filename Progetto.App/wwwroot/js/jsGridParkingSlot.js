@@ -48,6 +48,7 @@ $(function () {
         });
     });
 
+    // TODO: implement SignalR
     setInterval(function () {
         let filter = $("#parkingSlotGrid").jsGrid("getFilter");
         $("#parkingSlotGrid").jsGrid("loadData", filter);

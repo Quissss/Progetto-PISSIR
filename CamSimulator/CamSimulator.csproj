@@ -8,4 +8,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Progetto.App.Core\Progetto.App.Core.csproj" />
+  </ItemGroup>
+
 </Project>

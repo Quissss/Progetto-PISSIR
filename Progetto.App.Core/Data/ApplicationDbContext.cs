@@ -51,4 +51,5 @@ public class ApplicationDbContext : IdentityDbContext
     public DbSet<ChargeHistory> ChargeHistory { get; set; }
     public DbSet<ImmediateRequest> ImmediateRequests { get; set; }
     public DbSet<CurrentlyCharging> CurrentlyCharging { get; set; }
+    public DbSet<Stopover> Stopovers { get; set; }
 }

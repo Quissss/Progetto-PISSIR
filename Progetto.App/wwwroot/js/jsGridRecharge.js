@@ -39,7 +39,7 @@ $(function () {
         ]
     });
 
-
+    // TODO: implement SignalR
     setInterval(function () {
         let filter = $("#jsGridRecharge").jsGrid("getFilter");
         $("#jsGridRecharge").jsGrid("loadData", filter);

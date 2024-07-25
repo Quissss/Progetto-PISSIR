@@ -22,6 +22,9 @@ public class CarConfiguration : IEntityTypeConfiguration<Car>
         builder.Property(c => c.Brand).HasMaxLength(50);
         builder.Property(c => c.Model).HasMaxLength(50);
         builder.Property(c => c.IsElectric).HasDefaultValue(true).IsRequired();
+        builder.Property(c => c.Status).IsRequired();
+        builder.Property(c => c.ParkingSlotId).IsRequired(false);
+        builder.HasOne(c => c.Parking).WithMany().HasForeignKey(c => c.ParkingId).IsRequired(false);
         builder.HasOne(c => c.Owner).WithMany().HasForeignKey(c => c.OwnerId).IsRequired();
     }
 }

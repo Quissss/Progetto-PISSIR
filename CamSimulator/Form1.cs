@@ -1,3 +1,4 @@
+using Progetto.App.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -30,12 +31,11 @@ namespace CamSimulator
                 {
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                 };
-                var parkings = JsonSerializer.Deserialize<List<Parking>>(responseData, option);
+                var parkings = JsonSerializer.Deserialize<List<CamParking>>(responseData, option);
 
                 cmbParkings.Items.Clear();
 
-                cmbParkings.DataSource=(parkings);
-                
+                cmbParkings.DataSource = (parkings);
 
                 if (cmbParkings.Items.Count > 0)
                 {
@@ -51,7 +51,7 @@ namespace CamSimulator
         private async void btnSend_Click(object sender, EventArgs e)
         {
             string targa = txtLicensePlate.Text;
-            Parking selectedParking = cmbParkings.SelectedItem as Parking;
+            CamParking selectedParking = cmbParkings.SelectedItem as CamParking;
 
             if (string.IsNullOrWhiteSpace(targa))
             {
@@ -90,37 +90,19 @@ namespace CamSimulator
 
         private async Task<HttpResponseMessage> InviaTarga(string targa, int parkingId)
         {
-            var targaRequest = new { LicensePlate = targa, ParkingId = parkingId };
-            var option = new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            };
+            var targaRequest = new { LicencePlate = targa, ParkingId = parkingId };
+            var option = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
             var jsonContent = JsonSerializer.Serialize(targaRequest, option);
             var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-            return await client.PostAsync("https://localhost:7237/api/CamSimulator/arrival", content);
-        }
-
-        private void txtLicensePlate_TextChanged(object sender, EventArgs e)
-        {
-
+            return await client.PostAsync("https://localhost:7237/api/CamSimulator/detect", content);
         }
     }
 
-    public class Parking
+    public class CamParking : Parking
     {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public string Address { get; set; }
-        public string City { get; set; }
-        public string Province { get; set; }
-        public string PostalCode { get; set; }
-        public string Country { get; set; }
-
         public override string ToString()
         {
             return $"{Name}, {Address}, {City}";
         }
     }
-
-
 }

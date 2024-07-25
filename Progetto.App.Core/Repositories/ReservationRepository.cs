@@ -22,8 +22,21 @@ public class ReservationRepository : GenericRepository<Reservation>
         _context = context;
     }
 
-    public async Task<IEnumerable<Reservation?>> GetReservationsByUser(string userId)
+    public async Task<IEnumerable<Reservation?>> GetByUserId(string userId)
     {
         return await _context.Reservations.Where(r => r.UserId == userId).ToListAsync();
+    }
+
+    public async Task<IEnumerable<Reservation?>> GetByCarPlate(string LicencePlate)
+    {
+        return await _context.Reservations.Where(r => r.CarPlate == LicencePlate).ToListAsync();
+    }
+
+    public async Task<IEnumerable<Reservation?>> UpdateCarIsInside(string LicencePlate, int ParkingId, bool CarInside)
+    {
+        var reservations = await _context.Reservations.Where(r => r.CarPlate == LicencePlate && r.ParkingId == ParkingId).ToListAsync();
+        reservations.ForEach(r => r.CarIsInside = CarInside);
+        await _context.SaveChangesAsync();
+        return reservations;
     }
 }

@@ -199,7 +199,7 @@ public class ReservationController : ControllerBase
         {
             _logger.LogDebug("Getting reservations of user {userId}", userId);
 
-            var reservations = await _reservationRepository.GetReservationsByUser(userId);
+            var reservations = await _reservationRepository.GetByUserId(userId);
             if (reservations == null)
             {
                 _logger.LogWarning("No reservations found for user {userId}", userId);
@@ -227,7 +227,7 @@ public class ReservationController : ControllerBase
         {
             _logger.LogDebug("Getting reservations of user {user}", User.Identity.Name);
 
-            var reservations = await _reservationRepository.GetReservationsByUser(User.Identity.Name);
+            var reservations = await _reservationRepository.GetByUserId(User.Identity.Name);
             if (reservations == null)
             {
                 _logger.LogWarning("No reservations found for user {user}", User.Identity.Name);
@@ -255,7 +255,7 @@ public class ReservationController : ControllerBase
         {
             _logger.LogDebug("Getting reservation of user {user} with id {id}", User.Identity.Name, id);
 
-            var reservations = await _reservationRepository.GetReservationsByUser(User.Identity.Name);
+            var reservations = await _reservationRepository.GetByUserId(User.Identity.Name);
             if (reservations == null)
             {
                 _logger.LogWarning("No reservations found for user {user} with id {id}", User.Identity.Name, id);

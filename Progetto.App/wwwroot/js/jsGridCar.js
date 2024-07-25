@@ -69,6 +69,7 @@ $(function () {
         },
     });
 
+    // TODO: implement SignalR
     setInterval(function () {
         let filter = $("#jsGridCar").jsGrid("getFilter");
         $("#jsGridCar").jsGrid("loadData", filter);

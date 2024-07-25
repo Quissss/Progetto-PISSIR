@@ -73,6 +73,7 @@ services.AddScoped<ParkingSlotRepository>();
 services.AddScoped<ReservationRepository>();
 services.AddScoped<ImmediateRequestRepository>();
 services.AddScoped<CurrentlyChargingRepository>();
+services.AddScoped<StopoverRepository>();
 
 // Authorization handlers
 services.AddSingleton<ChargeManager>();

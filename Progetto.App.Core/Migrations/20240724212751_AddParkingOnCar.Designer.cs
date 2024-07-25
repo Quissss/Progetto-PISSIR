@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Progetto.App.Core.Data;
 
@@ -10,9 +11,11 @@ using Progetto.App.Core.Data;
 namespace Progetto.App.Core.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240724212751_AddParkingOnCar")]
+    partial class AddParkingOnCar
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.6");
@@ -241,9 +244,6 @@ namespace Progetto.App.Core.Migrations
                     b.Property<int?>("ParkingId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("ParkingSlotId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<int>("Status")
                         .HasColumnType("INTEGER");
 
@@ -268,7 +268,7 @@ namespace Progetto.App.Core.Migrations
                     b.Property<DateTime>("EndChargingTime")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime")
-                        .HasDefaultValue(new DateTime(2024, 7, 25, 2, 29, 1, 220, DateTimeKind.Local).AddTicks(3195));
+                        .HasDefaultValue(new DateTime(2024, 7, 24, 23, 27, 49, 230, DateTimeKind.Local).AddTicks(3523));
 
                     b.Property<decimal>("EnergyConsumed")
                         .ValueGeneratedOnAdd()
@@ -287,7 +287,7 @@ namespace Progetto.App.Core.Migrations
                     b.Property<DateTime>("StartChargingTime")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime")
-                        .HasDefaultValue(new DateTime(2024, 7, 25, 2, 29, 1, 220, DateTimeKind.Local).AddTicks(2688));
+                        .HasDefaultValue(new DateTime(2024, 7, 24, 23, 27, 49, 230, DateTimeKind.Local).AddTicks(3000));
 
                     b.Property<decimal?>("TargetChargePercentage")
                         .HasColumnType("decimal(5, 2)");
@@ -349,7 +349,7 @@ namespace Progetto.App.Core.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 7, 25, 2, 29, 1, 221, DateTimeKind.Local).AddTicks(2760));
+                        .HasDefaultValue(new DateTime(2024, 7, 24, 23, 27, 49, 231, DateTimeKind.Local).AddTicks(3008));
 
                     b.Property<decimal?>("TargetChargePercentage")
                         .HasColumnType("decimal(5, 2)");
@@ -509,7 +509,7 @@ namespace Progetto.App.Core.Migrations
 
                     b.HasIndex("ParkingId");
 
-                    b.ToTable("ParkingSlots", (string)null);
+                    b.ToTable("ParkingSlots");
                 });
 
             modelBuilder.Entity("Progetto.App.Core.Models.Reservation", b =>
@@ -565,14 +565,14 @@ namespace Progetto.App.Core.Migrations
                     b.Property<DateTime?>("EndStopoverTime")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("ParkingSlotId")
+                    b.Property<int?>("ParkingId")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("StartStopoverTime")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 7, 25, 2, 29, 1, 224, DateTimeKind.Local).AddTicks(7442));
+                        .HasDefaultValue(new DateTime(2024, 7, 24, 23, 27, 49, 234, DateTimeKind.Local).AddTicks(7405));
 
                     b.Property<bool>("ToPay")
                         .ValueGeneratedOnAdd()
@@ -589,7 +589,7 @@ namespace Progetto.App.Core.Migrations
 
                     b.HasIndex("CarPlate");
 
-                    b.HasIndex("ParkingSlotId");
+                    b.HasIndex("ParkingId");
 
                     b.HasIndex("UserId");
 
@@ -806,9 +806,9 @@ namespace Progetto.App.Core.Migrations
                         .WithMany()
                         .HasForeignKey("CarPlate");
 
-                    b.HasOne("Progetto.App.Core.Models.ParkingSlot", "ParkingSlot")
+                    b.HasOne("Progetto.App.Core.Models.Parking", "Parking")
                         .WithMany()
-                        .HasForeignKey("ParkingSlotId");
+                        .HasForeignKey("ParkingId");
 
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
                         .WithMany()
@@ -816,7 +816,7 @@ namespace Progetto.App.Core.Migrations
 
                     b.Navigation("Car");
 
-                    b.Navigation("ParkingSlot");
+                    b.Navigation("Parking");
 
                     b.Navigation("User");
                 });

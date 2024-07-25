@@ -34,8 +34,8 @@ namespace Progetto.App.Core.Models
             _logger.BeginScope("Retrieving reservations");
             try
             {
-                var scope = _serviceScopeFactory.CreateScope();
-                var _reservationRepository = scope.ServiceProvider.GetRequiredService<ReservationRepository>();
+                var provider = _serviceScopeFactory.CreateScope().ServiceProvider;
+                var _reservationRepository = provider.GetRequiredService<ReservationRepository>();
 
                 var reservations = await _reservationRepository.GetAllAsync();
                 _reservations = reservations.OrderBy(r => r.ReservationTime).ToList();
@@ -71,9 +71,31 @@ namespace Progetto.App.Core.Models
             _reservations?.Add(reservation);
         }
 
-        public void AddImmediateRequest(ImmediateRequest immediateRequest)
+        public async Task<ImmediateRequest> AddImmediateRequest(ImmediateRequest immediateRequest, int parkingId)
         {
-            _immediateRequests?.Enqueue(immediateRequest);
+            while (true)
+            {
+                var provider = _serviceScopeFactory.CreateScope().ServiceProvider;
+                var _parkingSlotRepository = provider.GetRequiredService<ParkingSlotRepository>();
+
+                var allFreeSlots = await _parkingSlotRepository.GetFreeParkingSlots(parkingId);
+                if (allFreeSlots != null && allFreeSlots.Any())
+                {
+                    var freeSlot = allFreeSlots.FirstOrDefault();
+                    if (freeSlot != null)
+                    {
+                        var _immediateRequestRepository = provider.GetRequiredService<ImmediateRequestRepository>();
+                        immediateRequest.ParkingSlotId = freeSlot.Id;
+
+                        _immediateRequests?.Enqueue(immediateRequest);
+                        await _immediateRequestRepository.AddAsync(immediateRequest);
+
+                        return immediateRequest;
+                    }
+                }
+
+                Task.Delay(5000).Wait();
+            }
         }
 
         private Reservation? GetNextReservation()
@@ -103,25 +125,24 @@ namespace Progetto.App.Core.Models
         public async Task<ImmediateRequest?> ServeNext(MwBot mwBot)
         {
             ImmediateRequest? immediateRequest = null;
-
+            // TODO: update car status (charging)
             // Serve reservations
             try
             {
                 await _reservationsSemaphore.WaitAsync();
-                // TODO: is car inside flagged true on car arrival (cam reads carplate + user accepts)
+
                 var parkingReservations = _reservations?.Where(r => r.ParkingId == mwBot.ParkingId && r.RequestDate <= DateTime.Now && r.CarIsInside);
                 if (parkingReservations?.Count() > 0)
                 {
-                    var scope = _serviceScopeFactory.CreateScope();
-                    var _parkingSlotRepository = scope.ServiceProvider.GetRequiredService<ParkingSlotRepository>();
-                    var _immediateRequestRepository = scope.ServiceProvider.GetRequiredService<ImmediateRequestRepository>();
-                    var _reservationsRepository = scope.ServiceProvider.GetRequiredService<ReservationRepository>();
+                    var provider = _serviceScopeFactory.CreateScope().ServiceProvider;
+                    var _parkingSlotRepository = provider.GetRequiredService<ParkingSlotRepository>();
+                    var _immediateRequestRepository = provider.GetRequiredService<ImmediateRequestRepository>();
+                    var _reservationsRepository = provider.GetRequiredService<ReservationRepository>();
+                    var _carRepository = provider.GetRequiredService<CarRepository>();
 
                     _logger.LogInformation("MwBot {mwBot}: Found reservations, checking free slots", mwBot.Id);
-                    var allFreeSlots = await _parkingSlotRepository.GetFreeParkingSlots(mwBot.ParkingId);
-                    if (allFreeSlots is null || allFreeSlots.Count() == 0) return null;
 
-                    var freeSlot = allFreeSlots.FirstOrDefault();
+                    var freeSlot = await _parkingSlotRepository.GetFreeParkingSlot(mwBot.ParkingId);
                     if (freeSlot is null) return null;
 
                     var nextReservation = GetNextReservation();
@@ -149,6 +170,14 @@ namespace Progetto.App.Core.Models
                     freeSlot.Status = ParkingSlotStatus.Occupied;
                     await _parkingSlotRepository.UpdateAsync(freeSlot);
 
+                    if (nextReservation?.CarPlate is not null)
+                    {
+                        var car = await _carRepository.GetCarByLicencePlate(nextReservation.CarPlate);
+                        if (car is null) return null;
+                        car.Status = CarStatus.InCharge;
+                        await _carRepository.UpdateAsync(car);
+                    }
+
                     _logger.LogInformation("MwBot {mwBot}: Created immediate request for user {immediateRequest.UserId} at {immediateRequest.RequestDate}.", mwBot.Id, immediateRequest.UserId, immediateRequest.RequestDate);
                 }
             }
@@ -174,7 +203,7 @@ namespace Progetto.App.Core.Models
 
             if (immediateRequest is null)
             {
-                _logger.LogInformation("MwBot {mwBot}: No requests to serve.", mwBot.Id);
+                _logger.LogDebug("MwBot {mwBot}: No requests to serve.", mwBot.Id);
             }
 
             return immediateRequest;

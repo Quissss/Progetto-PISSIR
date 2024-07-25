@@ -26,6 +26,9 @@ public class Car
     public string Model { get; set; }
     public bool IsElectric { get; set; }
     public CarStatus Status { get; set; }
+    public int? ParkingId { get; set; }
+    public Parking? Parking { get; set; }
+    public int? ParkingSlotId { get; set; }
     public string OwnerId { get; set; }
     public IdentityUser? Owner { get; set; }
 }

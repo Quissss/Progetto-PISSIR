@@ -37,6 +37,11 @@ public class ParkingSlotRepository : GenericRepository<ParkingSlot>
         return await _context.ParkingSlots.Where(ps => ps.Status == ParkingSlotStatus.Free && ps.ParkingId == parkingId).ToListAsync();
     }
 
+    public async Task<ParkingSlot?> GetFreeParkingSlot(int? parkingId)
+    {
+        return await _context.ParkingSlots.Where(ps => ps.Status == ParkingSlotStatus.Free && ps.ParkingId == parkingId).FirstOrDefaultAsync();
+    }
+
     public async Task<IEnumerable<ParkingSlot>> GetOccupiedParkingSlots(int? parkingId)
     {
         return await _context.ParkingSlots.Where(ps => ps.Status == ParkingSlotStatus.Occupied && ps.ParkingId == parkingId).ToListAsync();

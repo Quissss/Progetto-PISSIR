@@ -9,16 +9,16 @@ using System.Threading.Tasks;
 namespace Progetto.App.Core.Validators;
 
 /// <summary>
-/// Rules for StopOver entity validation
+/// Rules for Stopover entity validation
 /// </summary>
-public class StopOverValidator : AbstractValidator<StopOver>
+public class StopoverValidator : AbstractValidator<Stopover>
 {
-    public StopOverValidator()
+    public StopoverValidator()
     {
-        RuleFor(x => x.StartStopOverTime).NotNull();
+        RuleFor(x => x.StartStopoverTime).NotNull();
         RuleFor(x => x.UserId).NotNull().NotEmpty();
         RuleFor(x => x.CarPlate).NotNull().NotEmpty();
-        RuleFor(x => x.ParkingId).NotNull().NotEmpty();
+        RuleFor(x => x.ParkingSlotId).NotNull().NotEmpty();
         RuleFor(x => x.ToPay).NotNull();
     }
 }

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Progetto.App.Core.Data;
 
@@ -10,9 +11,11 @@ using Progetto.App.Core.Data;
 namespace Progetto.App.Core.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240724223913_AddParkingSlotIdOnCar")]
+    partial class AddParkingSlotIdOnCar
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.6");
@@ -268,7 +271,7 @@ namespace Progetto.App.Core.Migrations
                     b.Property<DateTime>("EndChargingTime")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime")
-                        .HasDefaultValue(new DateTime(2024, 7, 25, 2, 29, 1, 220, DateTimeKind.Local).AddTicks(3195));
+                        .HasDefaultValue(new DateTime(2024, 7, 25, 0, 39, 12, 289, DateTimeKind.Local).AddTicks(6102));
 
                     b.Property<decimal>("EnergyConsumed")
                         .ValueGeneratedOnAdd()
@@ -287,7 +290,7 @@ namespace Progetto.App.Core.Migrations
                     b.Property<DateTime>("StartChargingTime")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime")
-                        .HasDefaultValue(new DateTime(2024, 7, 25, 2, 29, 1, 220, DateTimeKind.Local).AddTicks(2688));
+                        .HasDefaultValue(new DateTime(2024, 7, 25, 0, 39, 12, 289, DateTimeKind.Local).AddTicks(5539));
 
                     b.Property<decimal?>("TargetChargePercentage")
                         .HasColumnType("decimal(5, 2)");
@@ -349,7 +352,7 @@ namespace Progetto.App.Core.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 7, 25, 2, 29, 1, 221, DateTimeKind.Local).AddTicks(2760));
+                        .HasDefaultValue(new DateTime(2024, 7, 25, 0, 39, 12, 290, DateTimeKind.Local).AddTicks(6709));
 
                     b.Property<decimal?>("TargetChargePercentage")
                         .HasColumnType("decimal(5, 2)");
@@ -509,7 +512,7 @@ namespace Progetto.App.Core.Migrations
 
                     b.HasIndex("ParkingId");
 
-                    b.ToTable("ParkingSlots", (string)null);
+                    b.ToTable("ParkingSlots");
                 });
 
             modelBuilder.Entity("Progetto.App.Core.Models.Reservation", b =>
@@ -572,7 +575,7 @@ namespace Progetto.App.Core.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 7, 25, 2, 29, 1, 224, DateTimeKind.Local).AddTicks(7442));
+                        .HasDefaultValue(new DateTime(2024, 7, 25, 0, 39, 12, 294, DateTimeKind.Local).AddTicks(4197));
 
                     b.Property<bool>("ToPay")
                         .ValueGeneratedOnAdd()

@@ -11,8 +11,8 @@ using Progetto.App.Core.Data;
 namespace Progetto.App.Core.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240724111853_AddStopOverTable")]
-    partial class AddStopOverTable
+    [Migration("20240724111853_AddStopoverTable")]
+    partial class AddStopoverTable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -545,7 +545,7 @@ namespace Progetto.App.Core.Migrations
                     b.ToTable("Reservations");
                 });
 
-            modelBuilder.Entity("Progetto.App.Core.Models.StopOver", b =>
+            modelBuilder.Entity("Progetto.App.Core.Models.Stopover", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -560,7 +560,7 @@ namespace Progetto.App.Core.Migrations
                     b.Property<int?>("ParkingId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime?>("StartStopOverTime")
+                    b.Property<DateTime?>("StartStopoverTime")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
@@ -585,7 +585,7 @@ namespace Progetto.App.Core.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("StopOver", (string)null);
+                    b.ToTable("Stopover", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -786,7 +786,7 @@ namespace Progetto.App.Core.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Progetto.App.Core.Models.StopOver", b =>
+            modelBuilder.Entity("Progetto.App.Core.Models.Stopover", b =>
                 {
                     b.HasOne("Progetto.App.Core.Models.Car", "Car")
                         .WithMany()

@@ -109,7 +109,8 @@ $(function () {
             }
         ]
     });
-    
+
+    // TODO: implement SignalR
     setInterval(function () {
         let filter = $("#mwBotGrid").jsGrid("getFilter");
         $("#mwBotGrid").jsGrid("loadData", filter);

@@ -16,6 +16,7 @@ public class ParkingSlotConfiguration : IEntityTypeConfiguration<ParkingSlot>
 {
     public void Configure(EntityTypeBuilder<ParkingSlot> builder)
     {
+        builder.ToTable("ParkingSlots");
         builder.HasKey(p => p.Id);
         builder.Property(p => p.Number).IsRequired();
         builder.Property(p => p.Status).IsRequired()
