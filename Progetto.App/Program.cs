@@ -74,6 +74,7 @@ services.AddScoped<ReservationRepository>();
 services.AddScoped<ImmediateRequestRepository>();
 services.AddScoped<CurrentlyChargingRepository>();
 services.AddScoped<StopoverRepository>();
+services.AddScoped<StopoverHistoryRepository>();
 
 // Authorization handlers
 services.AddSingleton<ChargeManager>();

@@ -38,7 +38,7 @@
                                     <td>
                                         @if (charge.ToPay)
                                         {
-                                            <button class="btn btn-success" onclick="handlePayment('@charge.Id', @charge.TotalCost, true)">Pay Now</button>
+                                            <button class="btn btn-success" onclick="handlePayment('@charge.Id', @charge.TotalCost, 1)">Pay Now</button>
                                         }
                                     </td>
                                 </tr>
@@ -71,7 +71,7 @@
                                     <td>
                                         @if (stop.ToPay)
                                         {
-                                            <button class="btn btn-success" onclick="handlePayment('@stop.Id', @stop.TotalCost, false)">Pay Now</button>
+                                            <button class="btn btn-success" onclick="handlePayment('@stop.Id', @stop.TotalCost, 0)">Pay Now</button>
                                         }
                                     </td>
                                 </tr>
@@ -85,50 +85,54 @@
     </div>
 </div>
 
-<script>
-    async function handlePayment(id, totalCost, isCharge) {
-        try {
-            alert(`Hai pagato €${totalCost.toFixed(2)} con successo.`);
+@section Scripts {
+    <script>
+        async function handlePayment(id, totalCost, isCharge) {
+            try {
+                alert(`Hai pagato €${totalCost.toFixed(2)} con successo.`);
 
-            if (isCharge) {
-                await historicizeCharge(id);
-            } else {
-                await historicizeStopover(id);
+                if (isCharge === 1) {
+                    await historicizeCharge(id);
+                } else {
+                    await historicizeStopover(id);
+                }
+            } catch (error) {
+                console.error("Errore durante il pagamento o la storicizzazione:", error);
+                alert("C'è stato un errore durante il pagamento o la storicizzazione.");
             }
-        } catch (error) {
-            console.error("Errore durante il pagamento o la storicizzazione:", error);
-            alert("C'è stato un errore durante il pagamento o la storicizzazione.");
-        }
-    }
-
-    async function historicizeCharge(chargeId) {
-        const response = await fetch('/api/currentlycharging/historicizeCharge', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: chargeId
-        });
-
-        if (!response.ok) {
-            throw new Error('Errore nella storicizzazione della ricarica.');
         }
 
-        console.log('Ricarica storicizzata con successo.');
-    }
+        async function historicizeCharge(chargeId) {
+            const response = await fetch('/api/currentlycharging/historicizeCharge', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: chargeId
+            });
 
-    async function historicizeStopover(stopoverId) {
-        const response = await fetch('/api/currentlycharging/historicizeStopover', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: stopoverId
-        });
+            if (!response.ok) {
+                throw new Error('Errore nella storicizzazione della ricarica.');
+            }
 
-        if (!response.ok) {
-            throw new Error('Errore nella storicizzazione della sosta.');
+            console.log('Ricarica storicizzata con successo.');
         }
 
-        console.log('Sosta storicizzata con successo.');
-    }
-</script>
+        async function historicizeStopover(stopoverId) {
+            const response = await fetch('/api/currentlycharging/historicizeStopover', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: stopoverId
+            });
+
+            if (!response.ok) {
+                throw new Error('Errore nella storicizzazione della sosta.');
+            }
+
+            console.log('Sosta storicizzata con successo.');
+        }
+    </script>
+}
+
+
 @*
         // TODO: mandare richiesta PUT all'endpoint /api/CurrentlyCharging/historicize
 
