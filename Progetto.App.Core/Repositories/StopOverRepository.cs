@@ -10,8 +10,8 @@ using System.Threading.Tasks;
 namespace Progetto.App.Core.Repositories;
 
 /// <summary>
-/// Repository for ChargeHistory entity (inherits from GenericRepository)
-/// For database operations related to ChargeHistory entity
+/// Repository for Stopover entity (inherits from GenericRepository)
+/// For database operations related to Stopover entity
 /// </summary>
 public class StopoverRepository : GenericRepository<Stopover>
 {

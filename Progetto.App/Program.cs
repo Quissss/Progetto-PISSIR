@@ -65,7 +65,6 @@ services.AddValidatorsFromAssemblyContaining<CarValidator>();
 
 // Repositories
 services.AddScoped<CarRepository>();
-services.AddScoped<ChargeHistoryRepository>();
 services.AddScoped<ChargeManager>();
 services.AddScoped<MwBotRepository>();
 services.AddScoped<ParkingRepository>();
@@ -74,7 +73,6 @@ services.AddScoped<ReservationRepository>();
 services.AddScoped<ImmediateRequestRepository>();
 services.AddScoped<CurrentlyChargingRepository>();
 services.AddScoped<StopoverRepository>();
-services.AddScoped<StopoverHistoryRepository>();
 services.AddScoped<PaymentHistoryRepository>();
 
 // Authorization handlers

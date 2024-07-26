@@ -10,8 +10,8 @@ using System.Threading.Tasks;
 namespace Progetto.App.Core.Repositories;
 
 /// <summary>
-/// Repository for ChargeHistory entity (inherits from GenericRepository)
-/// For database operations related to ChargeHistory entity
+/// Repository for CurrentlyCharging entity (inherits from GenericRepository)
+/// For database operations related to CurrentlyCharging entity
 /// </summary>
 public class CurrentlyChargingRepository : GenericRepository<CurrentlyCharging>
 {

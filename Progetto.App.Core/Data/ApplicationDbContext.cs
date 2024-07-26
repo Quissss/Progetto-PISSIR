@@ -48,10 +48,8 @@ public class ApplicationDbContext : IdentityDbContext
     public DbSet<Parking> Parkings { get; set; }
     public DbSet<ParkingSlot> ParkingSlots { get; set; }
     public DbSet<Reservation> Reservations { get; set; }
-    public DbSet<ChargeHistory> ChargeHistory { get; set; }
     public DbSet<ImmediateRequest> ImmediateRequests { get; set; }
     public DbSet<CurrentlyCharging> CurrentlyCharging { get; set; }
     public DbSet<Stopover> Stopovers { get; set; }
-    public DbSet<StopoverHistory> StopoverHistory { get; set; }
     public DbSet<PaymentHistory> PaymentHistory { get; set; }
 }
