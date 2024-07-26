@@ -25,7 +25,7 @@ services.AddLogging(loggingBuilder =>
             .CreateLogger()
     ));
 
-//// External authentication
+// External authentication
 //services.AddAuthentication().AddGoogle(googleOptions =>
 //    {
 //        googleOptions.ClientId = configuration["Authentication:Google:ClientId"]!;

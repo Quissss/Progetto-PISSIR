@@ -110,7 +110,7 @@ public class CamSimulatorController : ControllerBase
             var parkingSlot = await _parkingSlotRepository.GetByIdAsync(stopover.ParkingSlotId.Value);
             var parking = await _parkingRepository.GetByParkingSlotId(parkingSlot.Id);
 
-            stopover.TotalCost = (decimal)totalMinutes * parking.StopCostPerMinute;
+            stopover.TotalCost = Math.Round((decimal)totalMinutes * parking.StopCostPerMinute, 2);
             stopover.ToPay = true;
             await _stopoverRepository.UpdateAsync(stopover);
         }
