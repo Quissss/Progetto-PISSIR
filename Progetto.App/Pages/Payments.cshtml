@@ -30,17 +30,20 @@
                             @foreach (var charge in Model.CurrentCharges)
                             {
                                 <tr>
-                                    <td>@charge.CarPlate</td>
-                                    <td>@charge.ParkingSlotId</td>
-                                    <td>@charge.StartChargingTime?.ToString("g")</td>
-                                    <td>@charge.EndChargingTime?.ToString("g")</td>
-                                    <td>@charge.TotalCost</td>
+                                    <form action="/api/CurrentlyCharging/payCharge" method="post">
+                                    <td><input type="text" name="carPlate" value="@charge.CarPlate" readonly class="form-control" /></td>
+                                    <td><input type="text" name="parkingSlotId" value="@charge.ParkingSlotId" readonly class="form-control" /></td>
+                                    <td><input type="text" name="startChargingTime" value="@charge.StartChargingTime?.ToString("g")" readonly class="form-control" /></td>
+                                    <td><input type="text" name="endChargingTime" value="@charge.EndChargingTime?.ToString("g")" readonly class="form-control" /></td>
+                                    <td><input type="text" name="totalCost" value="@charge.TotalCost" readonly class="form-control" /></td>
+                                    <input type="hidden" name="id" value="@charge.Id" readonly class="form-control" />
                                     <td>
                                         @if (charge.ToPay)
                                         {
                                             <button class="btn btn-success" onclick="handlePayment('@charge.CarPlate', @charge.TotalCost)">Pay Now</button>
                                         }
                                     </td>
+                                    </form>
                                 </tr>
                             }
                         </tbody>
@@ -63,17 +66,23 @@
                             @foreach (var charge in Model.StopCharges)
                             {
                                 <tr>
-                                    <td>@charge.CarPlate</td>
-                                    <td>@charge.ParkingSlotId</td>
-                                    <td>@charge.StartStopoverTime?.ToString("g")</td>
-                                    <td>@charge.EndStopoverTime?.ToString("g")</td>
-                                    <td>@charge.TotalCost</td>
+                                    <form action="/api/CurrentlyCharging/pay" method="post">
+                                    <td><input type="text" name="carPlate" value="@charge.CarPlate" readonly class="form-control" /></td>
+                                    <td><input type="text" name="parkingSlotId" value="@charge.ParkingSlotId" readonly class="form-control" /></td>
+                                    <td><input type="text" name="startStopoverTime" value="@charge.StartStopoverTime?.ToString("g")" readonly class="form-control" /></td>
+                                    <td><input type="text" name="endStopoverTime" value="@charge.EndStopoverTime?.ToString("g")" readonly class="form-control" /></td>
+                                    <td><input type="text" name="totalCost" value="@charge.TotalCost" readonly class="form-control" /></td>
+                                    <input type="hidden" name="id" value="@charge.Id" readonly class="form-control" />
                                     <td>
-                                        @if (charge.ToPay)
-                                        {
-                                            <button class="btn btn-success" onclick="handlePayment('@charge.CarPlate')">Pay Now</button>
-                                        }
+                                            @if (charge.ToPay)
+                                            {
+
+
+                                            <input class="btn btn-success" type="submit"
+                                                   value="Pay Now" />
+                                            }
                                     </td>
+                                    </form>
                                 </tr>
                             }
                         </tbody>

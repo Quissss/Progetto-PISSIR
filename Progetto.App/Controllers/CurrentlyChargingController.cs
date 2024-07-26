@@ -16,7 +16,7 @@ namespace Progetto.App.Controllers
     {
         private readonly UserManager<IdentityUser> _userManager;
         private readonly CurrentlyChargingRepository _currentlyChargingRespository;
-        private readonly StopoverHistoryRepository _stopoverHistoryRepository;
+        private readonly StopoverRepository _stopoverRepository;
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly ILogger<CurrentlyChargingController> _logger;
 
@@ -24,13 +24,13 @@ namespace Progetto.App.Controllers
             ILogger<CurrentlyChargingController> logger,
             UserManager<IdentityUser> userManager,
             CurrentlyChargingRepository currentlyChargingRepository,
-            StopoverHistoryRepository stopoverHistoryRepository,
+            StopoverRepository stopoverRepository,
             IServiceScopeFactory serviceScopeFactory)
         {
             _logger = logger;
             _userManager = userManager;
             _currentlyChargingRespository = currentlyChargingRepository;
-            _stopoverHistoryRepository = stopoverHistoryRepository;
+            _stopoverRepository = stopoverRepository;
             _serviceScopeFactory = serviceScopeFactory;
         }
 
@@ -38,12 +38,12 @@ namespace Progetto.App.Controllers
         public async Task<IActionResult> GetRecharges([FromQuery] string? carPlate)
         {
             var currentUser = await _userManager.GetUserAsync(User);
-          
+
             var recharges = await _currentlyChargingRespository.GetByUserId(currentUser.Id);
-              
+
             if (!(string.IsNullOrEmpty(carPlate)))
             {
-                recharges = recharges.Where(r => r.CarPlate.Contains(carPlate,StringComparison.InvariantCultureIgnoreCase)).ToList();
+                recharges = recharges.Where(r => r.CarPlate.Contains(carPlate, StringComparison.InvariantCultureIgnoreCase)).ToList();
             }
 
             return Ok(recharges);
@@ -88,6 +88,31 @@ namespace Progetto.App.Controllers
             });
 
             return Ok(historicizedStopover);
+        }
+
+
+        [HttpPost("pay")]
+        public async Task<IActionResult> Pay([FromForm] Stopover stopover)
+        {
+
+
+            var updateTopay = await _stopoverRepository.GetByIdAsync(stopover.Id);
+
+            updateTopay.ToPay = false;
+            await _stopoverRepository.SaveAsync();
+            return Ok(updateTopay);
+        }
+
+        [HttpPost("payCharge")]
+        public async Task<IActionResult> PayCharge([FromForm] CurrentlyCharging charge)
+        {
+
+
+            var updateTopay = await _currentlyChargingRespository.GetByIdAsync(charge.Id);
+
+            updateTopay.ToPay = false;
+            await _currentlyChargingRespository.SaveAsync();
+            return Ok(updateTopay);
         }
     }
 }
