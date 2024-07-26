@@ -49,7 +49,7 @@ namespace Progetto.App.Controllers
             return Ok(recharges);
         }
 
-        [HttpPut("historicizeCharge")]
+        [HttpPut("historicizeCharge")] // NOT WORKING
         public async Task<IActionResult> HistoricizeCharge([FromBody] CurrentlyCharging recharge)
         {
             var scope = _serviceScopeFactory.CreateScope();
@@ -72,7 +72,7 @@ namespace Progetto.App.Controllers
             return Ok(historicizedRecharge);
         }
 
-        [HttpPut("historicizeStopover")]
+        [HttpPut("historicizeStopover")] // NOT WORKING
         public async Task<IActionResult> HistoricizeStopover([FromBody] Stopover stopover)
         {
             var scope = _serviceScopeFactory.CreateScope();
@@ -94,8 +94,6 @@ namespace Progetto.App.Controllers
         [HttpPost("pay")]
         public async Task<IActionResult> Pay([FromForm] Stopover stopover)
         {
-
-
             var updateTopay = await _stopoverRepository.GetByIdAsync(stopover.Id);
 
             updateTopay.ToPay = false;
