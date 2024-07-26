@@ -49,45 +49,47 @@ namespace Progetto.App.Controllers
             return Ok(recharges);
         }
 
-        [HttpPost("historicizeCharge")] // NOT WORKING
+        [HttpPost("historicizeCharge")]
         public async Task<IActionResult> HistoricizeCharge([FromBody] int chargeId)
         {
             var scope = _serviceScopeFactory.CreateScope();
-            var chargeHistoryRepository = scope.ServiceProvider.GetRequiredService<ChargeHistoryRepository>();
+            var paymentHistoryRepository = scope.ServiceProvider.GetRequiredService<PaymentHistoryRepository>();
 
             var charge = await _currentlyChargingRespository.GetByIdAsync(chargeId);
-            var historicizedRecharge = await chargeHistoryRepository.AddAsync(new ChargeHistory
+            var historicizedRecharge = await paymentHistoryRepository.AddAsync(new PaymentHistory
             {
-                StartChargingTime = charge.StartChargingTime.Value,
-                EndChargingTime = charge.EndChargingTime.Value,
+                StartTime = charge.StartChargingTime.Value,
+                EndTime = charge.EndChargingTime.Value,
                 StartChargePercentage = charge.StartChargePercentage,
-                TargetChargePercentage = charge.TargetChargePercentage,
-                MwBotId = charge.MwBotId,
+                EndChargePercentage = charge.TargetChargePercentage,
                 UserId = charge.UserId,
                 CarPlate = charge.CarPlate,
-                ParkingSlotId = charge.ParkingSlotId,
                 EnergyConsumed = charge.EnergyConsumed,
-                TotalCost = charge.TotalCost
+                TotalCost = charge.TotalCost,
+                IsCharge = true,
             });
+            await _currentlyChargingRespository.DeleteAsync(c => c.Id == chargeId);
 
             return Ok(historicizedRecharge);
         }
 
-        [HttpPost("historicizeStopover")] // NOT WORKING
+        [HttpPost("historicizeStopover")]
         public async Task<IActionResult> HistoricizeStopover([FromBody] int stopoverId)
         {
             var scope = _serviceScopeFactory.CreateScope();
-            var stopoverHistoryRepository = scope.ServiceProvider.GetRequiredService<StopoverHistoryRepository>();
+            var paymentHistoryRepository = scope.ServiceProvider.GetRequiredService<PaymentHistoryRepository>();
 
             var stopover = await _stopoverRepository.GetByIdAsync(stopoverId);
-            var historicizedStopover = await stopoverHistoryRepository.AddAsync(new StopoverHistory
+            var historicizedStopover = await paymentHistoryRepository.AddAsync(new PaymentHistory
             {
-                StartStopoverTime = stopover.StartStopoverTime.Value,
-                EndStopoverTime = stopover.EndStopoverTime.Value,
+                StartTime = stopover.StartStopoverTime.Value,
+                EndTime = stopover.EndStopoverTime.Value,
                 UserId = stopover.UserId,
                 CarPlate = stopover.CarPlate,
-                TotalCost = stopover.TotalCost
+                TotalCost = stopover.TotalCost,
+                IsCharge = false,
             });
+            await _stopoverRepository.DeleteAsync(s => s.Id == stopoverId);
 
             return Ok(historicizedStopover);
         }
