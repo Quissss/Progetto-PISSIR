@@ -34,4 +34,10 @@ public class StopoverRepository : GenericRepository<Stopover>
             .OrderBy(s => s.StartStopoverTime)
             .FirstOrDefaultAsync();
     }
+
+    public async Task<IEnumerable<Stopover?>> GetByUserId(string userId)
+    {
+        return await _context.Stopovers
+            .Where(s => s.UserId == userId).ToListAsync();
+    }
 }

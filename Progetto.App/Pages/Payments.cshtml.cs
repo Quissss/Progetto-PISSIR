@@ -5,6 +5,7 @@ using Progetto.App.Core.Repositories;
 using PayPal.REST.Client;
 using PayPal.REST.Models.Orders;
 using PayPal.REST.Models.PaymentSources;
+using Microsoft.AspNetCore.Identity;
 
 namespace Progetto.App.Pages;
 
@@ -13,12 +14,18 @@ public class PaymentsModel : PageModel
     private readonly CurrentlyChargingRepository _currentlyChargingRepository;
     private readonly PayPalClient _payPalClient;
     private readonly StopoverRepository _stopoverRepository;
+    private readonly UserManager<IdentityUser> _userManager;
 
-    public PaymentsModel(CurrentlyChargingRepository currentlyChargingRepository, StopoverRepository stopoverRepository)
+    public PaymentsModel(
+        CurrentlyChargingRepository currentlyChargingRepository, 
+        StopoverRepository stopoverRepository,
+        UserManager<IdentityUser> userManager
+        )
     {
         _currentlyChargingRepository = currentlyChargingRepository;
         _payPalClient = new PayPalClient("tuoClientId", "tuoClientSecret", "https://api.sandbox.paypal.com"); // Configura con le tue credenziali PayPal
         _stopoverRepository = stopoverRepository;
+        _userManager = userManager;
     }
 
     public List<CurrentlyCharging> CurrentCharges { get; private set; }
@@ -26,9 +33,9 @@ public class PaymentsModel : PageModel
 
     public async Task OnGetAsync()
     {
-        CurrentCharges = await _currentlyChargingRepository.GetAllAsync();
-        StopCharges = await _stopoverRepository.GetAllAsync();
-
+        var user = await _userManager.GetUserAsync(User);
+        CurrentCharges = (await _currentlyChargingRepository.GetByUserId(user.Id)).ToList();
+        StopCharges = (await _stopoverRepository.GetByUserId(user.Id)).ToList();
     }
 
     public async Task<IActionResult> OnPostPayNowAsync(string carPlate)
