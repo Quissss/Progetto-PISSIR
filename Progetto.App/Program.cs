@@ -29,11 +29,11 @@ services.AddLogging(loggingBuilder =>
     ));
 
 // External authentication
-//services.AddAuthentication().AddGoogle(googleOptions =>
-//    {
-//        googleOptions.ClientId = configuration["Authentication:Google:ClientId"]!;
-//        googleOptions.ClientSecret = configuration["Authentication:Google:ClientSecret"]!;
-//    });
+services.AddAuthentication().AddGoogle(googleOptions =>
+    {
+        googleOptions.ClientId = configuration["Authentication:Google:ClientId"]!;
+        googleOptions.ClientSecret = configuration["Authentication:Google:ClientSecret"]!;
+    });
 
 #region PayPal
 services.AddSingleton<IPayPalClient, PayPalClient>();
