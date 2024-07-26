@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Models;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -10,12 +11,12 @@ namespace Progetto.App.Pages
 {
     public class DashPaymentModel : PageModel
     {
-        private readonly CurrentlyChargingRepository _currentlyChargingRepository;
+        private readonly PaymentHistoryRepository _paymentHistoryRepository;
         private readonly ILogger<DashPaymentModel> _logger;
 
-        public DashPaymentModel(CurrentlyChargingRepository currentlyChargingRepository, ILogger<DashPaymentModel> logger)
+        public DashPaymentModel(PaymentHistoryRepository paymentHistoryRepository, ILogger<DashPaymentModel> logger)
         {
-            _currentlyChargingRepository = currentlyChargingRepository;
+            _paymentHistoryRepository = paymentHistoryRepository;
             _logger = logger;
         }
 
@@ -25,7 +26,10 @@ namespace Progetto.App.Pages
         [BindProperty]
         public DateTime? EndDate { get; set; }
 
-        public List<CurrentlyCharging> Payments { get; set; } = new List<CurrentlyCharging>();
+        [BindProperty]
+        public bool? ChargeType { get; set; } 
+
+        public List<PaymentHistory> Payments { get; set; } = new List<PaymentHistory>();
 
         public async Task<IActionResult> OnPostAsync()
         {
@@ -35,7 +39,7 @@ namespace Progetto.App.Pages
                 return Page();
             }
 
-            Payments = await _currentlyChargingRepository.GetPaymentsWithinDateRange(StartDate.Value, EndDate.Value);
+            Payments = await _paymentHistoryRepository.GetPaymentsWithinDateRangeAndType(StartDate.Value, EndDate.Value, ChargeType);
 
             return Page();
         }
@@ -46,7 +50,7 @@ namespace Progetto.App.Pages
             StartDate = DateTime.Now.AddDays(-7); // last 7 days
             EndDate = DateTime.Now;
 
-            Payments = await _currentlyChargingRepository.GetPaymentsWithinDateRange(StartDate.Value, EndDate.Value);
+            Payments = await _paymentHistoryRepository.GetPaymentsWithinDateRangeAndType(StartDate.Value, EndDate.Value, ChargeType);
         }
     }
 }
