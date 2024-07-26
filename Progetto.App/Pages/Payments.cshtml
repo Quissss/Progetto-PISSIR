@@ -30,20 +30,17 @@
                             @foreach (var charge in Model.CurrentCharges)
                             {
                                 <tr>
-                                    <form action="/api/CurrentlyCharging/payCharge" method="post">
-                                    <td><input type="text" name="carPlate" value="@charge.CarPlate" readonly class="form-control" /></td>
-                                    <td><input type="text" name="parkingSlotId" value="@charge.ParkingSlotId" readonly class="form-control" /></td>
-                                    <td><input type="text" name="startChargingTime" value="@charge.StartChargingTime?.ToString("g")" readonly class="form-control" /></td>
-                                    <td><input type="text" name="endChargingTime" value="@charge.EndChargingTime?.ToString("g")" readonly class="form-control" /></td>
-                                    <td><input type="text" name="totalCost" value="@charge.TotalCost" readonly class="form-control" /></td>
-                                    <input type="hidden" name="id" value="@charge.Id" readonly class="form-control" />
+                                    <td>@charge.CarPlate</td>
+                                    <td>@charge.ParkingSlotId</td>
+                                    <td>@charge.StartChargingTime?.ToString("g")</td>
+                                    <td>@charge.EndChargingTime?.ToString("g")</td>
+                                    <td>@charge.TotalCost</td>
                                     <td>
                                         @if (charge.ToPay)
                                         {
-                                            <button class="btn btn-success" onclick="handlePayment('@charge.CarPlate', @charge.TotalCost)">Pay Now</button>
+                                            <button class="btn btn-success" onclick="handlePayment('@charge.Id', @charge.TotalCost, true)">Pay Now</button>
                                         }
                                     </td>
-                                    </form>
                                 </tr>
                             }
                         </tbody>
@@ -63,26 +60,20 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var charge in Model.StopCharges)
+                            @foreach (var stop in Model.StopCharges)
                             {
                                 <tr>
-                                    <form action="/api/CurrentlyCharging/pay" method="post">
-                                    <td><input type="text" name="carPlate" value="@charge.CarPlate" readonly class="form-control" /></td>
-                                    <td><input type="text" name="parkingSlotId" value="@charge.ParkingSlotId" readonly class="form-control" /></td>
-                                    <td><input type="text" name="startStopoverTime" value="@charge.StartStopoverTime?.ToString("g")" readonly class="form-control" /></td>
-                                    <td><input type="text" name="endStopoverTime" value="@charge.EndStopoverTime?.ToString("g")" readonly class="form-control" /></td>
-                                    <td><input type="text" name="totalCost" value="@charge.TotalCost" readonly class="form-control" /></td>
-                                    <input type="hidden" name="id" value="@charge.Id" readonly class="form-control" />
+                                    <td>@stop.CarPlate</td>
+                                    <td>@stop.ParkingSlotId</td>
+                                    <td>@stop.StartStopoverTime?.ToString("g")</td>
+                                    <td>@stop.EndStopoverTime?.ToString("g")</td>
+                                    <td>@stop.TotalCost</td>
                                     <td>
-                                            @if (charge.ToPay)
-                                            {
-
-
-                                            <input class="btn btn-success" type="submit"
-                                                   value="Pay Now" />
-                                            }
+                                        @if (stop.ToPay)
+                                        {
+                                            <button class="btn btn-success" onclick="handlePayment('@stop.Id', @stop.TotalCost, false)">Pay Now</button>
+                                        }
                                     </td>
-                                    </form>
                                 </tr>
                             }
                         </tbody>
@@ -95,9 +86,50 @@
 </div>
 
 <script>
-    async function handlePayment(carPlate) {
-        alert(`Hai pagato €${totalCost.toFixed(2)} con successo per l'auto con targa: ${carPlate}`);
+    async function handlePayment(id, totalCost, isCharge) {
+        try {
+            alert(`Hai pagato €${totalCost.toFixed(2)} con successo.`);
 
+            if (isCharge) {
+                await historicizeCharge(id);
+            } else {
+                await historicizeStopover(id);
+            }
+        } catch (error) {
+            console.error("Errore durante il pagamento o la storicizzazione:", error);
+            alert("C'è stato un errore durante il pagamento o la storicizzazione.");
+        }
+    }
+
+    async function historicizeCharge(chargeId) {
+        const response = await fetch('/api/currentlycharging/historicizeCharge', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: chargeId
+        });
+
+        if (!response.ok) {
+            throw new Error('Errore nella storicizzazione della ricarica.');
+        }
+
+        console.log('Ricarica storicizzata con successo.');
+    }
+
+    async function historicizeStopover(stopoverId) {
+        const response = await fetch('/api/currentlycharging/historicizeStopover', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: stopoverId
+        });
+
+        if (!response.ok) {
+            throw new Error('Errore nella storicizzazione della sosta.');
+        }
+
+        console.log('Sosta storicizzata con successo.');
+    }
+</script>
+@*
         // TODO: mandare richiesta PUT all'endpoint /api/CurrentlyCharging/historicize
 
         // TODO: PayPal payment implementation
@@ -116,6 +148,4 @@
         // } catch (error) {
         //     console.error('Error:', error);
         //     alert('An error occurred during the payment process.');
-        // }
-    }
-</script>
+        // } *@

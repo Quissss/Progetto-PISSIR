@@ -49,35 +49,37 @@ namespace Progetto.App.Controllers
             return Ok(recharges);
         }
 
-        [HttpPut("historicizeCharge")] // NOT WORKING
-        public async Task<IActionResult> HistoricizeCharge([FromBody] CurrentlyCharging recharge)
+        [HttpPost("historicizeCharge")] // NOT WORKING
+        public async Task<IActionResult> HistoricizeCharge([FromBody] int chargeId)
         {
             var scope = _serviceScopeFactory.CreateScope();
             var chargeHistoryRepository = scope.ServiceProvider.GetRequiredService<ChargeHistoryRepository>();
 
+            var charge = await _currentlyChargingRespository.GetByIdAsync(chargeId);
             var historicizedRecharge = await chargeHistoryRepository.AddAsync(new ChargeHistory
             {
-                StartChargingTime = recharge.StartChargingTime.Value,
-                EndChargingTime = recharge.EndChargingTime.Value,
-                StartChargePercentage = recharge.StartChargePercentage,
-                TargetChargePercentage = recharge.TargetChargePercentage,
-                MwBotId = recharge.MwBotId,
-                UserId = recharge.UserId,
-                CarPlate = recharge.CarPlate,
-                ParkingSlotId = recharge.ParkingSlotId,
-                EnergyConsumed = recharge.EnergyConsumed,
-                TotalCost = recharge.TotalCost
+                StartChargingTime = charge.StartChargingTime.Value,
+                EndChargingTime = charge.EndChargingTime.Value,
+                StartChargePercentage = charge.StartChargePercentage,
+                TargetChargePercentage = charge.TargetChargePercentage,
+                MwBotId = charge.MwBotId,
+                UserId = charge.UserId,
+                CarPlate = charge.CarPlate,
+                ParkingSlotId = charge.ParkingSlotId,
+                EnergyConsumed = charge.EnergyConsumed,
+                TotalCost = charge.TotalCost
             });
 
             return Ok(historicizedRecharge);
         }
 
-        [HttpPut("historicizeStopover")] // NOT WORKING
-        public async Task<IActionResult> HistoricizeStopover([FromBody] Stopover stopover)
+        [HttpPost("historicizeStopover")] // NOT WORKING
+        public async Task<IActionResult> HistoricizeStopover([FromBody] int stopoverId)
         {
             var scope = _serviceScopeFactory.CreateScope();
             var stopoverHistoryRepository = scope.ServiceProvider.GetRequiredService<StopoverHistoryRepository>();
 
+            var stopover = await _stopoverRepository.GetByIdAsync(stopoverId);
             var historicizedStopover = await stopoverHistoryRepository.AddAsync(new StopoverHistory
             {
                 StartStopoverTime = stopover.StartStopoverTime.Value,
@@ -89,7 +91,6 @@ namespace Progetto.App.Controllers
 
             return Ok(historicizedStopover);
         }
-
 
         [HttpPost("pay")]
         public async Task<IActionResult> Pay([FromForm] Stopover stopover)
