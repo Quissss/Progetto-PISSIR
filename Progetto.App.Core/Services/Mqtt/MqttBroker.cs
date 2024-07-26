@@ -242,6 +242,7 @@ public class MqttBroker : IHostedService, IDisposable
         mwBotMessage.CurrentlyCharging.ImmediateRequestId = null;
         mwBotMessage.CurrentlyCharging.EndChargingTime = DateTime.Now;
         mwBotMessage.CurrentlyCharging.ToPay = true;
+        mwBotMessage.CurrentlyCharging.TotalCost = Math.Round((decimal)mwBotMessage.CurrentlyCharging.TotalCost, 2);
         mwBotMessage.Parking = parking;
         await currentlyChargingRepository.UpdateAsync(mwBotMessage.CurrentlyCharging);
         await carRepository.UpdateCarStatus(mwBotMessage.CarPlate, CarStatus.Charged);
