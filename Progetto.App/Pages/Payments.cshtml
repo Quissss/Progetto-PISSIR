@@ -38,7 +38,7 @@
                                     <td>
                                         @if (charge.ToPay)
                                         {
-                                            <button class="btn btn-success" onclick="handlePayment('@charge.Id', @charge.TotalCost.ToString(), true)">Pay Now</button>
+                                            <button class="btn btn-success" onclick="handlePayment('@charge.Id', '@charge.TotalCost', true)">Pay Now</button>
                                         }
                                     </td>
                                 </tr>
@@ -71,7 +71,7 @@
                                     <td>
                                         @if (stop.ToPay)
                                         {
-                                            <button class="btn btn-success" onclick="handlePayment('@stop.Id', @stop.TotalCost.ToString(), false)">Pay Now</button>
+                                            <button class="btn btn-success" onclick="handlePayment('@stop.Id', '@stop.TotalCost', false)">Pay Now</button>
                                         }
                                     </td>
                                 </tr>
@@ -89,7 +89,8 @@
     <script>
         async function handlePayment(id, totalCost, isCharge) {
             try {
-                alert(`Hai pagato €${totalCost.toFixed(2)} con successo.`);
+                let totalCostNumber = parseFloat(totalCost); // Converte la stringa in un numero decimale
+                alert(`Hai pagato €${totalCostNumber.toFixed(2)} con successo.`);
 
                 if (isCharge) {
                     await historicizeCharge(id);
