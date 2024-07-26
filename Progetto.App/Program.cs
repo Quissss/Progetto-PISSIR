@@ -1,20 +1,17 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Progetto.App.Core.Data;
-using Progetto.App.Core.Services.Mqtt;
-using Progetto.App.Core.Security;
-using Progetto.App.Core.Security.Policies;
-using Serilog;
-using Progetto.App.Core.Repositories;
-using Progetto.App.Core.Validators;
-using FluentValidation;
-using Progetto.App.Core.Models;
-using Progetto.App.Controllers;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using PayPal.REST.Client;
 using PayPal.REST.Models;
+using Progetto.App.Core.Data;
+using Progetto.App.Core.Models;
+using Progetto.App.Core.Repositories;
+using Progetto.App.Core.Security;
+using Progetto.App.Core.Security.Policies;
+using Progetto.App.Core.Services.Mqtt;
+using Progetto.App.Core.Validators;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -28,12 +25,12 @@ services.AddLogging(loggingBuilder =>
             .CreateLogger()
     ));
 
-// External authentication
-services.AddAuthentication().AddGoogle(googleOptions =>
-    {
-        googleOptions.ClientId = configuration["Authentication:Google:ClientId"]!;
-        googleOptions.ClientSecret = configuration["Authentication:Google:ClientSecret"]!;
-    });
+//// External authentication
+//services.AddAuthentication().AddGoogle(googleOptions =>
+//    {
+//        googleOptions.ClientId = configuration["Authentication:Google:ClientId"]!;
+//        googleOptions.ClientSecret = configuration["Authentication:Google:ClientSecret"]!;
+//    });
 
 #region PayPal
 services.AddSingleton<IPayPalClient, PayPalClient>();
