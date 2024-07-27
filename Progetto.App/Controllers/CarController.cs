@@ -220,29 +220,31 @@ public class CarController : ControllerBase
     [HttpGet("my-cars")]
     public async Task<ActionResult<IEnumerable<Car>>> GetMyCars()
     {
-        if (string.IsNullOrEmpty(User.Identity.Name))
+        var userId = (await _userManager.GetUserAsync(User))?.Id.ToString();
+
+        if (string.IsNullOrEmpty(userId))
         {
-            _logger.LogWarning("Invalid user {user}", User.Identity.Name);
+            _logger.LogWarning("Invalid user {user}", userId);
             return BadRequest();
         }
 
         try
         {
-            _logger.LogDebug("Getting cars of user {user}", User.Identity.Name);
+            _logger.LogDebug("Getting cars of user {user}", userId);
 
-            var car = await _carRepository.GetCarsByOwner(User.Identity.Name);
+            var car = await _carRepository.GetCarsByOwner(userId);
             if (car == null)
             {
-                _logger.LogWarning("No cars found for user {user}", User.Identity.Name);
+                _logger.LogWarning("No cars found for user {user}", userId);
                 return NotFound();
             }
 
-            _logger.LogDebug("Returning cars of user {user}", User.Identity.Name);
+            _logger.LogDebug("Returning cars of user {user}", userId);
             return Ok(car);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error while getting cars of user {user}", User.Identity.Name);
+            _logger.LogError(ex, "Error while getting cars of user {user}", userId);
         }
 
         return BadRequest();
@@ -251,6 +253,14 @@ public class CarController : ControllerBase
     [HttpGet("my-cars/{licencePlate}")]
     public async Task<ActionResult<IEnumerable<Car>>> GetMyCar(string licencePlate)
     {
+        var userId = (await _userManager.GetUserAsync(User))?.Id.ToString();
+
+        if (string.IsNullOrEmpty(userId))
+        {
+            _logger.LogWarning("Invalid user {user}", userId);
+            return BadRequest();
+        }
+
         if (string.IsNullOrEmpty(licencePlate))
         {
             _logger.LogWarning("Invalid licence plate {licencePlate}", licencePlate);
@@ -259,9 +269,9 @@ public class CarController : ControllerBase
 
         try
         {
-            _logger.LogDebug("Getting car with licence plate {licencePlate} of user {user}", licencePlate, User.Identity.Name);
+            _logger.LogDebug("Getting car with licence plate {licencePlate} of user {user}", licencePlate, userId);
 
-            var myCars = await _carRepository.GetCarsByOwner(User.Identity.Name);
+            var myCars = await _carRepository.GetCarsByOwner(userId);
 
             var car = myCars.Where(c => c.LicencePlate == licencePlate).FirstOrDefault();
             if (car == null)
@@ -271,7 +281,7 @@ public class CarController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error while getting car with licence plate {licencePlate} of user {user}", licencePlate, User.Identity.Name);
+            _logger.LogError(ex, "Error while getting car with licence plate {licencePlate} of user {user}", licencePlate, userId);
         }
 
         return BadRequest();

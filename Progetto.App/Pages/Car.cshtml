@@ -24,6 +24,24 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.js"></script>
     <script>
         const userId = @Html.Raw(Json.Serialize(Model.UserId));
+
+        $(document).ready(function () {
+            var userId = '@Model.UserId';
+            $.ajax({
+                url: '/api/Car/GetCarsByOwner/' + userId,
+                method: 'GET',
+                success: function (data) {
+                    // Inizializza jsGrid o altre UI con i dati ottenuti
+                    $("#jsGridCar").jsGrid({
+                        data: data,
+                        // Configurazioni di jsGrid
+                    });
+                },
+                error: function (error) {
+                    console.log("Errore nel caricamento dei dati delle auto:", error);
+                }
+            });
+        });
     </script>
     <script type="text/javascript" src="~/js/jsGridCar.js" asp-append-version="true"></script>
 }

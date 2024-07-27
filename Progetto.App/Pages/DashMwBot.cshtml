@@ -22,13 +22,38 @@
     </div>
 </div>
 
-
-
-
 @section Scripts {
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.js"></script>
-    <script>
-        const parkings = @Html.Raw(Json.Serialize(Model.Parkings.Select(p => new { value = p.Value, text = p.Text })));
-    </script>
     <script type="text/javascript" src="~/js/jsGridMwBot.js" asp-append-version="true"></script>
+    <script>
+        let parkings;
+
+        $(document).ready(function () {
+            // Load mwbots
+            $.ajax({
+                url: '/api/MwBot',
+                method: 'GET',
+                success: function (data) {
+                    $("#mwBotGrid").jsGrid({
+                        data: data,
+                    });
+                },
+                error: function (error) {
+                    console.error("Errore nel caricamento dei dati dei MwBot:", error);
+                }
+            });
+
+            // Load parkings
+            $.ajax({
+                url: '/api/Parking',
+                method: 'GET',
+                success: function (data) {
+                    parkings = data.map(p => ({ value: p.id, text: `${p.name} [${p.city} - ${p.address}]` }));
+                },
+                error: function (error) {
+                    console.error("Errore nel caricamento dei dati dei Parkings:", error);
+                }
+            });
+        });
+    </script>
 }

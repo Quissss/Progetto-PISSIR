@@ -9,7 +9,6 @@
     <div class="row">
         <partial name="_DashboardPartial" />
 
-        <!-- Main content -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
             <div class="card mt-4 shadow-sm">
                 <div class="card-header bg-primary text-white text-center">
@@ -31,27 +30,17 @@
 
                         <div class="form-group mb-4">
                             <label for="parkingId" class="form-label"><strong>Seleziona Parcheggio:</strong></label>
-                            <select id="parkingId" name="ParkingId" class="form-select" required>
-                                @foreach (var parking in Model.Parkings)
-                                {
-                                    <option value="@parking.Id">@parking.Name - @parking.Address - @parking.City</option>
-                                }
-                            </select>
+                            <select id="parkingId" name="ParkingId" class="form-select" required></select>
                             <span class="error text-danger" id="parkingIdError"></span>
                         </div>
 
                         <div class="form-group mb-4">
                             <label for="carPlate" class="form-label"><strong>Seleziona Auto:</strong></label>
-                            <select id="carPlate" name="CarPlate" class="form-select" required>
-                                @foreach (var car in Model.Cars)
-                                {
-                                    <option value="@car.LicencePlate">@car.Model - @car.LicencePlate</option>
-                                }
-                            </select>
+                            <select id="carPlate" name="CarPlate" class="form-select" required></select>
                             <span class="error text-danger" id="carPlateError"></span>
                         </div>
 
-                        <input type="hidden" id="userId" name="userId" value="@Model.Reservation.UserId" required>
+                        <input type="hidden" id="userId" name="userId" required>
 
                         <div class="d-flex justify-content-center">
                             <button type="button" class="btn btn-primary btn-lg" onclick="submitForm()">Crea Prenotazione</button>
@@ -60,47 +49,93 @@
                 </div>
             </div>
 
-            <!-- Line chart -->
             <canvas class="my-4 w-100" id="myChart" width="900" height="380"></canvas>
         </main>
     </div>
 </div>
 
 @section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        $(document).ready(function () {
+            loadDropdownOptions();
+            loadUserId(); // Carica l'ID utente
+        });
+
+        function loadUserId() {
+            $.ajax({
+                url: '/api/user/current',
+                method: 'GET',
+                success: function (data) {
+                    $('#userId').val(data.userId);
+                },
+                error: function () {
+                    console.error('Errore durante il caricamento dell\'ID utente.');
+                }
+            });
+        }
+
+        function loadDropdownOptions() {
+            $.when(
+                $.getJSON('/api/Parking'),
+                $.getJSON('/api/Car/my-cars')
+            ).done(function (parkingsResponse, carsResponse) {
+                var parkings = parkingsResponse[0];
+                var cars = carsResponse[0];
+
+                var $parkingSelect = $('#parkingId');
+                $.each(parkings, function (index, parking) {
+                    $parkingSelect.append($('<option>', {
+                        value: parking.id,
+                        text: `${parking.name} - ${parking.address} - ${parking.city}`
+                    }));
+                });
+
+                var $carSelect = $('#carPlate');
+                $.each(cars, function (index, car) {
+                    $carSelect.append($('<option>', {
+                        value: car.licencePlate,
+                        text: `${car.model} - ${car.licencePlate}`
+                    }));
+                });
+            }).fail(function () {
+                console.error('Errore durante il caricamento delle opzioni.');
+            });
+        }
+
         function updateChargeLevelDisplay() {
-            const chargeLevel = document.getElementById('requestedChargeLevel').value;
-            document.getElementById('chargeLevelDisplay').innerText = chargeLevel;
+            var chargeLevel = $('#requestedChargeLevel').val();
+            $('#chargeLevelDisplay').text(chargeLevel);
         }
 
         function clearErrors() {
-            document.querySelectorAll('.error').forEach(error => error.innerText = '');
+            $('.error').text('');
         }
 
         function validateForm() {
             clearErrors();
-            let isValid = true;
+            var isValid = true;
 
-            const requestDate = document.getElementById('requestDate').value;
-            const requestedChargeLevel = document.getElementById('requestedChargeLevel').value;
-            const parkingId = document.getElementById('parkingId').value;
-            const carId = document.getElementById('carPlate').value;
-            const userId = document.getElementById('userId').value;
+            var requestDate = $('#requestDate').val();
+            var requestedChargeLevel = $('#requestedChargeLevel').val();
+            var parkingId = $('#parkingId').val();
+            var carId = $('#carPlate').val();
+            var userId = $('#userId').val();
 
             if (!requestDate) {
-                document.getElementById('requestDateError').innerText = 'Data Richiesta è obbligatoria.';
+                $('#requestDateError').text('Data Richiesta è obbligatoria.');
                 isValid = false;
             }
             if (requestedChargeLevel < 0 || requestedChargeLevel > 100) {
-                document.getElementById('requestedChargeLevelError').innerText = 'Livello di Carica Richiesto deve essere tra 0 e 100.';
+                $('#requestedChargeLevelError').text('Livello di Carica Richiesto deve essere tra 0 e 100.');
                 isValid = false;
             }
             if (!parkingId) {
-                document.getElementById('parkingIdError').innerText = 'Seleziona un parcheggio.';
+                $('#parkingIdError').text('Seleziona un parcheggio.');
                 isValid = false;
             }
             if (!carId) {
-                document.getElementById('carPlateError').innerText = 'Seleziona un\'auto.';
+                $('#carPlateError').text('Seleziona un\'auto.');
                 isValid = false;
             }
             if (!userId) {
@@ -110,29 +145,26 @@
             return isValid;
         }
 
-        async function submitForm() {
+        function submitForm() {
             if (!validateForm()) {
                 return;
             }
 
-            const form = document.getElementById('reservationForm');
-            const formData = new FormData(form);
+            var formData = new FormData($('#reservationForm')[0]);
 
-            try {
-                const response = await fetch('/api/reservation', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (response.ok) {
+            $.ajax({
+                url: '/api/reservation',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function () {
                     alert('Prenotazione creata con successo!');
-                } else {
+                },
+                error: function () {
                     alert('Si è verificato un errore durante la creazione della prenotazione.');
                 }
-            } catch (error) {
-                console.error('Errore durante la chiamata fetch:', error);
-                alert('Si è verificato un errore durante la chiamata fetch. Controlla la console per ulteriori dettagli.');
-            }
+            });
         }
     </script>
 }

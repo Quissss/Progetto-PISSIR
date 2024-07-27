@@ -34,11 +34,10 @@ namespace Progetto.App.Controllers
             _serviceScopeFactory = serviceScopeFactory;
         }
 
-        [HttpGet]
+        [HttpGet("recharges")]
         public async Task<IActionResult> GetRecharges([FromQuery] string? carPlate)
         {
             var currentUser = await _userManager.GetUserAsync(User);
-
             var recharges = await _currentlyChargingRespository.GetByUserId(currentUser.Id);
 
             if (!(string.IsNullOrEmpty(carPlate)))
@@ -47,6 +46,21 @@ namespace Progetto.App.Controllers
             }
 
             return Ok(recharges);
+        }
+
+
+        [HttpGet("stopovers")]
+        public async Task<IActionResult> GetStopovers([FromQuery] string? carPlate)
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+            var stopovers = await _stopoverRepository.GetByUserId(currentUser.Id);
+
+            if (!(string.IsNullOrEmpty(carPlate)))
+            {
+                stopovers = stopovers.Where(s => s.CarPlate.Contains(carPlate, StringComparison.InvariantCultureIgnoreCase)).ToList();
+            }
+
+            return Ok(stopovers);
         }
 
         [HttpPost("historicizeCharge")]
@@ -92,28 +106,6 @@ namespace Progetto.App.Controllers
             await _stopoverRepository.DeleteAsync(s => s.Id == stopoverId);
 
             return Ok(historicizedStopover);
-        }
-
-        [HttpPost("pay")]
-        public async Task<IActionResult> Pay([FromForm] Stopover stopover)
-        {
-            var updateTopay = await _stopoverRepository.GetByIdAsync(stopover.Id);
-
-            updateTopay.ToPay = false;
-            await _stopoverRepository.SaveAsync();
-            return Ok(updateTopay);
-        }
-
-        [HttpPost("payCharge")]
-        public async Task<IActionResult> PayCharge([FromForm] CurrentlyCharging charge)
-        {
-
-
-            var updateTopay = await _currentlyChargingRespository.GetByIdAsync(charge.Id);
-
-            updateTopay.ToPay = false;
-            await _currentlyChargingRespository.SaveAsync();
-            return Ok(updateTopay);
         }
     }
 }

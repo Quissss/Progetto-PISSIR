@@ -26,23 +26,7 @@
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            @foreach (var charge in Model.CurrentCharges)
-                            {
-                                <tr>
-                                    <td>@charge.CarPlate</td>
-                                    <td>@charge.ParkingSlotId</td>
-                                    <td>@charge.StartChargingTime?.ToString("g")</td>
-                                    <td>@charge.EndChargingTime?.ToString("g")</td>
-                                    <td>@charge.TotalCost</td>
-                                    <td>
-                                        @if (charge.ToPay)
-                                        {
-                                            <button class="btn btn-success" onclick="handlePayment('@charge.Id', '@charge.TotalCost', true)">Pay Now</button>
-                                        }
-                                    </td>
-                                </tr>
-                            }
+                        <tbody id="currentChargesTable">
                         </tbody>
                     </table>
                 </div>
@@ -59,23 +43,7 @@
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            @foreach (var stop in Model.StopCharges)
-                            {
-                                <tr>
-                                    <td>@stop.CarPlate</td>
-                                    <td>@stop.ParkingSlotId</td>
-                                    <td>@stop.StartStopoverTime?.ToString("g")</td>
-                                    <td>@stop.EndStopoverTime?.ToString("g")</td>
-                                    <td>@stop.TotalCost</td>
-                                    <td>
-                                        @if (stop.ToPay)
-                                        {
-                                            <button class="btn btn-success" onclick="handlePayment('@stop.Id', '@stop.TotalCost', false)">Pay Now</button>
-                                        }
-                                    </td>
-                                </tr>
-                            }
+                        <tbody id="stopChargesTable">
                         </tbody>
                     </table>
                 </div>
@@ -89,7 +57,7 @@
     <script>
         async function handlePayment(id, totalCost, isCharge) {
             try {
-                let totalCostNumber = parseFloat(totalCost); // Converte la stringa in un numero decimale
+                let totalCostNumber = parseFloat(totalCost);
                 alert(`Hai pagato €${totalCostNumber.toFixed(2)} con successo.`);
 
                 if (isCharge) {
@@ -107,7 +75,7 @@
             const response = await fetch('/api/currentlycharging/historicizeCharge', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: chargeId
+                body: JSON.stringify({ chargeId })
             });
 
             if (!response.ok) {
@@ -115,13 +83,14 @@
             }
 
             console.log('Ricarica storicizzata con successo.');
+            loadCharges();
         }
 
         async function historicizeStopover(stopoverId) {
             const response = await fetch('/api/currentlycharging/historicizeStopover', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: stopoverId
+                body: JSON.stringify({ stopoverId })
             });
 
             if (!response.ok) {
@@ -129,7 +98,57 @@
             }
 
             console.log('Sosta storicizzata con successo.');
+            loadStopovers();
         }
+
+        async function loadCharges() {
+            const response = await fetch('/api/currentlycharging/recharges');
+            const charges = await response.json();
+            const tbody = document.getElementById('currentChargesTable');
+            tbody.innerHTML = '';
+
+            charges.forEach(charge => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                            <td>${charge.carPlate}</td>
+                            <td>${charge.parkingSlotId}</td>
+                            <td>${new Date(charge.startChargingTime).toLocaleString()}</td>
+                            <td>${new Date(charge.endChargingTime).toLocaleString()}</td>
+                            <td>${charge.totalCost}</td>
+                            <td>
+                                ${charge.toPay ? `<button class="btn btn-success" onclick="handlePayment(${charge.id}, ${charge.totalCost}, true)">Pay Now</button>` : ''}
+                            </td>
+                        `;
+                tbody.appendChild(row);
+            });
+        }
+
+        async function loadStopovers() {
+            const response = await fetch('/api/currentlycharging/stopovers');
+            const stopovers = await response.json();
+            const tbody = document.getElementById('stopChargesTable');
+            tbody.innerHTML = '';
+
+            stopovers.forEach(stop => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                            <td>${stop.carPlate}</td>
+                            <td>${stop.parkingSlotId}</td>
+                            <td>${new Date(stop.startStopoverTime).toLocaleString()}</td>
+                            <td>${new Date(stop.endStopoverTime).toLocaleString()}</td>
+                            <td>${stop.totalCost}</td>
+                            <td>
+                                ${stop.toPay ? `<button class="btn btn-success" onclick="handlePayment(${stop.id}, ${stop.totalCost}, false)">Pay Now</button>` : ''}
+                            </td>
+                        `;
+                tbody.appendChild(row);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCharges();
+            loadStopovers();
+        });
     </script>
 }
 
