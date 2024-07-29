@@ -58,12 +58,11 @@
         async function handlePayment(id, totalCost, isCharge) {
             try {
                 let totalCostNumber = parseFloat(totalCost);
-                alert(`Hai pagato €${totalCostNumber.toFixed(2)} con successo.`);
 
                 if (isCharge) {
-                    await historicizeCharge(id);
+                    await historicizeCharge(id, totalCostNumber);
                 } else {
-                    await historicizeStopover(id);
+                    await historicizeStopover(id, totalCostNumber);
                 }
             } catch (error) {
                 console.error("Errore durante il pagamento o la storicizzazione:", error);
@@ -71,32 +70,34 @@
             }
         }
 
-        async function historicizeCharge(chargeId) {
+        async function historicizeCharge(chargeId, totalCostNumber) {
             const response = await fetch('/api/currentlycharging/historicizeCharge', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chargeId })
+                body: chargeId,
             });
 
             if (!response.ok) {
                 throw new Error('Errore nella storicizzazione della ricarica.');
             }
 
+            alert(`Hai pagato €${totalCostNumber.toFixed(2)} con successo.`);
             console.log('Ricarica storicizzata con successo.');
             loadCharges();
         }
 
-        async function historicizeStopover(stopoverId) {
+        async function historicizeStopover(stopoverId, totalCostNumber) {
             const response = await fetch('/api/currentlycharging/historicizeStopover', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ stopoverId })
+                body: stopoverId,
             });
 
             if (!response.ok) {
                 throw new Error('Errore nella storicizzazione della sosta.');
             }
 
+            alert(`Hai pagato €${totalCostNumber.toFixed(2)} con successo.`);
             console.log('Sosta storicizzata con successo.');
             loadStopovers();
         }
@@ -151,7 +152,6 @@
         });
     </script>
 }
-
 
 @*
 // TODO: mandare richiesta PUT all'endpoint /api/CurrentlyCharging/historicize

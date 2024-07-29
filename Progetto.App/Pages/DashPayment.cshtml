@@ -10,29 +10,27 @@
     <div class="row">
         <partial name="_DashboardPartial" />
 
-        <!-- Main content -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-            <!-- Filter Form -->
             <div class="card mb-4 shadow-sm border-primary">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h3 class="card-title mb-0"><strong>Filter Payments</strong></h3>
                     <i class="fas fa-filter"></i>
                 </div>
                 <div class="card-body">
-                    <form method="post">
+                    <form id="filterForm">
                         <div class="form-row">
                             <div class="row">
                                 <div class="form-group col-md-4 mb-3">
                                     <label for="startDate">Start Date</label>
-                                    <input type="datetime-local" id="startDate" asp-for="StartDate" class="form-control" />
+                                    <input type="datetime-local" id="startDate" class="form-control" />
                                 </div>
                                 <div class="form-group col-md-4 mb-3">
                                     <label for="endDate">End Date</label>
-                                    <input type="datetime-local" id="endDate" asp-for="EndDate" class="form-control" />
+                                    <input type="datetime-local" id="endDate" class="form-control" />
                                 </div>
                                 <div class="form-group col-md-4 mb-3">
                                     <label for="chargeType">Charge Type</label>
-                                    <select id="chargeType" asp-for="ChargeType" class="form-control">
+                                    <select id="chargeType" class="form-control">
                                         <option value="">All</option>
                                         <option value="true">Charge</option>
                                         <option value="false">Stop</option>
@@ -40,58 +38,108 @@
                                 </div>
                             </div>
                             <div class="row d-flex justify-content-center">
-                                <button type="submit" class="btn btn-primary btn-block col-6"><i class="fas fa-search"></i> Filter</button>
+                                <button type="button" class="btn btn-primary btn-block col-6" onclick="filterPayments()"><i class="fas fa-search"></i> Filter</button>
                             </div>
                         </div>
                     </form>
                 </div>
             </div>
 
-            <!-- Payment Report Table -->
             <div class="card shadow-sm border-success">
                 <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                     <h3 class="card-title mb-0"><strong>Payment Report</strong></h3>
                     <i class="fas fa-file-invoice-dollar"></i>
                 </div>
                 <div class="card-body">
-                    @if (Model.Payments.Any())
-                    {
-                        <table class="table table-striped table-bordered">
-                            <thead class="thead-dark">
-                                <tr>
-                                    <th scope="col">User ID</th>
-                                    <th scope="col">Car Plate</th>
-                                    <th scope="col">Total Cost</th>
-                                    <th scope="col">Energy Consumed</th>
-                                    <th scope="col">Start Time</th>
-                                    <th scope="col">End Time</th>
-                                    <th scope="col">Type</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var payment in Model.Payments)
-                                {
-                                    <tr>
-                                        <td>@payment.UserId</td>
-                                        <td>@payment.CarPlate</td>
-                                        <td>@payment.TotalCost.ToString("C")</td>
-                                        <td>@payment.EnergyConsumed?.ToString("N2")</td>
-                                        <td>@payment.StartTime.ToString("g")</td>
-                                        <td>@payment.EndTime.ToString("g")</td>
-                                        <td>@(payment.IsCharge ? "Charge" : "Stop")</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    }
-                    else
-                    {
-                        <div class="alert alert-warning d-flex align-items-center" role="alert">
-                            <i class="fas fa-exclamation-circle me-2"></i> No payments found for the selected filters.
-                        </div>
-                    }
+                    <div id="paymentReport">
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 </div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            loadInitialPayments();
+        });
+
+        function loadInitialPayments() {
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - 7); // Set to last 7 days
+            const endDate = new Date();
+
+            $('#startDate').val(startDate.toISOString().slice(0, 16));
+            $('#endDate').val(endDate.toISOString().slice(0, 16));
+
+            filterPayments();
+        }
+
+        function filterPayments() {
+            const startDate = $('#startDate').val();
+            const endDate = $('#endDate').val();
+            const chargeType = $('#chargeType').val();
+
+            if (!startDate || !endDate) {
+                alert('Please select a valid date range.');
+                return;
+            }
+
+            $.ajax({
+                url: '/api/payment/payments',
+                method: 'GET',
+                data: {
+                    startDate: startDate,
+                    endDate: endDate,
+                    chargeType: chargeType
+                },
+                success: function(data) {
+                    renderPayments(data);
+                },
+                error: function() {
+                    alert('Error loading payment data.');
+                }
+            });
+        }
+
+        function renderPayments(payments) {
+            const $paymentReport = $('#paymentReport');
+            $paymentReport.empty();
+
+            if (payments.length > 0) {
+                let table = `<table class="table table-striped table-bordered">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th scope="col">User ID</th>
+                            <th scope="col">Car Plate</th>
+                            <th scope="col">Total Cost</th>
+                            <th scope="col">Energy Consumed</th>
+                            <th scope="col">Start Time</th>
+                            <th scope="col">End Time</th>
+                            <th scope="col">Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+                payments.forEach(payment => {
+                    table += `<tr>
+                        <td>${payment.userId}</td>
+                        <td>${payment.carPlate}</td>
+                        <td>${payment.totalCost.toFixed(2)}</td>
+                        <td>${payment.energyConsumed?.toFixed(2) || ''}</td>
+                        <td>${new Date(payment.startTime).toLocaleString()}</td>
+                        <td>${new Date(payment.endTime).toLocaleString()}</td>
+                        <td>${payment.isCharge ? "Charge" : "Stop"}</td>
+                    </tr>`;
+                });
+
+                table += '</tbody></table>';
+                $paymentReport.append(table);
+            } else {
+                $paymentReport.append('<div class="alert alert-warning d-flex align-items-center" role="alert"><i class="fas fa-exclamation-circle me-2"></i> No payments found for the selected filters.</div>');
+            }
+        }
+    </script>
+}

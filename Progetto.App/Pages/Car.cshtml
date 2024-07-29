@@ -31,10 +31,8 @@
                 url: '/api/Car/GetCarsByOwner/' + userId,
                 method: 'GET',
                 success: function (data) {
-                    // Inizializza jsGrid o altre UI con i dati ottenuti
                     $("#jsGridCar").jsGrid({
                         data: data,
-                        // Configurazioni di jsGrid
                     });
                 },
                 error: function (error) {

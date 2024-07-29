@@ -34,7 +34,10 @@ $(function () {
 
         controller: {
             loadData: function (filter) {
-                return ajax(filter, "GET",false);
+                if (filter.status === -1) {
+                    delete filter.status;
+                }
+                return ajax(filter, "GET", false);
             },
             updateItem: function (item) {
                 return ajax(item, "PUT");
@@ -51,9 +54,10 @@ $(function () {
             { name: "licencePlate", type: "text", title: "Licence Plate", width: 100, validate: "required" },
             { name: "brand", type: "text", title: "Brand", width: 100, validate: "required", filtering: false },
             { name: "model", type: "text", title: "Model", width: 100, validate: "required", filtering: false },
-            { name: "isElectric", type: "checkbox", title: "Is Electric", sorting: false,filtering: false },
+            { name: "isElectric", type: "checkbox", title: "Is Electric", sorting: false, filtering: false },
             {
                 name: "status", type: "select", title: "Status", width: 100, items: [
+                    { Id: -1, Name: ""},
                     { Id: 0, Name: "Out Of Parking" },
                     { Id: 1, Name: "In Charge" },
                     { Id: 2, Name: "Waiting" },
@@ -64,6 +68,7 @@ $(function () {
             
             { type: "control", editButton: true, deleteButton: true }
         ],
+
         onItemInserting: function (args) {
             args.item["ownerId"] = userId;
         },

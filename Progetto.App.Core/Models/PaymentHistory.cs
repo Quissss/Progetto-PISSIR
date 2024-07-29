@@ -13,6 +13,7 @@ namespace Progetto.App.Core.Models;
 public class PaymentHistory
 {
     public int Id { get; set; }
+    public DateTime PaymentDate { get; set; }
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
     public decimal? StartChargePercentage { get; set; }

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
+using Progetto.App.Core.Repositories;
 
 namespace Progetto.App.Controllers;
 
@@ -9,9 +10,15 @@ namespace Progetto.App.Controllers;
 [ApiController]
 public class PaymentController : ControllerBase
 {
+    private readonly PaymentHistoryRepository _paymentHistoryRepository;
+
+    public PaymentController(PaymentHistoryRepository paymentHistoryRepository)
+    {
+        _paymentHistoryRepository = paymentHistoryRepository;
+    }
 
     [AllowAnonymous]
-    [HttpGet("/api/success")]
+    [HttpGet("success")]
     public async Task<ActionResult> Success(string id, string token, string payerId, string returnUrl)
     {
         if (id is null || token is null)
@@ -23,12 +30,23 @@ public class PaymentController : ControllerBase
     }
 
     [AllowAnonymous]
-    [HttpGet("/api/failed")]
+    [HttpGet("failed")]
     public async Task<ActionResult> Fail(string id, string token, string? payerId, string returnUrl)
     {
         if (id is null || token is null)
             return BadRequest();
-        //Failed
+
         return Ok();
+    }
+
+    [Authorize]
+    [HttpGet("payments")]
+    public async Task<ActionResult> GetPayments([FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] bool? chargeType)
+    {
+        if (startDate == default || endDate == default)
+            return BadRequest();
+        
+        var payments = await _paymentHistoryRepository.GetPaymentsWithinDateRangeAndType(startDate, endDate, chargeType);
+        return Ok(payments);
     }
 }

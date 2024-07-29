@@ -32,7 +32,7 @@ public class PaymentHistoryRepository : GenericRepository<PaymentHistory>
     public async Task<List<PaymentHistory>> GetPaymentsWithinDateRangeAndType(DateTime startDate, DateTime endDate, bool? chargeType)
     {
         var query = _context.PaymentHistory
-                            .Where(p => p.StartTime >= startDate && p.EndTime <= endDate);
+                            .Where(p => p.PaymentDate >= startDate && p.PaymentDate <= endDate);
 
         if (chargeType.HasValue)
         {
@@ -41,5 +41,4 @@ public class PaymentHistoryRepository : GenericRepository<PaymentHistory>
 
         return await query.ToListAsync();
     }
-
 }
