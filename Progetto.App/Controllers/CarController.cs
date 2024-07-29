@@ -232,15 +232,15 @@ public class CarController : ControllerBase
         {
             _logger.LogDebug("Getting cars of user {user}", userId);
 
-            var car = await _carRepository.GetCarsByOwner(userId);
-            if (car == null)
+            var cars = await _carRepository.GetCarsByOwner(userId);
+            if (cars == null)
             {
                 _logger.LogWarning("No cars found for user {user}", userId);
                 return NotFound();
             }
 
             _logger.LogDebug("Returning cars of user {user}", userId);
-            return Ok(car);
+            return Ok(cars);
         }
         catch (Exception ex)
         {

@@ -1,42 +1,31 @@
 ﻿@page
-@using Progetto.App.Core.Models
 @model Progetto.App.Pages.MonitoringParkingModel
 @{
     ViewData["Title"] = "MonitoringParking";
 }
 
-<h2 ><i class="fa-solid fa-square-parking"></i> <strong>@ViewData["Title"]</strong></h2>
+<h2><i class="fa-solid fa-square-parking"></i> <strong>@ViewData["Title"]</strong></h2>
 
 <div class="container-fluid">
-
     <div class="row">
         <partial name="_DashboardPartial" />
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-            <!-- Form per la ricerca -->
-            <form action="" method="GET" class="row justify-content-center">
+            <form id="filterForm" class="row justify-content-center">
                 <div class="col-md-auto mb-3">
                     <input type="text" class="form-control" id="searchSlotNumber" name="searchSlotNumber" placeholder="Ricerca per Slot Number">
                 </div>
                 <div class="col-md-auto mb-3">
                     <select id="parkingSlotStatus" name="parkingSlotStatus" class="form-select">
                         <option value="">Tutti gli stati</option>
-                        @foreach (var status in Enum.GetValues(typeof(ParkingSlotStatus)))
-                        {
-                            <option value="@status">@status</option>
-                        }
                     </select>
                 </div>
                 <div class="col-md-auto mb-3">
                     <select id="parkingSlotId" name="ParkingSlotId" class="form-select">
                         <option value="">Tutti i parcheggi</option>
-                        @foreach (var parking in Model.Parkings)
-                        {
-                            <option value="@parking.Id">@parking.Name - @parking.Address</option>
-                        }
                     </select>
                 </div>
                 <div class="col-md-auto mb-3">
-                    <button type="submit" class="btn btn-light btn-outline-dark">Cerca <i class="fa-solid fa-magnifying-glass"></i></button>
+                    <button type="button" class="btn btn-light btn-outline-dark" onclick="loadParkingSlots()">Cerca <i class="fa-solid fa-magnifying-glass"></i></button>
                 </div>
             </form>
             <div class="card shadow-sm mb-4">
@@ -52,25 +41,77 @@
                                 <th>Parking</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            @foreach (var slot in Model.ParkingSlots)
-                            {
-                                <tr>
-                                    <td>@slot.Number</td>
-                                    <td style="color:@slot.StatusColor;">@slot.Status</td>
-                                    <td>@(slot.Parking?.Name ?? "N/A")</td>
-                                </tr>
-                            }
+                        <tbody id="parkingSlotsBody">
                         </tbody>
                     </table>
                 </div>
             </div>
-            <!-- Line chart -->
-
-            <div class="card-body">
-                <canvas class="my-4 w-100" id="myChart" width="900" height="380"></canvas>
-            </div>
-
         </main>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            loadParkingStatuses();
+            loadParkings();
+            loadParkingSlots();
+        });
+
+        function loadParkingStatuses() {
+            $.get('/api/ParkingSlot/statuses', function (data) {
+                let statusDropdown = $('#parkingSlotStatus');
+                data.forEach(function (status) {
+                    statusDropdown.append(new Option(status.name, status.id));
+                });
+            }).fail(function () {
+                console.error('Errore durante il caricamento degli stati dei parcheggi.');
+            });
+        }
+
+        function loadParkings() {
+            $.get('/api/Parking', function (data) {
+                let parkingDropdown = $('#parkingSlotId');
+                data.forEach(function (parking) {
+                    parkingDropdown.append(new Option(parking.name + ' - ' + parking.address, parking.id));
+                });
+            }).fail(function () {
+                console.error('Errore durante il caricamento dei parcheggi.');
+            });
+        }
+
+        function loadParkingSlots() {
+            let filterData = {
+                number: $('#searchSlotNumber').val(),
+                status: $('#parkingSlotStatus').val(),
+                parkingId: $('#parkingSlotId').val()
+            };
+
+            $.get('/api/ParkingSlot', filterData, function (data) {
+                let tableBody = $('#parkingSlotsBody');
+                tableBody.empty();
+
+                data.forEach(function (slot) {
+                    let row = `<tr>
+                        <td>${slot.number}</td>
+                        <td style="color:${getStatusColor(slot.status)};">${slot.statusName}</td>
+                        <td>${slot.parking ? slot.parking.name : 'N/A'} - ${slot.parking.address}</td>
+                    </tr>`;
+                    tableBody.append(row);
+                });
+            }).fail(function () {
+                console.error('Errore durante il caricamento degli slot di parcheggio.');
+            });
+        }
+
+        function getStatusColor(status) {
+            switch (status) {
+                case 0: return 'green'; // Free
+                case 1: return 'red'; // Occupied
+                case 2: return 'orange'; // Reserved
+                case 3: return 'grey'; // OutOfService
+                default: return 'black';
+            }
+        }
+    </script>
+}

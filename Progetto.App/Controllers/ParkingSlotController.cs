@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Security;
@@ -22,11 +23,13 @@ public class ParkingSlotController : ControllerBase
 {
     private readonly ILogger<ParkingSlotController> _logger;
     private readonly ParkingSlotRepository _parkingSlotRepository;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
 
-    public ParkingSlotController(ILogger<ParkingSlotController> logger, ParkingSlotRepository repository)
+    public ParkingSlotController(ILogger<ParkingSlotController> logger, ParkingSlotRepository repository, IServiceScopeFactory serviceScopeFactory)
     {
         _logger = logger;
         _parkingSlotRepository = repository;
+        _serviceScopeFactory = serviceScopeFactory;
     }
 
     [HttpGet]
@@ -36,8 +39,13 @@ public class ParkingSlotController : ControllerBase
         {
             _logger.LogDebug("Getting all parking slots");
 
-
             var parkingSlots = await _parkingSlotRepository.GetAllAsync();
+
+            var scope = _serviceScopeFactory.CreateScope();
+            var parkingRepository = scope.ServiceProvider.GetRequiredService<ParkingRepository>();
+
+            var parkings = await parkingRepository.GetAllAsync();
+            parkingSlots.ForEach(p => p.Parking = parkings.FirstOrDefault(parking => parking.Id == p.ParkingId));
 
             if (parkingSlots == null)
             {
@@ -57,7 +65,6 @@ public class ParkingSlotController : ControllerBase
             {
                 parkingSlots = parkingSlots.Where(p => p.Status == status).ToList();
             }
-
 
             _logger.LogDebug("Returning {count} parking slots", parkingSlots.Count());
 

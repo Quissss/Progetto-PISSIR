@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -31,4 +32,7 @@ public class Car
     public int? ParkingSlotId { get; set; }
     public string OwnerId { get; set; }
     public IdentityUser? Owner { get; set; }
+
+    [NotMapped]
+    public string StatusName { get { return Status.ToString(); } }
 }

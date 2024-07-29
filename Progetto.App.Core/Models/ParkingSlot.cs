@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -25,4 +26,7 @@ public class ParkingSlot
     public ParkingSlotStatus Status { get; set; }
     public int ParkingId { get; set; }
     public Parking? Parking { get; set; }
+
+    [NotMapped]
+    public string StatusName { get { return Status.ToString(); } }
 }
