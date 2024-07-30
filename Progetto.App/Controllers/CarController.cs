@@ -108,7 +108,7 @@ public class CarController : ControllerBase
 
         try
         {
-            if ( !(await _carRepository.CheckEntityExists(car)))
+            if (!(await _carRepository.CheckEntityExists(car)))
             {
                 _logger.LogWarning("Car with licence plate {licencePlate} not found", car.LicencePlate);
                 return NotFound(car);
@@ -128,7 +128,7 @@ public class CarController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Car>>> GetAllCars([FromQuery] string? licencePlate,  [FromQuery] CarStatus? status)
+    public async Task<ActionResult<IEnumerable<Car>>> GetAllCars([FromQuery] string? licencePlate, [FromQuery] CarStatus? status)
     {
         try
         {
@@ -137,7 +137,7 @@ public class CarController : ControllerBase
             var cars = await _carRepository.GetCarsByOwner(user.Id);
 
             if (!string.IsNullOrEmpty(licencePlate))
-                cars=cars.Where(car => car.LicencePlate.Contains(licencePlate)).ToList();
+                cars = cars.Where(car => car.LicencePlate.Contains(licencePlate)).ToList();
             if (status is not null)
                 cars = cars.Where(car => car.Status == status).ToList();
 

@@ -1,13 +1,10 @@
 ﻿using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Security;
 using Progetto.App.Core.Validators;
-using System.Net;
-using System.Xml.Linq;
 
 namespace Progetto.App.Controllers;
 
@@ -30,7 +27,7 @@ public class ParkingSlotController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ParkingSlot>>> GetParkingSlots([FromQuery] int? number, int? parkingId , ParkingSlotStatus? status)
+    public async Task<ActionResult<IEnumerable<ParkingSlot>>> GetParkingSlots([FromQuery] int? number, int? parkingId, ParkingSlotStatus? status)
     {
         try
         {
@@ -47,7 +44,7 @@ public class ParkingSlotController : ControllerBase
 
             if (number is not null)
             {
-                parkingSlots = parkingSlots.Where(p => p.Number ==number).ToList();
+                parkingSlots = parkingSlots.Where(p => p.Number == number).ToList();
             }
             else if (parkingId is not null)
             {

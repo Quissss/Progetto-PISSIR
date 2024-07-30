@@ -1,11 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Progetto.App.Controllers
 {

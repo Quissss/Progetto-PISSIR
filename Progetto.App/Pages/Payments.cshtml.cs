@@ -1,11 +1,11 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Progetto.App.Core.Models;
-using Progetto.App.Core.Repositories;
 using PayPal.REST.Client;
 using PayPal.REST.Models.Orders;
 using PayPal.REST.Models.PaymentSources;
-using Microsoft.AspNetCore.Identity;
+using Progetto.App.Core.Models;
+using Progetto.App.Core.Repositories;
 
 namespace Progetto.App.Pages;
 
@@ -17,7 +17,7 @@ public class PaymentsModel : PageModel
     private readonly UserManager<IdentityUser> _userManager;
 
     public PaymentsModel(
-        CurrentlyChargingRepository currentlyChargingRepository, 
+        CurrentlyChargingRepository currentlyChargingRepository,
         StopoverRepository stopoverRepository,
         UserManager<IdentityUser> userManager
         )

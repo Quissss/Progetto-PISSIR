@@ -2,12 +2,6 @@
 using Microsoft.Extensions.Logging;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
-using Progetto.App.Core.Security;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Services.Mqtt;
 

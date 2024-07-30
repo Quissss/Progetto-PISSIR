@@ -40,13 +40,14 @@ namespace PayPal.REST.Client
         }
 
         private PayPalClient()
-        {            
+        {
             _options = new();
             _options.Converters.Add(new TypeMappingConverter<IPaymentSource, PayPalPaymentSource>());
         }
 
-        private void Configure()        {
-            
+        private void Configure()
+        {
+
             _client.DefaultRequestHeaders.Clear();
             _client.DefaultRequestHeaders.Add("Prefer", "return=representation");
         }

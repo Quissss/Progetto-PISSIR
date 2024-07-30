@@ -5,7 +5,6 @@ using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Security;
 using Progetto.App.Core.Validators;
-using System.Linq.Expressions;
 
 namespace Progetto.App.Controllers;
 
@@ -53,7 +52,7 @@ public class ParkingController : ControllerBase
             await _parkingRepository.AddAsync(parking);
 
             _logger.LogDebug("Parking with {name} created", parking.Name);
-            return Ok(parking); 
+            return Ok(parking);
         }
         catch (Exception ex)
         {
@@ -138,7 +137,7 @@ public class ParkingController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Parking>>> GetAllParkings([FromQuery] string? name, [FromQuery] string? city , [FromQuery] string? address)
+    public async Task<ActionResult<IEnumerable<Parking>>> GetAllParkings([FromQuery] string? name, [FromQuery] string? city, [FromQuery] string? address)
     {
         try
         {
@@ -151,9 +150,9 @@ public class ParkingController : ControllerBase
                 return NotFound();
             }
 
-            if (name is not null )
+            if (name is not null)
             {
-                parkings = parkings.Where(p => p.Name.Contains(name,StringComparison.InvariantCultureIgnoreCase)).ToList();
+                parkings = parkings.Where(p => p.Name.Contains(name, StringComparison.InvariantCultureIgnoreCase)).ToList();
             }
             else if (city is not null)
             {

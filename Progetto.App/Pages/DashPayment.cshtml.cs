@@ -1,11 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Models;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Progetto.App.Core.Repositories;
 
 namespace Progetto.App.Pages
 {
@@ -27,7 +23,7 @@ namespace Progetto.App.Pages
         public DateTime? EndDate { get; set; }
 
         [BindProperty]
-        public bool? ChargeType { get; set; } 
+        public bool? ChargeType { get; set; }
 
         public List<PaymentHistory> Payments { get; set; } = new List<PaymentHistory>();
 

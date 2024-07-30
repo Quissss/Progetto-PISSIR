@@ -1,12 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Progetto.App.Core.Data;
 using Progetto.App.Core.Models;
-using SQLitePCL;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Repositories;
 
@@ -18,7 +12,7 @@ public class CarRepository : GenericRepository<Car>
 {
     private readonly ApplicationDbContext _context;
 
-    public CarRepository(ApplicationDbContext context) : base(context) 
+    public CarRepository(ApplicationDbContext context) : base(context)
     {
         _context = context;
     }

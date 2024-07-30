@@ -1,11 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Progetto.App.Core.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Models
 {
@@ -31,7 +26,7 @@ namespace Progetto.App.Core.Models
 
         public async Task UpdateReservationsCarIsInside(string licencePlate, int parkingId, bool carInside)
         {
-            _reservations?.ForEach(r => 
+            _reservations?.ForEach(r =>
             {
                 if (r.CarPlate == licencePlate && r.ParkingId == parkingId)
                 {

@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
-using Timer = System.Timers.Timer;
 
 namespace Progetto.App.Controllers;
 

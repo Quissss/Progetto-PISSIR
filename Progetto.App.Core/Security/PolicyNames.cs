@@ -1,11 +1,4 @@
-﻿using Progetto.App.Core.Security.Policies;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Progetto.App.Core.Security;
+﻿namespace Progetto.App.Core.Security;
 
 /// <summary>
 /// List of policy names (for authorization)

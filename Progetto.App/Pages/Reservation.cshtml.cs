@@ -3,8 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
-using System;
-using System.Threading.Tasks;
 
 namespace Progetto.App.Pages
 {
@@ -24,14 +22,14 @@ namespace Progetto.App.Pages
         }
 
         [BindProperty]
-        public Reservation Reservation { get; set; } = new ();
+        public Reservation Reservation { get; set; } = new();
         public List<Parking> Parkings { get; set; } = new();
 
-        public IEnumerable<Car> Cars { get; set; } 
+        public IEnumerable<Car> Cars { get; set; }
 
         public async Task OnGetAsync()
         {
-         
+
 
             var currentUser = await _userManager.GetUserAsync(User);
 

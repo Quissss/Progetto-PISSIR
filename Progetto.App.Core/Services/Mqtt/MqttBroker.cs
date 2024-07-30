@@ -9,7 +9,6 @@ using Progetto.App.Core.Models.Mqtt;
 using Progetto.App.Core.Repositories;
 using System.Text;
 using System.Text.Json;
-using static System.Formats.Asn1.AsnWriter;
 
 namespace Progetto.App.Core.Services.Mqtt;
 

@@ -1,5 +1,4 @@
-﻿using FluentValidation;
-using FluentValidation.AspNetCore;
+﻿using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Progetto.App.Core.Models;
@@ -48,8 +47,8 @@ public class ReservationController : ControllerBase
         {
             _logger.LogDebug("Creating reservation with id {id} for user {user}", reservation.Id, User.Identity.Name);
 
-            
-          
+
+
 
             reservation.ReservationTime = DateTime.Now;
             await _reservationRepository.AddAsync(reservation);

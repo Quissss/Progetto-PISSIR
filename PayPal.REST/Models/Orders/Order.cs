@@ -1,13 +1,6 @@
 ﻿using PayPal.REST.Models.Orders.Converters;
 using PayPal.REST.Models.PaymentSources;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
-using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace PayPal.REST.Models.Orders
 {

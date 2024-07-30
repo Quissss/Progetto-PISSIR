@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.WebSockets;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Progetto.App.Core.Models.Mqtt;
+﻿namespace Progetto.App.Core.Models.Mqtt;
 
 public enum MessageType
 {

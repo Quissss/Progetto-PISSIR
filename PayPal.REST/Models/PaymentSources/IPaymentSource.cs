@@ -1,6 +1,4 @@
-﻿using System.Reflection.Metadata;
-
-namespace PayPal.REST.Models.PaymentSources;
+﻿namespace PayPal.REST.Models.PaymentSources;
 
 public interface IPaymentSource
 {

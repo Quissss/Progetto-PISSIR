@@ -1,11 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Progetto.App.Core.Data;
 using Progetto.App.Core.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Progetto.App.Core.Repositories;
 
@@ -26,7 +21,7 @@ public class MwBotRepository : GenericRepository<MwBot>
     {
         _context.MwBots.Update(mwBot);
         await _context.SaveChangesAsync();
-    } 
+    }
 
     public async Task<IEnumerable<MwBot>> GetOnlineMwBots()
     {

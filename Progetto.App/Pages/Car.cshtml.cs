@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
@@ -11,10 +10,10 @@ namespace Progetto.App.Pages
         private readonly CarRepository _carRepository;
         private readonly ILogger<CarModel> _logger;
         private readonly UserManager<IdentityUser> _userManager;
-        
 
 
-        public CarModel(CarRepository carRepository, ILogger<CarModel> logger,UserManager<IdentityUser> userManager)
+
+        public CarModel(CarRepository carRepository, ILogger<CarModel> logger, UserManager<IdentityUser> userManager)
         {
             _carRepository = carRepository;
             _logger = logger;

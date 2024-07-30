@@ -1,11 +1,5 @@
 ﻿using PayPal.REST.Models.Orders.Converters;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace PayPal.REST.Models.Orders;
 
@@ -65,7 +59,7 @@ public class EuroAmount
 {
     [JsonPropertyName("currency_code")]
     public string CurrencyCode => "EUR";
-    
+
     [JsonPropertyName("value")]
     public string Value { get; set; }
 }

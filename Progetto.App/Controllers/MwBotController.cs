@@ -2,8 +2,6 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
@@ -233,7 +231,7 @@ public class MwBotController : ControllerBase
         {
             _logger.BeginScope("Retrieving MwBots");
 
-            IEnumerable<MwBot> mwBots =await _mwBotRepository.GetAllAsync();
+            IEnumerable<MwBot> mwBots = await _mwBotRepository.GetAllAsync();
 
             if (status.HasValue && status.Value == 1)
             {

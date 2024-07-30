@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Progetto.App.Core.Models;
@@ -18,7 +17,7 @@ namespace Progetto.App.Pages
             _logger = logger;
             _parkingRepository = parkingRepository;
         }
-      
+
         public IEnumerable<MwBot> MwBots { get; private set; }
         public IEnumerable<SelectListItem> Parkings { get; set; }
 
