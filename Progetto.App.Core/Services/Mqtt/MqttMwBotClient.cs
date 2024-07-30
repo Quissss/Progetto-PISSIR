@@ -31,9 +31,10 @@ public class MqttMwBotClient
     private CancellationToken _cancellationToken;
     private const int _chargeDelay = 1000;
     private const int _rechargeDelay = 1000;
-    // TODO: add mqttMessage as property here and handle it
     public MwBot? MwBot { get; private set; }
     public ImmediateRequest? HandlingRequest { get; private set; }
+
+    // TODO: add mqttMessage as property here and handle it
 
     public MqttMwBotClient(ILogger<MqttMwBotClient> logger, IServiceScopeFactory serviceScopeFactory, ChargeManager chargeManager)
     {
@@ -52,11 +53,11 @@ public class MqttMwBotClient
 
         // Set timer for reconnect attempts
         _reconnectTimer = new Timer(5000);
-        _reconnectTimer.Elapsed += async (sender, e) => await AttemptReconnectAsync(_cancellationToken);
+        _reconnectTimer.Elapsed += async (sender, e) => await TimedAttemptReconnectAsync(_cancellationToken);
 
         // Set timer for monitoring battery
-        _batteryMonitorTimer = new Timer(10000);
-        _batteryMonitorTimer.Elapsed += async (sender, e) => await CheckBatteryLevelAsync();
+        _batteryMonitorTimer = new Timer(1000);
+        _batteryMonitorTimer.Elapsed += async (sender, e) => await TimedCheckBatteryLevelAsync();
     }
 
     private void ResetCancellationToken()
@@ -91,7 +92,7 @@ public class MqttMwBotClient
         await PublishClientMessageAsync(mwBotMessage, _cancellationTokenSource.Token);
     }
 
-    private async Task CheckBatteryLevelAsync()
+    private async Task TimedCheckBatteryLevelAsync()
     {
         if (MwBot == null)
         {
@@ -99,7 +100,6 @@ public class MqttMwBotClient
             return;
         }
 
-        // TODO: FIX if bot battery starts 5% it stays still
         if (MwBot.BatteryPercentage <= _rechargeThreshold) // Threshold for low battery
         {
             _logger.LogInformation("MwBot {id} battery is low: {batteryPercentage}%", MwBot.Id, MwBot.BatteryPercentage);
@@ -124,7 +124,7 @@ public class MqttMwBotClient
         }
     }
 
-    private async Task AttemptReconnectAsync(CancellationToken cancellationToken)
+    private async Task TimedAttemptReconnectAsync(CancellationToken cancellationToken)
     {
         if (_mqttClient.IsConnected)
             return;
@@ -139,7 +139,7 @@ public class MqttMwBotClient
         else
         {
             await Task.Delay(5000, cancellationToken);
-            await AttemptReconnectAsync(cancellationToken);
+            await TimedAttemptReconnectAsync(cancellationToken);
         }
     }
 
@@ -696,7 +696,7 @@ public class MqttMwBotClient
                     if (brokerMessage.ImmediateRequest is null)
                     {
                         await ChangeBotStatus(MwBotStatus.StandBy);
-                        return;
+                        break;
                     }
 
                     HandlingRequest = brokerMessage.ImmediateRequest;
