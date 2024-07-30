@@ -47,7 +47,7 @@ public class MqttMwBotClient
         _mqttClient.ApplicationMessageReceivedAsync += async (e) => await HandleReceivedApplicationMessage(e, _cancellationToken);
 
         // Set timer for processing charge requests
-        _timer = new Timer(3000);
+        _timer = new Timer(1000);
         _timer.Elapsed += async (sender, e) => await TimedProcessChargeRequest(sender, _cancellationToken);
 
         // Set timer for reconnect attempts
@@ -82,11 +82,97 @@ public class MqttMwBotClient
         return isConnected;
     }
 
+    /// <summary>
+    /// Initialize MwBot property with given id if exists in database
+    /// </summary>
+    /// <param name="mwBotId"></param>
+    /// <returns></returns>
+    private async Task InitializeMwBot(int? mwBotId)
+    {
+        try
+        {
+            // TODO: delegate to broker
+            using var scope = _serviceScopeFactory.CreateScope();
+            var mwBotRepository = scope.ServiceProvider.GetRequiredService<MwBotRepository>();
+
+            if (mwBotId is not null)
+                MwBot = await mwBotRepository.GetByIdAsync(mwBotId.Value);
+
+            if (MwBot is null)
+            {
+                _logger.LogWarning("MwBot not found");
+                return;
+            }
+
+            _logger.LogInformation("MwBot {mwBotId} initialized successfully", mwBotId);
+
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while initializing MwBot with id: {mwBotId}", mwBotId);
+        }
+    }
+
     private void ResetCancellationToken()
     {
         _cancellationTokenSource?.Cancel();
         _cancellationTokenSource = new CancellationTokenSource();
         _cancellationToken = _cancellationTokenSource.Token;
+    }
+
+    private async Task<bool> ChangeBotStatus(MwBotStatus status)
+    {
+        if (MwBot is null)
+        {
+            _logger.LogWarning("MwBot not initialized, cannot change status");
+            return false;
+        }
+
+        switch (status)
+        {
+            case MwBotStatus.Offline:
+                _logger.LogInformation("MwBot {id}: Disconnecting from MQTT server", MwBot.Id);
+                await DisconnectAsync();
+                break;
+            case MwBotStatus.StandBy:
+                _logger.LogInformation("MwBot {id}: Awaiting for task", MwBot.Id);
+                if (!_timer.Enabled) _timer.Start();
+                break;
+            case MwBotStatus.ChargingCar:
+                _logger.LogInformation("MwBot {id}: Charging car", MwBot.Id);
+                break;
+            case MwBotStatus.Recharging:
+                _logger.LogInformation("MwBot {id}: Recharging", MwBot.Id);
+                break;
+            case MwBotStatus.MovingToSlot:
+                _logger.LogInformation("MwBot {id}: Going to charge car on parking slot {parkingSlot}", MwBot.Id, HandlingRequest?.ParkingSlotId);
+                break;
+            case MwBotStatus.MovingToDock:
+                _logger.LogInformation("MwBot {id}: Going to dock for recharge", MwBot.Id);
+                break;
+            default:
+                _logger.LogWarning("MwBot {id}: Invalid status", MwBot.Id);
+                return false;
+        }
+
+        MwBot.Status = status;
+        var mwBotMessage = new MqttClientMessage
+        {
+            MessageType = MessageType.UpdateMwBot,
+            Id = MwBot.Id,
+            Status = MwBot.Status,
+            BatteryPercentage = MwBot.BatteryPercentage,
+            ParkingSlotId = HandlingRequest?.ParkingSlotId,
+            TargetBatteryPercentage = HandlingRequest?.RequestedChargeLevel,
+            UserId = HandlingRequest?.UserId,
+            CarPlate = HandlingRequest?.CarPlate,
+            ImmediateRequestId = HandlingRequest?.Id,
+            ParkingId = MwBot.ParkingId,
+            Parking = MwBot.Parking,
+        };
+        await PublishClientMessageAsync(mwBotMessage, _cancellationTokenSource.Token);
+
+        return true;
     }
 
     private async Task RequestResumeChargingAsync()
@@ -190,118 +276,6 @@ public class MqttMwBotClient
         {
             _logger.LogError(ex, "Error processing charge request");
         }
-    }
-
-    /// <summary>
-    /// Initialize MwBot with given id if exists in database
-    /// </summary>
-    /// <param name="mwBotId"></param>
-    /// <returns></returns>
-    private async Task InitializeMwBot(int? mwBotId)
-    {
-        try
-        {
-            // TODO: delegate to broker
-            using var scope = _serviceScopeFactory.CreateScope();
-            var mwBotRepository = scope.ServiceProvider.GetRequiredService<MwBotRepository>();
-
-            if (mwBotId is not null)
-                MwBot = await mwBotRepository.GetByIdAsync(mwBotId.Value);
-
-            if (MwBot is null)
-            {
-                _logger.LogWarning("MwBot not found");
-                return;
-            }
-
-            _logger.LogInformation("MwBot {mwBotId} initialized successfully", mwBotId);
-
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error while initializing MwBot with id: {mwBotId}", mwBotId);
-        }
-    }
-
-    public async Task PublishAsync(string payload)
-    {
-        ArgumentNullException.ThrowIfNull(payload);
-
-        try
-        {
-            var message = new MqttApplicationMessageBuilder()
-                .WithPayload(payload)
-                .WithTopic("toServer")
-                .Build();
-
-            if (!_mqttClient.IsConnected)
-            {
-                _logger.LogWarning("MwBot {id}: Client is not connected, cannot publish message", MwBot?.Id);
-                return;
-            }
-
-            await _mqttClient.PublishAsync(message);
-            _logger.LogDebug("MwBot {id}: Published message {payload}", MwBot?.Id, payload);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error publishing message {payload}", payload);
-        }
-    }
-
-    private async Task<bool> ChangeBotStatus(MwBotStatus status)
-    {
-        if (MwBot is null)
-        {
-            _logger.LogWarning("MwBot not initialized, cannot change status");
-            return false;
-        }
-
-        switch (status)
-        {
-            case MwBotStatus.Offline:
-                _logger.LogInformation("MwBot {id}: Disconnecting from MQTT server", MwBot.Id);
-                await DisconnectAsync();
-                break;
-            case MwBotStatus.StandBy:
-                _logger.LogInformation("MwBot {id}: Awaiting for task", MwBot.Id);
-                if (!_timer.Enabled) _timer.Start();
-                break;
-            case MwBotStatus.ChargingCar:
-                _logger.LogInformation("MwBot {id}: Charging car", MwBot.Id);
-                break;
-            case MwBotStatus.Recharging:
-                _logger.LogInformation("MwBot {id}: Recharging", MwBot.Id);
-                break;
-            case MwBotStatus.MovingToSlot:
-                _logger.LogInformation("MwBot {id}: Going to charge car on parking slot {parkingSlot}", MwBot.Id, HandlingRequest?.ParkingSlotId);
-                break;
-            case MwBotStatus.MovingToDock:
-                _logger.LogInformation("MwBot {id}: Going to dock for recharge", MwBot.Id);
-                break;
-            default:
-                _logger.LogWarning("MwBot {id}: Invalid status", MwBot.Id);
-                return false;
-        }
-
-        MwBot.Status = status;
-        var mwBotMessage = new MqttClientMessage
-        {
-            MessageType = MessageType.UpdateMwBot,
-            Id = MwBot.Id,
-            Status = MwBot.Status,
-            BatteryPercentage = MwBot.BatteryPercentage,
-            ParkingSlotId = HandlingRequest?.ParkingSlotId,
-            TargetBatteryPercentage = HandlingRequest?.RequestedChargeLevel,
-            UserId = HandlingRequest?.UserId,
-            CarPlate = HandlingRequest?.CarPlate,
-            ImmediateRequestId = HandlingRequest?.Id,
-            ParkingId = MwBot.ParkingId,
-            Parking = MwBot.Parking,
-        };
-        await PublishClientMessageAsync(mwBotMessage, _cancellationTokenSource.Token);
-
-        return true;
     }
 
     public async Task StartRechargingAsync(CancellationToken cancellationToken)
@@ -708,6 +682,32 @@ public class MqttMwBotClient
         var payload = JsonSerializer.Serialize(mwBotMessage);
         await PublishAsync(payload);
         _logger.LogDebug("MwBot {id}: Published message {payload}", MwBot?.Id, payload);
+    }
+
+    public async Task PublishAsync(string payload)
+    {
+        ArgumentNullException.ThrowIfNull(payload);
+
+        try
+        {
+            var message = new MqttApplicationMessageBuilder()
+                .WithPayload(payload)
+                .WithTopic("toServer")
+                .Build();
+
+            if (!_mqttClient.IsConnected)
+            {
+                _logger.LogWarning("MwBot {id}: Client is not connected, cannot publish message", MwBot?.Id);
+                return;
+            }
+
+            await _mqttClient.PublishAsync(message);
+            _logger.LogDebug("MwBot {id}: Published message {payload}", MwBot?.Id, payload);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error publishing message {payload}", payload);
+        }
     }
 
     public async Task<bool> ConnectAsync()
