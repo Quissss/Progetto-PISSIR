@@ -23,4 +23,11 @@ public class ImmediateRequestRepository : GenericRepository<ImmediateRequest>
             .Where(ir => ir.FromReservation == false)
             .ToListAsync();
     }
+
+    public async Task<ImmediateRequest?> GetByCarPlate(string carPlate)
+    {
+        return await _context.ImmediateRequests
+            .Where(ir => ir.CarPlate == carPlate)
+            .FirstOrDefaultAsync();
+    }
 }

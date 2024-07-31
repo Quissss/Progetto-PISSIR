@@ -90,27 +90,5 @@ namespace Progetto.App.Controllers
 
             return Ok(historicizedStopover);
         }
-
-        [HttpPost("pay")]
-        public async Task<IActionResult> Pay([FromForm] Stopover stopover)
-        {
-            var updateTopay = await _stopoverRepository.GetByIdAsync(stopover.Id);
-
-            updateTopay.ToPay = false;
-            await _stopoverRepository.SaveAsync();
-            return Ok(updateTopay);
-        }
-
-        [HttpPost("payCharge")]
-        public async Task<IActionResult> PayCharge([FromForm] CurrentlyCharging charge)
-        {
-
-
-            var updateTopay = await _currentlyChargingRespository.GetByIdAsync(charge.Id);
-
-            updateTopay.ToPay = false;
-            await _currentlyChargingRespository.SaveAsync();
-            return Ok(updateTopay);
-        }
     }
 }

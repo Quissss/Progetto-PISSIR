@@ -25,8 +25,7 @@ public class CamSimulatorController : ControllerBase
         ReservationRepository reservationRepository,
         ChargeManager chargeManager,
         ParkingSlotRepository parkingSlotRepository,
-        UserManager<IdentityUser> userManager
-        )
+        UserManager<IdentityUser> userManager)
     {
         _carRepository = carRepository;
         _reservationRepository = reservationRepository;
@@ -176,14 +175,20 @@ public class CamSimulatorController : ControllerBase
         var userId = (await _userManager.GetUserAsync(User))?.Id.ToString();
         _logger.LogInformation("L'utente {user} richiede ricarica per la targa {LicencePlate}", userId, request.LicencePlate);
 
-        var scope = _serviceScopeFactory.CreateScope();
-        var _immediateRequestRepository = scope.ServiceProvider.GetRequiredService<ImmediateRequestRepository>();
-
         var reservations = await _reservationRepository.UpdateCarIsInside(request.LicencePlate, request.ParkingId, true);
         await _chargeManager.UpdateReservationsCarIsInside(request.LicencePlate, request.ParkingId, true);
         if (!reservations.Any())
         {
+            var scope = _serviceScopeFactory.CreateScope();
+            var immediateRequestRepository = scope.ServiceProvider.GetRequiredService<ImmediateRequestRepository>();
+
             _logger.LogDebug("No reservation found for car {car}, proceding to create ImmediateRequest", request.LicencePlate);
+
+            var existingRequest = await immediateRequestRepository.GetByCarPlate(request.LicencePlate);
+            if (existingRequest is not null)
+            {
+               return BadRequest("Richiesta già in corso");
+            }
 
             var immediateRequest = new ImmediateRequest
             {
@@ -193,7 +198,7 @@ public class CamSimulatorController : ControllerBase
                 UserId = userId,
                 FromReservation = false,
             };
-            await _immediateRequestRepository.AddAsync(immediateRequest);
+            await immediateRequestRepository.AddAsync(immediateRequest);
             var chargeIR = await _chargeManager.AddImmediateRequest(immediateRequest, request.ParkingId);
 
             return Ok(immediateRequest);

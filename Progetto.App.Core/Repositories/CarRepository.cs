@@ -27,10 +27,15 @@ public class CarRepository : GenericRepository<Car>
         return await _context.Cars.Where(c => c.OwnerId == ownerId).ToListAsync();
     }
 
-    public async Task<Car> UpdateCarStatus(string LicencePlate, CarStatus status)
+    public async Task<Car> UpdateCarStatus(string licencePlate, CarStatus status, int? parkingSlotId = null)
     {
-        var car = await _context.Cars.Where(c => c.LicencePlate == LicencePlate).FirstAsync();
+        var car = await _context.Cars.Where(c => c.LicencePlate == licencePlate).FirstAsync();
         car.Status = status;
+        if (status == CarStatus.InCharge)
+        {
+            car.ParkingSlotId = parkingSlotId;
+        }
+
         await _context.SaveChangesAsync();
         return car;
     }

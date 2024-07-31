@@ -138,7 +138,7 @@ public class CarController : ControllerBase
 
             if (!string.IsNullOrEmpty(licencePlate))
                 cars = cars.Where(car => car.LicencePlate.Contains(licencePlate)).ToList();
-            if (status is not null)
+            if (status.HasValue)
                 cars = cars.Where(car => car.Status == status).ToList();
 
             _logger.LogDebug("Returning {count} cars", cars.Count());

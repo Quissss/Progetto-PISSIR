@@ -9,15 +9,13 @@ public class ConnectedClientsService
 {
     private readonly ILogger<ConnectedClientsService> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
-    private readonly ChargeManager _chargeManager;
     private readonly ILoggerFactory _loggerFactory;
     private readonly List<MqttMwBotClient> _connectedClients;
 
-    public ConnectedClientsService(ILogger<ConnectedClientsService> logger, IServiceScopeFactory serviceScopeFactory, ChargeManager chargeManager, ILoggerFactory loggerFactory)
+    public ConnectedClientsService(ILogger<ConnectedClientsService> logger, IServiceScopeFactory serviceScopeFactory, ILoggerFactory loggerFactory)
     {
         _logger = logger;
         _serviceScopeFactory = serviceScopeFactory;
-        _chargeManager = chargeManager;
         _loggerFactory = loggerFactory;
         _connectedClients = new List<MqttMwBotClient>();
     }
@@ -36,8 +34,7 @@ public class ConnectedClientsService
                 _logger.LogDebug("Creating MqttMwBotClient for MwBot with id {id}", singleMwBot.Id);
                 var client = new MqttMwBotClient(
                     _loggerFactory.CreateLogger<MqttMwBotClient>(),
-                    _serviceScopeFactory,
-                    _chargeManager);
+                    _serviceScopeFactory);
 
                 var connectResult = await client.InitializeAsync(singleMwBot.Id);
                 if (!connectResult) // If connection fails, set MwBot status to offline

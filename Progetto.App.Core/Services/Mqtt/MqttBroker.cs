@@ -17,12 +17,13 @@ namespace Progetto.App.Core.Services.Mqtt;
 /// </summary>
 public class MqttBroker : IHostedService, IDisposable
 {
+    private readonly ChargeManager _chargeManager;
     private readonly MqttServer _mqttServer;
     private readonly MqttServerOptions _options;
     private readonly ILogger<MqttBroker> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
 
-    public MqttBroker(ILogger<MqttBroker> logger, IServiceScopeFactory serviceScopeFactory, IConfiguration configuration)
+    public MqttBroker(ChargeManager chargeManager, ILogger<MqttBroker> logger, IServiceScopeFactory serviceScopeFactory, IConfiguration configuration)
     {
         _options = new MqttServerOptionsBuilder()
             .WithDefaultEndpoint()
@@ -30,6 +31,7 @@ public class MqttBroker : IHostedService, IDisposable
             .WithKeepAlive()
             .Build();
 
+        _chargeManager = chargeManager;
         _logger = logger;
         _mqttServer = new MqttFactory().CreateMqttServer(_options);
         _serviceScopeFactory = serviceScopeFactory;
@@ -68,11 +70,6 @@ public class MqttBroker : IHostedService, IDisposable
 
             switch (mwBotMessage.MessageType)
             {
-                case MessageType.RequestResumeCharging:
-                    _logger.LogInformation("MqttBroker: MwBot {id} requested MessageType.RequestResumeCharging", mwBotMessage.Id);
-                    await HandleResumeChargingRequestMessageAsync(mwBotMessage);
-                    break;
-
                 case MessageType.RequestCharge:
                     _logger.LogInformation("MqttBroker: MwBot {id} requested MessageType.RequestCharge", mwBotMessage.Id);
                     await HandleChargeRequestMessageAsync(mwBotMessage);
@@ -89,18 +86,18 @@ public class MqttBroker : IHostedService, IDisposable
                     break;
 
                 case MessageType.UpdateCharging:
-                    _logger.LogInformation("MqttBroker: MwBot {id} requested MessageType.UpdateCharging", mwBotMessage.Id);
+                    _logger.LogDebug("MqttBroker: MwBot {id} requested MessageType.UpdateCharging", mwBotMessage.Id);
                     var currentlyChargingRepository = scope.ServiceProvider.GetRequiredService<CurrentlyChargingRepository>();
                     await currentlyChargingRepository.UpdateAsync(mwBotMessage.CurrentlyCharging);
                     break;
 
                 case MessageType.UpdateMwBot:
-                    _logger.LogInformation("MqttBroker: MwBot {id} requested MessageType.UpdateMwBot", mwBotMessage.Id);
+                    _logger.LogDebug("MqttBroker: MwBot {id} requested MessageType.UpdateMwBot", mwBotMessage.Id);
                     // Done by default
                     break;
 
                 case MessageType.UpdateParkingSlot:
-                    _logger.LogInformation("MqttBroker: MwBot {id} requested MessageType.UpdateParkingSlot", mwBotMessage.Id);
+                    _logger.LogDebug("MqttBroker: MwBot {id} requested MessageType.UpdateParkingSlot", mwBotMessage.Id);
                     var parkingSlotRepository = scope.ServiceProvider.GetRequiredService<ParkingSlotRepository>();
                     var parkingSlot = await parkingSlotRepository.GetByIdAsync(mwBotMessage.ParkingSlotId.Value);
                     parkingSlot.Status = mwBotMessage.ParkingSlot.Status;
@@ -177,43 +174,90 @@ public class MqttBroker : IHostedService, IDisposable
         _logger.LogDebug("MqttBroker: Confirmation sent to MwBot {id} to start recharging", mwBotMessage.Id);
     }
 
-    private async Task HandleResumeChargingRequestMessageAsync(MqttClientMessage mwBotMessage)
+    private async Task HandleChargeRequestMessageAsync(MqttClientMessage mwBotMessage)
     {
-        _logger.LogDebug("MqttBroker: MwBot {id} requested to resume charging", mwBotMessage.Id);
+        _logger.LogDebug("MqttBroker: MwBot {id} is requesting a charge", mwBotMessage.Id);
 
         using var scope = _serviceScopeFactory.CreateScope();
-        var currentlyChargingRepository = scope.ServiceProvider.GetRequiredService<CurrentlyChargingRepository>();
+        var carRepository = scope.ServiceProvider.GetRequiredService<CarRepository>();
+        var mwBotRepository = scope.ServiceProvider.GetRequiredService<MwBotRepository>();
         var parkingRepository = scope.ServiceProvider.GetRequiredService<ParkingRepository>();
         var immediateRequestRepository = scope.ServiceProvider.GetRequiredService<ImmediateRequestRepository>();
+        var currentlyChargingRepository = scope.ServiceProvider.GetRequiredService<CurrentlyChargingRepository>();
 
-        var parking = await parkingRepository.GetByIdAsync(mwBotMessage.ParkingId.Value);
-        if (parking is null)
+        var mwBot = await mwBotRepository.GetByIdAsync(mwBotMessage.Id);
+        if (mwBot == null)
         {
-            _logger.LogWarning("MqttBroker: Parking not found");
+            _logger.LogWarning("MqttBroker: MwBot not found");
             return;
         }
 
+        CurrentlyCharging? currentlyCharging = null;
         ImmediateRequest? immediateRequest = null;
-        var currentlyCharging = await currentlyChargingRepository.GetActiveByMwBot(mwBotMessage.Id);
-        if (currentlyCharging is not null)
+
+        // Check if the bot has a currently charging session
+        currentlyCharging = await currentlyChargingRepository.GetActiveByMwBot(mwBot.Id);
+        if (currentlyCharging != null)
         {
-            immediateRequest = await immediateRequestRepository.GetByIdAsync(currentlyCharging.ImmediateRequestId.Value);
-            if (immediateRequest is null)
+            // If there's an active charging session, get the associated immediate request
+            if (currentlyCharging.ImmediateRequestId.HasValue)
             {
-                _logger.LogWarning("MqttBroker: Immediate request not found");
+                immediateRequest = await immediateRequestRepository.GetByIdAsync(currentlyCharging.ImmediateRequestId.Value);
+            }
+
+            // If no immediate request is found, log a warning
+            if (immediateRequest == null)
+            {
+                _logger.LogWarning("MqttBroker: Immediate request not found for currently charging record");
             }
         }
 
-        mwBotMessage.MessageType = MessageType.ResumeCharging;
+        // If there's no active charging session, or we couldn't find an associated immediate request
+        if (currentlyCharging == null || immediateRequest == null)
+        {
+            // Attempt to get a new immediate request from the charge manager
+            immediateRequest = await _chargeManager.ServeNext(mwBot);
+            if (immediateRequest != null)
+            {
+                // Create a new currently charging record if a new request is assigned
+                currentlyCharging = new CurrentlyCharging
+                {
+                    TargetChargePercentage = immediateRequest.RequestedChargeLevel,
+                    MwBotId = mwBot.Id,
+                    UserId = immediateRequest.UserId,
+                    ParkingSlotId = immediateRequest.ParkingSlotId,
+                    ImmediateRequestId = immediateRequest.Id,
+                    CarPlate = immediateRequest.CarPlate,
+                    StartChargingTime = DateTime.Now,
+                    CurrentChargePercentage = 0,
+                    StartChargePercentage = 0,
+                };
+                await currentlyChargingRepository.AddAsync(currentlyCharging);
+            }
+            else
+            {
+                _logger.LogInformation("MqttBroker: No immediate request available for MwBot {id}", mwBot.Id);
+                return;
+            }
+        }
+
+        // Update car status
+        await carRepository.UpdateCarStatus(currentlyCharging.CarPlate, CarStatus.InCharge, currentlyCharging.ParkingSlotId);
+
+        // Update MwBot status
+        mwBot.Status = MwBotStatus.ChargingCar;
+        await mwBotRepository.UpdateAsync(mwBot);
+
+        // Prepare and publish the response message
+        mwBotMessage.MessageType = MessageType.StartCharging;
         mwBotMessage.Status = MwBotStatus.ChargingCar;
-        mwBotMessage.Parking = parking;
         mwBotMessage.ImmediateRequest = immediateRequest;
         mwBotMessage.CurrentlyCharging = currentlyCharging;
-        mwBotMessage.CarPlate = currentlyCharging?.CarPlate;
-        mwBotMessage.CurrentCarCharge = currentlyCharging?.CurrentChargePercentage;
-        mwBotMessage.ParkingSlotId = currentlyCharging?.ParkingSlotId;
-        mwBotMessage.TargetBatteryPercentage = currentlyCharging?.TargetChargePercentage;
-        mwBotMessage.UserId = currentlyCharging?.UserId;
+        mwBotMessage.CarPlate = currentlyCharging.CarPlate;
+        mwBotMessage.BatteryPercentage = mwBot.BatteryPercentage;
+        mwBotMessage.TargetBatteryPercentage = currentlyCharging.TargetChargePercentage;
+        mwBotMessage.ParkingSlotId = currentlyCharging.ParkingSlotId;
+        mwBotMessage.Parking = await parkingRepository.GetByIdAsync(mwBot.ParkingId.Value);
 
         await PublishMessage(mwBotMessage);
     }
@@ -246,57 +290,8 @@ public class MqttBroker : IHostedService, IDisposable
         await currentlyChargingRepository.UpdateAsync(mwBotMessage.CurrentlyCharging);
         await carRepository.UpdateCarStatus(mwBotMessage.CarPlate, CarStatus.Charged);
 
-        var parkingSlot = await parkingSlotRepository.GetByIdAsync(mwBotMessage.CurrentlyCharging.ParkingSlotId.Value);
-        parkingSlot.Status = ParkingSlotStatus.Free;
-        await parkingSlotRepository.UpdateAsync(parkingSlot);
-
-        _logger.LogDebug("MqttBroker: Parking slot {id} is now free", parkingSlot.Id);
-    }
-
-    private async Task HandleChargeRequestMessageAsync(MqttClientMessage mwBotMessage)
-    {
-        _logger.LogDebug("MqttBroker: MwBot {id} is charging car", mwBotMessage.Id);
-
-        using var scope = _serviceScopeFactory.CreateScope();
-        var carRepository = scope.ServiceProvider.GetRequiredService<CarRepository>();
-        var parkingRepository = scope.ServiceProvider.GetRequiredService<ParkingRepository>();
-        var currentlyChargingRepository = scope.ServiceProvider.GetRequiredService<CurrentlyChargingRepository>();
-
-        var currentlyCharging = await currentlyChargingRepository.GetActiveByImmediateRequest(mwBotMessage.ImmediateRequestId.Value);
-        if (currentlyCharging == null) // record doesn't exist, create new
-        {
-            currentlyCharging = new CurrentlyCharging
-            {
-                TargetChargePercentage = mwBotMessage.TargetBatteryPercentage,
-                MwBotId = mwBotMessage.Id,
-                UserId = mwBotMessage.UserId,
-                ParkingSlotId = mwBotMessage.ParkingSlotId,
-                ImmediateRequestId = mwBotMessage.ImmediateRequestId.Value,
-                CarPlate = mwBotMessage.CarPlate,
-                CurrentChargePercentage = 0,
-                StartChargePercentage = 0,
-            };
-            await currentlyChargingRepository.AddAsync(currentlyCharging);
-        }
-        else // record exists, update it
-        {
-            currentlyCharging.CurrentChargePercentage = mwBotMessage.BatteryPercentage;
-            currentlyCharging.TargetChargePercentage = mwBotMessage.TargetBatteryPercentage;
-            await currentlyChargingRepository.UpdateAsync(currentlyCharging);
-        }
-
-        await carRepository.UpdateCarStatus(mwBotMessage.CarPlate, CarStatus.InCharge);
-
-        var confirmMessage = mwBotMessage;
-        confirmMessage.CurrentlyCharging = currentlyCharging;
-
-        var parking = await parkingRepository.GetByIdAsync(mwBotMessage.ParkingId.Value);
-        confirmMessage.MessageType = MessageType.StartCharging;
-        confirmMessage.Status = MwBotStatus.ChargingCar;
-        confirmMessage.Parking = parking;
-
-        await PublishMessage(confirmMessage);
-        _logger.LogDebug("MqttBroker: Created charging record + confirmation sent to MwBot {id}", mwBotMessage.Id);
+        mwBotMessage.MessageType = MessageType.ChargeCompleted;
+        await PublishMessage(mwBotMessage);
     }
 
     public async Task PublishMessage(MqttClientMessage message)

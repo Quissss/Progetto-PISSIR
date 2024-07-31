@@ -5,8 +5,8 @@ namespace Progetto.App.Core.Models;
 public enum CarStatus
 {
     OutOfParking,    //0
-    InCharge,        //1
-    Waiting,         //2
+    Waiting,         //1
+    InCharge,        //2
     Charged,         //3
     Parked           //4
 }

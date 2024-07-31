@@ -10,9 +10,8 @@ public enum MessageType
     UpdateParkingSlot, // client → broker
     StartRecharge, // broker → client
     RequestRecharge, // client → broker
-    RequestResumeCharging, // client → broker
-    ResumeCharging, // broker → client
     DisconnectClient, // client → broker
+    ChargeCompleted, // broker → client
 }
 
 /// <summary>

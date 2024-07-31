@@ -24,7 +24,6 @@ public class MwBotController : ControllerBase
     private readonly MwBotRepository _mwBotRepository;
     private readonly ILoggerFactory _loggerFactory;
     private readonly IServiceScopeFactory _serviceScopeFactory;
-    private readonly ChargeManager _chargeManager;
     private readonly ConnectedClientsService _connectedClientsService;
 
     public MwBotController(
@@ -32,12 +31,10 @@ public class MwBotController : ControllerBase
         MwBotRepository mwBotRespository,
         ILoggerFactory loggerFactory,
         IServiceScopeFactory serviceScopeFactory,
-        ChargeManager chargeManager,
         ConnectedClientsService connectedClientsService)
     {
         _logger = logger;
         _loggerFactory = loggerFactory;
-        _chargeManager = chargeManager;
         _serviceScopeFactory = serviceScopeFactory;
         _connectedClientsService = connectedClientsService;
 
@@ -105,8 +102,7 @@ public class MwBotController : ControllerBase
             _logger.LogDebug("Creating / Retrieving MwBot with id {id}", mwBot.Id);
             var client = new MqttMwBotClient(
                 _loggerFactory.CreateLogger<MqttMwBotClient>(),
-                _serviceScopeFactory,
-                _chargeManager);
+                _serviceScopeFactory);
 
             if (client is null)
             {
