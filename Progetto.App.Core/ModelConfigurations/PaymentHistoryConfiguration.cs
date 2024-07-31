@@ -13,7 +13,8 @@ public class PaymentHistoryConfiguration : IEntityTypeConfiguration<PaymentHisto
     {
         builder.ToTable("PaymentHistory");
         builder.HasKey(so => so.Id);
-        builder.Property(so => so.StartTime).HasDefaultValue(DateTime.Now).IsRequired();
+        builder.Property(so => so.PaymentDate).HasDefaultValue(DateTime.Now).IsRequired();
+        builder.Property(so => so.StartTime).IsRequired();
         builder.Property(so => so.EndTime).IsRequired();
         builder.Property(so => so.StartChargePercentage).IsRequired(false);
         builder.Property(so => so.EndChargePercentage).IsRequired(false);

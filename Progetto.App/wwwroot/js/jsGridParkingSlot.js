@@ -11,6 +11,20 @@ let ajax = function (item, verb, json = true) {
 };
 
 $(function () {
+    let parkingOptions = [];
+    
+    $.ajax({
+        url: '/api/Parking',
+        method: 'GET',
+        async: false,
+        success: function (data) {
+            parkingOptions = data.map(p => ({ value: p.id, text: `${p.name} [${p.city} - ${p.address}]` }));
+        },
+        error: function (error) {
+            console.error("Errore nel caricamento dei dati dei parcheggi:", error);
+        }
+    });
+
     $.getJSON(url + "/statuses", function (statuses) {
         $("#parkingSlotGrid").jsGrid({
             width: "100%",
@@ -27,15 +41,13 @@ $(function () {
                 deleteItem: item => ajax(item, "DELETE"),
             },
             fields: [
-                { name: "id", visible: false },
+                { name: "id", visible: false, filtering: false },
                 { name: "number", type: "number", width: 50, title: "Slot Number " },
                 {
-                    name: "parkingId", type: "select", width: 100, title: "Location", items: parkings, valueField: "value", textField: "text",
+                    name: "parkingId", type: "select", width: 100, title: "Location", items: parkingOptions, valueField: "value", textField: "text",
                     itemTemplate: function (value, item) {
-                        let result = $.grep(parkings, function (parking) {
-                            return parking.value === value.toString();
-                        });
-                        return result.length ? result[0].text : value;
+                        let parking = parkingOptions.find(p => p.value == value);
+                        return parking ? parking.text : "";
                     }
                 },
                 { name: "status", type: "select", items: statuses, width: 100, title: "Status", valueField: "id", textField: "name" },

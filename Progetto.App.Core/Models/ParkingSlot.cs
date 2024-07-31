@@ -18,4 +18,7 @@ public class ParkingSlot
     public ParkingSlotStatus Status { get; set; }
     public int ParkingId { get; set; }
     public Parking? Parking { get; set; }
+
+    [NotMapped]
+    public string StatusName { get { return Status.ToString(); } }
 }

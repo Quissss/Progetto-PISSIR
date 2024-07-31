@@ -9,58 +9,68 @@
     <div class="row">
         <partial name="_DashboardPartial" />
 
-        <!-- Main content -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div id="carCards"></div>
 
-            <!-- inserisci qua la pagina-->
-            @if (Model.Cars.Any())
-            {
-                <div class="row">
-                    @foreach (var car in Model.Cars)
-                    {
-                        <div class="col-md-6 col-lg-4 mb-4">
-                            <div class="card mt-4 shadow-sm">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fa-solid fa-car"></i>
-                                        Auto: <span>@car.LicencePlate</span>
-                                    </h5>
-                                    <h6 class="card-subtitle mb-2 text-muted">
-                                        <i class="fa-solid fa-car-side"></i>
-                                        Marca: <span>@car.Brand</span>, Modello: <span>@car.Model</span>
-                                    </h6>
-                                    <p class="card-text">
-                                        <span class="badge bg-info text-dark">@car.Status</span>
-                                    </p>
-                                    <div class="d-flex justify-content-around mt-3">
-                                        <button class="btn btn-primary" onclick="recharge('@car.LicencePlate', '@car.ParkingId')">
-                                            <i class="fa-solid fa-battery-full"></i> Ricarica
-                                        </button>
-                                        <button class="btn btn-secondary" onclick="park('@car.LicencePlate', '@car.ParkingId')">
-                                            <i class="fa-solid fa-parking"></i> Sosta
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                </div>
-            }
-            else
-            {
-                <div class="alert alert-info mt-4" role="alert">
-                    Nessuna auto in attesa trovata.
-                </div>
-            }
+            <div class="alert alert-info mt-4" id="noCarsMessage" style="display:none;">
+                Nessuna auto in attesa trovata.
+            </div>
 
-            <!-- Line chart -->
             <canvas class="my-4 w-100" id="myChart" width="900" height="380"></canvas>
         </main>
     </div>
 </div>
 
 @section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        $(document).ready(function() {
+            loadCars();
+        });
+
+        function loadCars() {
+            $.getJSON("/api/Car/my-cars", function(data) {
+                const carCardsContainer = $("#carCards");
+                carCardsContainer.empty();
+
+                if (data.length > 0) {
+                    data.forEach(car => {
+                        const cardHtml = `
+                            <div class="col-md-6 col-lg-4 mb-4">
+                                <div class="card mt-4 shadow-sm">
+                                    <div class="card-body">
+                                        <h5 class="card-title">
+                                            <i class="fa-solid fa-car"></i>
+                                            Auto: <span>${car.licencePlate}</span>
+                                        </h5>
+                                        <h6 class="card-subtitle mb-2 text-muted">
+                                            <i class="fa-solid fa-car-side"></i>
+                                            Marca: <span>${car.brand}</span>, Modello: <span>${car.model}</span>
+                                        </h6>
+                                        <p class="card-text">
+                                            <span class="badge bg-info text-dark">${car.statusName}</span>
+                                        </p>
+                                        <div class="d-flex justify-content-around mt-3">
+                                            <button class="btn btn-primary" onclick="recharge('${car.licencePlate}', '${car.parkingId}')">
+                                                <i class="fa-solid fa-battery-full"></i> Ricarica
+                                            </button>
+                                            <button class="btn btn-secondary" onclick="park('${car.licencePlate}', '${car.parkingId}')">
+                                                <i class="fa-solid fa-parking"></i> Sosta
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>`;
+                        carCardsContainer.append(cardHtml);
+                    });
+                } else {
+                    $("#noCarsMessage").show();
+                }
+            }).fail(function() {
+                alert("Errore nel caricamento delle auto.");
+            });
+        }
+
         function recharge(licencePlate, parkingId) {
             var rechargePercentage = prompt('Inserisci la percentuale di ricarica desiderata (0-100): ');
 
@@ -72,7 +82,7 @@
 
             alert('Ricarica richiesta per la macchina con targa: ' + licencePlate + ' con percentuale di ricarica: ' + rechargePercentage + '%');
 
-            fetch(`api/CamSimulator/recharge`, {
+            fetch(`/api/CamSimulator/recharge`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -83,21 +93,21 @@
                     chargeLevel: rechargePercentage
                 }),
             })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Success:', data)
-                    alert("La tua ricarica verrà presa in carico");
-                })
-                .catch((error) => {
-                    console.error('Error:', error);
-                    alert(error);
-                });
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data)
+                alert("La tua ricarica verrà presa in carico");
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('Errore durante la richiesta di ricarica dell\'auto con targa: ' + licencePlate);
+            });
         }
 
         function park(licencePlate, parkingId) {
             alert('Sosta richiesta per macchina con targa: ' + licencePlate);
 
-            fetch(`api/CamSimulator/park`, {
+            fetch(`/api/CamSimulator/park`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -107,14 +117,14 @@
                     parkingId: parkingId
                 }),
             })
-                .then(response => response.text())
-                .then(data => {
-                    alert(data);
-                })
-                .catch((error) => {
-                    console.error('Error:', error);
-                    alert('Errore durante richiesta della sosta dell\'auto con targa: ' + licencePlate);
-                });
+            .then(response => response.text())
+            .then(data => {
+                alert(data);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('Errore durante richiesta della sosta dell\'auto con targa: ' + licencePlate);
+            });
         }
     </script>
 }

@@ -67,6 +67,7 @@ $(function () {
             
             { type: "control", editButton: true, deleteButton: true }
         ],
+
         onItemInserting: function (args) {
             args.item["ownerId"] = userId;
         },

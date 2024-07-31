@@ -26,4 +26,7 @@ public class Car
     public int? ParkingSlotId { get; set; }
     public string OwnerId { get; set; }
     public IdentityUser? Owner { get; set; }
+
+    [NotMapped]
+    public string StatusName { get { return Status.ToString(); } }
 }

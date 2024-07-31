@@ -11,11 +11,10 @@ let ajax = function (item, verb, json = true) {
 };
 
 $(function () {
-    let map = L.map('map').setView([45.4642, 9.1900], 13); // Default to Milan, Italy
+    let map = L.map('map').setView([45.4642, 9.1900], 13); // Default Milan, Italy
     let routingControl;
     let userPosition;
-
-    // Set up the OSM layer
+    
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
     }).addTo(map);
@@ -50,8 +49,6 @@ $(function () {
             deleteItem: item => ajax(item, "DELETE"),
             insertItem: item => ajax(item, "POST"),
         },
-
-        data: parkings,
         fields: [
             { name: "id", visible: false },
             { name: "name", type: "text", width: 150, title: "Name" },
@@ -85,23 +82,20 @@ $(function () {
             console.error("No address provided for mapping.");
             return;
         }
-
-        // Clear the map
+        
         if (routingControl) {
             map.removeControl(routingControl);
         }
-
-        // Use a geocoding service to convert the address to coordinates (e.g., OpenStreetMap's Nominatim)
+        
         $.get(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(item.address + ' ' + item.city + ' ' + item.country)}`, function (data) {
             if (data && data.length > 0) {
                 var lat = data[0].lat;
                 var lon = data[0].lon;
                 map.setView([lat, lon], 13);
-
-                // Calculate and display route
+                
                 routingControl = L.Routing.control({
                     waypoints: [
-                        L.latLng(userPosition), // User's current position
+                        L.latLng(userPosition),
                         L.latLng(lat, lon)
                     ],
                     createMarker: function (i, waypoint, n) {

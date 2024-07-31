@@ -6,15 +6,13 @@
 
 <h2><i class="fas fa-parking"></i> <strong>@ViewData["Title"]</strong></h2>
 
-
 <div class="container-fluid">
     <div class="row">
         <partial name="_DashboardPartial" />
 
         <!-- Main content -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-          
-        <div id="parkingSlotGrid"></div>
+            <div id="parkingSlotGrid"></div>
 
             <!-- Line chart -->
             <canvas class="my-4 w-100" id="myChart" width="900" height="380"></canvas>
@@ -22,13 +20,7 @@
     </div>
 </div>
 
-
-
-
 @section Scripts {
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.js"></script>
-    <script>
-        const parkings = @Html.Raw(Json.Serialize(Model.Parkings.Select(p => new { value = p.Value, text = p.Text })));
-    </script>
     <script type="text/javascript" asp-append-version="true" src="~/js/jsGridParkingSlot.js"></script>
 }
