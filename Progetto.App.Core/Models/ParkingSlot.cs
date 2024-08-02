@@ -1,4 +1,6 @@
-﻿namespace Progetto.App.Core.Models;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Progetto.App.Core.Models;
 
 public enum ParkingSlotStatus
 {
