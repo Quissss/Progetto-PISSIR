@@ -12,20 +12,20 @@ namespace Progetto.App.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class PaymentController : ControllerBase
 {
     private readonly PaymentHistoryRepository _paymentHistoryRepository;
     private readonly PayPalClient _payPalClient;
     private readonly IServiceScopeFactory _serviceScopeFactory;
 
-    public PaymentController(PaymentHistoryRepository paymentHistoryRepository, IServiceScopeFactory serviceScopeFactory, PayPalClient payPalClient)
+    public PaymentController(PaymentHistoryRepository paymentHistoryRepository, IServiceScopeFactory serviceScopeFactory)//, PayPalClient payPalClient)
     {
         _paymentHistoryRepository = paymentHistoryRepository;
         _serviceScopeFactory = serviceScopeFactory;
-        _payPalClient = payPalClient;
+        //_payPalClient = payPalClient;
     }
 
-    [Authorize]
     [HttpPost("create-order")]
     public async Task<IActionResult> CreateOrder([FromBody] OrderRequest orderRequest)
     {
@@ -40,7 +40,6 @@ public class PaymentController : ControllerBase
         }
     }
 
-    [Authorize]
     [HttpPost("confirm-order")]
     public async Task<IActionResult> ConfirmOrder(string orderId, [FromBody] IPaymentSource paymentSource)
     {
@@ -55,7 +54,6 @@ public class PaymentController : ControllerBase
         }
     }
 
-    [Authorize]
     [HttpPost("capture-payment")]
     public async Task<IActionResult> CapturePayment(string orderId)
     {
@@ -70,7 +68,6 @@ public class PaymentController : ControllerBase
         }
     }
 
-    [Authorize]
     [HttpGet("payments")]
     public async Task<ActionResult> GetPayments([FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] bool? chargeType)
     {

@@ -59,9 +59,11 @@ $(function () {
                     { Id: -1, Name: "" },
                     { Id: 0, Name: "Out Of Parking" },
                     { Id: 1, Name: "Waiting" },
-                    { Id: 2, Name: "In Charge" },
-                    { Id: 3, Name: "Charged" },
-                    { Id: 4, Name: "Parked" },
+                    { Id: 2, Name: "Waiting For Charge" },
+                    { Id: 3, Name: "Waiting For ParkingSlot" },
+                    { Id: 4, Name: "In Charge" },
+                    { Id: 5, Name: "Charged" },
+                    { Id: 6, Name: "Parked" },
                 ], valueField: "Id", textField: "Name"
             },
             

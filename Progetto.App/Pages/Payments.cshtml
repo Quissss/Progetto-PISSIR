@@ -55,6 +55,61 @@
 
 @section Scripts {
     <script>
+        $(document).ready(function () {
+            loadCharges();
+            loadStopovers();
+        });
+
+        async function loadCharges() {
+            try {
+                const response = await fetch('/api/currentlycharging/recharges');
+                const charges = await response.json();
+                const $tbody = $('#currentChargesTable');
+                $tbody.empty();
+
+                charges.forEach(charge => {
+                    const $row = $('<tr>').html(`
+                        <td>${charge.carPlate}</td>
+                        <td>${charge.parkingSlotId}</td>
+                        <td>${new Date(charge.startChargingTime).toLocaleString()}</td>
+                        <td>${new Date(charge.endChargingTime).toLocaleString()}</td>
+                        <td>${charge.totalCost}</td>
+                        <td>
+                            ${charge.toPay ? `<button class="btn btn-success" onclick="handlePayment(${charge.id}, ${charge.totalCost}, true)">Pay Now</button>` : ''}
+                        </td>
+                    `);
+                    $tbody.append($row);
+                });
+            } catch (error) {
+                console.error('Error loading charges:', error);
+            }
+        }
+
+        async function loadStopovers() {
+            try {
+                const response = await fetch('/api/currentlycharging/stopovers');
+                const stopovers = await response.json();
+                const $tbody = $('#stopChargesTable');
+                $tbody.empty();
+
+                stopovers.forEach(stop => {
+                    const $row = $('<tr>').html(`
+                        <td>${stop.carPlate}</td>
+                        <td>${stop.parkingSlotId}</td>
+                        <td>${new Date(stop.startStopoverTime).toLocaleString()}</td>
+                        <td>${new Date(stop.endStopoverTime).toLocaleString()}</td>
+                        <td>${stop.totalCost}</td>
+                        <td>
+                            ${stop.toPay ? `<button class="btn btn-success" onclick="handlePayment(${stop.id}, ${stop.totalCost}, false)">Pay Now</button>` : ''}
+                        </td>
+                    `);
+                    $tbody.append($row);
+                });
+            } catch (error) {
+                console.error('Error loading stopovers:', error);
+            }
+        }
+
         async function handlePayment(id, totalCost, isCharge) {
             try {
                 let totalCostNumber = parseFloat(totalCost);
@@ -78,7 +133,6 @@
                     ]
                 };
 
-                // Crea l'ordine PayPal
                 const createOrderResponse = await fetch('/api/payment/create-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -92,7 +146,6 @@
                 const orderResponse = await createOrderResponse.json();
                 const orderId = orderResponse.id;
 
-                // Conferma l'ordine PayPal
                 const paymentSource = {
                     // Dettagli della fonte di pagamento
                 };

@@ -82,6 +82,7 @@ public class CamSimulatorController : ControllerBase
     {   
         if (car.ParkingId != request.ParkingId)
         {
+            // TODO: return message to CamSimulator
             _logger.LogWarning("Carplate {plate} is not in parking {parkingId}", request.LicencePlate, request.ParkingId);
             return;
         }
@@ -155,6 +156,7 @@ public class CamSimulatorController : ControllerBase
             return NotFound("Auto non trovata");
         }
         car.ParkingSlotId = freeSlot.Id;
+        car.Status = CarStatus.WaitForParking;
         await _carRepository.UpdateAsync(car);
 
         var stopover = new Stopover
@@ -202,6 +204,8 @@ public class CamSimulatorController : ControllerBase
             {
                return BadRequest("Richiesta già in corso");
             }
+
+            await _carRepository.UpdateCarStatus(request.LicencePlate, CarStatus.WaitForCharge);
 
             var immediateRequest = new ImmediateRequest
             {

@@ -12,7 +12,7 @@
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
             <div id="carCards"></div>
 
-            <div class="alert alert-info mt-4" id="noCarsMessage" style="display:none;">
+            <div class="alert alert-info mt-4" id="noCarsMessage">
                 Nessuna auto in attesa trovata.
             </div>
 
@@ -26,14 +26,18 @@
     <script>
         $(document).ready(function() {
             loadCars();
+            setInterval(loadCars, 1000);
         });
 
         function loadCars() {
-            $.getJSON("/api/Car/my-cars", function(data) {
+            $.getJSON("/api/Car/my-cars", function (data) {
                 const carCardsContainer = $("#carCards");
+                const noCarsMessageContainer = $("#noCarsMessage");
                 carCardsContainer.empty();
 
+                data = data.filter(car => car.status === 1);
                 if (data.length > 0) {
+                    noCarsMessageContainer.hide();
                     data.forEach(car => {
                         const cardHtml = `
                             <div class="col-md-6 col-lg-4 mb-4">
@@ -64,7 +68,7 @@
                         carCardsContainer.append(cardHtml);
                     });
                 } else {
-                    $("#noCarsMessage").show();
+                    noCarsMessageContainer.show();
                 }
             }).fail(function() {
                 alert("Errore nel caricamento delle auto.");
@@ -97,6 +101,7 @@
             .then(data => {
                 console.log('Success:', data)
                 alert("La tua ricarica verrà presa in carico");
+                loadCars();
             })
             .catch((error) => {
                 console.error('Error:', error);
@@ -120,6 +125,7 @@
             .then(response => response.text())
             .then(data => {
                 alert(data);
+                loadCars();
             })
             .catch((error) => {
                 console.error('Error:', error);
