@@ -9,6 +9,8 @@ public class ImmediateRequest
     public decimal RequestedChargeLevel { get; set; } // Requested charge level
     public string? CarPlate { get; set; }
     public Car? Car { get; set; }
+    public int ParkingId { get; set; }
+    public Parking? Parking { get; set; }
     public int? ParkingSlotId { get; set; }
     public ParkingSlot? ParkingSlot { get; set; }
     public string UserId { get; set; }

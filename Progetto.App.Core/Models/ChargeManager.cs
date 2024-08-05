@@ -179,8 +179,9 @@ public class ChargeManager
             if (parkingReservations?.Count() > 0)
             {
                 var provider = _serviceScopeFactory.CreateScope().ServiceProvider;
-                var _parkingSlotRepository = provider.GetRequiredService<ParkingSlotRepository>();
                 var _carRepository = provider.GetRequiredService<CarRepository>();
+                var _parkingRepository = provider.GetRequiredService<ParkingRepository>();
+                var _parkingSlotRepository = provider.GetRequiredService<ParkingSlotRepository>();
 
                 _logger.LogInformation("MwBot {mwBot}: Found reservations, checking free slots", mwBot.Id);
 
@@ -198,6 +199,8 @@ public class ChargeManager
                         RequestDate = DateTime.Now,
                         CarPlate = nextReservation.CarPlate,
                         RequestedChargeLevel = nextReservation.RequestedChargeLevel,
+                        ParkingId = mwBot.ParkingId.Value,
+                        Parking = await _parkingRepository.GetByIdAsync(mwBot.ParkingId.Value),
                         ParkingSlotId = freeSlot.Id,
                         ParkingSlot = await _parkingSlotRepository.GetByIdAsync(freeSlot.Id),
                         UserId = nextReservation.UserId,
@@ -236,8 +239,7 @@ public class ChargeManager
             var scope = _serviceScopeFactory.CreateScope();
             var parkingSlotRepository = scope.ServiceProvider.GetRequiredService<ParkingSlotRepository>();  
 
-            var botParkingSlots = await parkingSlotRepository.GetByParkingId(mwBot.ParkingId.Value);
-            var immediateRequests = _immediateRequests?.Where(ir => botParkingSlots.Any(ps => ps.Id == ir.ParkingSlotId) && ir.RequestDate <= DateTime.Now);
+            var immediateRequests = _immediateRequests?.Where(ir => ir.ParkingId == mwBot.ParkingId && ir.RequestDate <= DateTime.Now);
 
             if (immediateRequests?.Count() > 0)
             {

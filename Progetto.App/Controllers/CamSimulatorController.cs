@@ -192,6 +192,7 @@ public class CamSimulatorController : ControllerBase
         if (!reservations.Any())
         {
             var scope = _serviceScopeFactory.CreateScope();
+            var parkingRepository = scope.ServiceProvider.GetRequiredService<ParkingRepository>();
             var immediateRequestRepository = scope.ServiceProvider.GetRequiredService<ImmediateRequestRepository>();
 
             _logger.LogDebug("No reservation found for car {car}, proceding to create ImmediateRequest", request.LicencePlate);
@@ -206,6 +207,8 @@ public class CamSimulatorController : ControllerBase
             {
                 RequestDate = DateTime.Now,
                 RequestedChargeLevel = request.ChargeLevel ?? 100,
+                ParkingId = request.ParkingId,
+                Parking = await parkingRepository.GetByIdAsync(request.ParkingId),
                 CarPlate = request.LicencePlate,
                 UserId = userId,
                 FromReservation = false,
