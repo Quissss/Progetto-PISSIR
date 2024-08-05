@@ -63,7 +63,6 @@ services.AddValidatorsFromAssemblyContaining<CarValidator>();
 
 // Repositories
 services.AddScoped<CarRepository>();
-services.AddScoped<ChargeManager>();
 services.AddScoped<MwBotRepository>();
 services.AddScoped<ParkingRepository>();
 services.AddScoped<ParkingSlotRepository>();

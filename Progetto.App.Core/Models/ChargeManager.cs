@@ -15,15 +15,16 @@ public class ChargeManager
     private readonly ImmediateRequestRepository _immediateRequestRepository;
     private readonly ReservationRepository _reservationRepository;
 
-    public ChargeManager(ILogger<ChargeManager> logger, IServiceScopeFactory serviceScopeFactory, ImmediateRequestRepository immediateRequestRepository, ReservationRepository reservationRepository)
+    public ChargeManager(ILogger<ChargeManager> logger, IServiceScopeFactory serviceScopeFactory)
     {
         _reservations = new List<Reservation>();
         _immediateRequests = new Queue<ImmediateRequest>();
         _serviceScopeFactory = serviceScopeFactory;
         _logger = logger;
 
-        _immediateRequestRepository = immediateRequestRepository;
-        _reservationRepository = reservationRepository;
+        var provider = _serviceScopeFactory.CreateScope().ServiceProvider;
+        _immediateRequestRepository = provider.GetRequiredService<ImmediateRequestRepository>();
+        _reservationRepository = provider.GetRequiredService<ReservationRepository>();
 
         GetReservations().GetAwaiter().GetResult();
         GetImmediateRequests().GetAwaiter().GetResult();
@@ -236,7 +237,7 @@ public class ChargeManager
             var parkingSlotRepository = scope.ServiceProvider.GetRequiredService<ParkingSlotRepository>();  
 
             var botParkingSlots = await parkingSlotRepository.GetByParkingId(mwBot.ParkingId.Value);
-            var immediateRequests = _immediateRequests?.Where(ir => botParkingSlots.Any(ps => ps.Id == ir.ParkingSlotId) && ir.RequestDate >= DateTime.Now);
+            var immediateRequests = _immediateRequests?.Where(ir => botParkingSlots.Any(ps => ps.Id == ir.ParkingSlotId) && ir.RequestDate <= DateTime.Now);
 
             if (immediateRequests?.Count() > 0)
             {
