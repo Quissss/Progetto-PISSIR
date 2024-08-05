@@ -1,6 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using PayPal.REST.Client;
+using PayPal.REST.Models;
+using PayPal.REST.Models.Orders;
+using PayPal.REST.Models.PaymentSources;
 using Progetto.App.Core.Repositories;
 
 namespace Progetto.App.Controllers;
@@ -10,32 +15,59 @@ namespace Progetto.App.Controllers;
 public class PaymentController : ControllerBase
 {
     private readonly PaymentHistoryRepository _paymentHistoryRepository;
+    private readonly PayPalClient _payPalClient;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
 
-    public PaymentController(PaymentHistoryRepository paymentHistoryRepository)
+    public PaymentController(PaymentHistoryRepository paymentHistoryRepository, IServiceScopeFactory serviceScopeFactory, PayPalClient payPalClient)
     {
         _paymentHistoryRepository = paymentHistoryRepository;
+        _serviceScopeFactory = serviceScopeFactory;
+        _payPalClient = payPalClient;
     }
 
-    [AllowAnonymous]
-    [HttpGet("success")]
-    public async Task<ActionResult> Success(string id, string token, string payerId, string returnUrl)
+    [Authorize]
+    [HttpPost("create-order")]
+    public async Task<IActionResult> CreateOrder([FromBody] OrderRequest orderRequest)
     {
-        if (id is null || token is null)
-            return BadRequest();
-        var ok = Request.GetEncodedUrl();
-        //var order = await _client.CapturePayment(token);
-        // Renew policy
-        return Ok();
+        try
+        {
+            var orderResponse = await _payPalClient.CreateOrder(orderRequest);
+            return Ok(orderResponse);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
-    [AllowAnonymous]
-    [HttpGet("failed")]
-    public async Task<ActionResult> Fail(string id, string token, string? payerId, string returnUrl)
+    [Authorize]
+    [HttpPost("confirm-order")]
+    public async Task<IActionResult> ConfirmOrder(string orderId, [FromBody] IPaymentSource paymentSource)
     {
-        if (id is null || token is null)
-            return BadRequest();
+        try
+        {
+            var confirmedOrder = await _payPalClient.ConfirmOrder(orderId, paymentSource);
+            return Ok(confirmedOrder);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
 
-        return Ok();
+    [Authorize]
+    [HttpPost("capture-payment")]
+    public async Task<IActionResult> CapturePayment(string orderId)
+    {
+        try
+        {
+            var capturedPayment = await _payPalClient.CapturePayment(orderId);
+            return Ok(capturedPayment);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     [Authorize]

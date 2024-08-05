@@ -59,118 +59,67 @@
             try {
                 let totalCostNumber = parseFloat(totalCost);
 
-                if (isCharge) {
-                    await historicizeCharge(id, totalCostNumber);
-                } else {
-                    await historicizeStopover(id, totalCostNumber);
+                const orderRequest = {
+                    intent: "CAPTURE",
+                    purchase_units: [
+                        {
+                            reference_id: id,
+                            amount: {
+                                currency_code: "EUR",
+                                value: totalCostNumber.toFixed(2),
+                                breakdown: {
+                                    item_total: {
+                                        currency_code: "EUR",
+                                        value: totalCostNumber.toFixed(2)
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                };
+
+                // Crea l'ordine PayPal
+                const createOrderResponse = await fetch('/api/payment/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderRequest)
+                });
+
+                if (!createOrderResponse.ok) {
+                    throw new Error('Errore durante la creazione dell\'ordine.');
                 }
+
+                const orderResponse = await createOrderResponse.json();
+                const orderId = orderResponse.id;
+
+                // Conferma l'ordine PayPal
+                const paymentSource = {
+                    // Dettagli della fonte di pagamento
+                };
+
+                const confirmOrderResponse = await fetch(`/api/payment/confirm-order?orderId=${orderId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(paymentSource)
+                });
+
+                if (!confirmOrderResponse.ok) {
+                    throw new Error('Errore durante la conferma dell\'ordine.');
+                }
+
+                const capturePaymentResponse = await fetch(`/api/payment/capture-payment?orderId=${orderId}`, {
+                    method: 'POST'
+                });
+
+                if (!capturePaymentResponse.ok) {
+                    throw new Error('Errore durante la cattura del pagamento.');
+                }
+
+                alert(`Hai pagato €${totalCostNumber.toFixed(2)} con successo.`);
             } catch (error) {
-                console.error("Errore durante il pagamento o la storicizzazione:", error);
-                alert("C'è stato un errore durante il pagamento o la storicizzazione.");
+                console.error("Errore durante il pagamento:", error);
+                alert("C'è stato un errore durante il pagamento.");
             }
         }
-
-        async function historicizeCharge(chargeId, totalCostNumber) {
-            const response = await fetch('/api/currentlycharging/historicizeCharge', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: chargeId,
-            });
-
-            if (!response.ok) {
-                throw new Error('Errore nella storicizzazione della ricarica.');
-            }
-
-            alert(`Hai pagato €${totalCostNumber.toFixed(2)} con successo.`);
-            console.log('Ricarica storicizzata con successo.');
-            loadCharges();
-        }
-
-        async function historicizeStopover(stopoverId, totalCostNumber) {
-            const response = await fetch('/api/currentlycharging/historicizeStopover', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: stopoverId,
-            });
-
-            if (!response.ok) {
-                throw new Error('Errore nella storicizzazione della sosta.');
-            }
-
-            alert(`Hai pagato €${totalCostNumber.toFixed(2)} con successo.`);
-            console.log('Sosta storicizzata con successo.');
-            loadStopovers();
-        }
-
-        async function loadCharges() {
-            const response = await fetch('/api/currentlycharging/recharges');
-            const charges = await response.json();
-            const tbody = document.getElementById('currentChargesTable');
-            tbody.innerHTML = '';
-
-            charges.forEach(charge => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                            <td>${charge.carPlate}</td>
-                            <td>${charge.parkingSlotId}</td>
-                            <td>${new Date(charge.startChargingTime).toLocaleString()}</td>
-                            <td>${new Date(charge.endChargingTime).toLocaleString()}</td>
-                            <td>${charge.totalCost}</td>
-                            <td>
-                                ${charge.toPay ? `<button class="btn btn-success" onclick="handlePayment(${charge.id}, ${charge.totalCost}, true)">Pay Now</button>` : ''}
-                            </td>
-                        `;
-                tbody.appendChild(row);
-            });
-        }
-
-        async function loadStopovers() {
-            const response = await fetch('/api/currentlycharging/stopovers');
-            const stopovers = await response.json();
-            const tbody = document.getElementById('stopChargesTable');
-            tbody.innerHTML = '';
-
-            stopovers.forEach(stop => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                            <td>${stop.carPlate}</td>
-                            <td>${stop.parkingSlotId}</td>
-                            <td>${new Date(stop.startStopoverTime).toLocaleString()}</td>
-                            <td>${new Date(stop.endStopoverTime).toLocaleString()}</td>
-                            <td>${stop.totalCost}</td>
-                            <td>
-                                ${stop.toPay ? `<button class="btn btn-success" onclick="handlePayment(${stop.id}, ${stop.totalCost}, false)">Pay Now</button>` : ''}
-                            </td>
-                        `;
-                tbody.appendChild(row);
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            loadCharges();
-            loadStopovers();
-        });
     </script>
 }
-
-@*
-// TODO: mandare richiesta PUT all'endpoint /api/CurrentlyCharging/historicize
-
-// TODO: PayPal payment implementation
-// try {
-//     const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-//     const response = await fetch('/Payments?handler=PayNow', {
-//         method: 'POST',
-//         headers: {
-//             'Content-Type': 'application/json',
-//             'RequestVerificationToken': token
-//         },
-//         body: JSON.stringify(carPlate)
-//     });
-//     const result = await response.json();
-//     alert(result.message);
-// } catch (error) {
-//     console.error('Error:', error);
-//     alert('An error occurred during the payment process.');
-// } 
-*@
