@@ -13,6 +13,7 @@ public class CamSimulatorController : ControllerBase
     private readonly CarRepository _carRepository;
     private readonly ReservationRepository _reservationRepository;
     private readonly ParkingSlotRepository _parkingSlotRepository;
+    private readonly StopoverRepository _stopoverRepository;
     private ChargeManager _chargeManager { get; set; }
     private readonly ILogger<CamSimulatorController> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
@@ -25,6 +26,7 @@ public class CamSimulatorController : ControllerBase
         ReservationRepository reservationRepository,
         ChargeManager chargeManager,
         ParkingSlotRepository parkingSlotRepository,
+        StopoverRepository stopoverRepository,
         UserManager<IdentityUser> userManager)
     {
         _carRepository = carRepository;
@@ -34,10 +36,11 @@ public class CamSimulatorController : ControllerBase
         _chargeManager = chargeManager;
         _parkingSlotRepository = parkingSlotRepository;
         _userManager = userManager;
+        _stopoverRepository = stopoverRepository;
     }
 
     [HttpPost("detect")]
-    public async Task<IActionResult> Uscita([FromBody] Request request)
+    public async Task<IActionResult> Detect([FromBody] Request request)
     {
         if (request == null || string.IsNullOrWhiteSpace(request.LicencePlate))
         {
@@ -45,7 +48,7 @@ public class CamSimulatorController : ControllerBase
         }
 
         // Simulazione dell'elaborazione della targa
-        string responseMessage = $"Targa ricevuta: {request.LicencePlate}, ParkingId ricevuto: {request.ParkingId}";
+        string responseMessage = $"Targa rilevata: {request.LicencePlate} sul parcheggio n.{request.ParkingId}";
         var car = await _carRepository.GetCarByLicencePlate(request.LicencePlate);
 
         if (car == null)
@@ -76,11 +79,20 @@ public class CamSimulatorController : ControllerBase
     }
 
     private async Task CarDeparting(Request request, Car car)
-    {
+    {   
+        if (car.ParkingId != request.ParkingId)
+        {
+            _logger.LogWarning("Carplate {plate} is not in parking {parkingId}", request.LicencePlate, request.ParkingId);
+            return;
+        }
+
         _logger.LogInformation("Detected carplate {plate} on departure", request.LicencePlate);
 
+        // Remove related requests
         var scope = _serviceScopeFactory.CreateScope();
-        var _stopoverRepository = scope.ServiceProvider.GetRequiredService<StopoverRepository>();
+        var _immediateRequestRepository = scope.ServiceProvider.GetRequiredService<ImmediateRequestRepository>();
+        await _immediateRequestRepository.DeleteByCarPlate(request.LicencePlate);
+        await _chargeManager.RemoveImmediateRequestByCarPlate(request.LicencePlate);
 
         if (car.ParkingSlotId != null)
         {

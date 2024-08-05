@@ -30,4 +30,17 @@ public class ImmediateRequestRepository : GenericRepository<ImmediateRequest>
             .Where(ir => ir.CarPlate == carPlate)
             .FirstOrDefaultAsync();
     }
+
+    public async Task DeleteByCarPlate(string licencePlate)
+    {
+        var immediateRequest = await _context.ImmediateRequests
+            .Where(ir => ir.CarPlate == licencePlate)
+            .FirstOrDefaultAsync();
+
+        if (immediateRequest != null)
+        {
+            _context.ImmediateRequests.Remove(immediateRequest);
+            await _context.SaveChangesAsync();
+        }
+    }
 }

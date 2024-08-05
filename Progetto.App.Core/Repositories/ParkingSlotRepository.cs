@@ -64,4 +64,8 @@ public class ParkingSlotRepository : GenericRepository<ParkingSlot>
         return await query.ToListAsync();
     }
 
+    public async Task<IEnumerable<ParkingSlot?>> GetByParkingId(int parkingId)
+    {
+        return await _context.ParkingSlots.Where(ps => ps.ParkingId == parkingId).ToListAsync();
+    }
 }
