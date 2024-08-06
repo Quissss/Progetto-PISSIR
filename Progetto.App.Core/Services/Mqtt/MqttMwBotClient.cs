@@ -87,28 +87,19 @@ public class MqttMwBotClient
     /// <returns></returns>
     private async Task InitializeMwBot(int? mwBotId)
     {
-        try
+        if (mwBotId == null)
         {
-            // TODO: delegate to broker
-            using var scope = _serviceScopeFactory.CreateScope();
-            var mwBotRepository = scope.ServiceProvider.GetRequiredService<MwBotRepository>();
-
-            if (mwBotId is not null)
-                MwBot = await mwBotRepository.GetByIdAsync(mwBotId.Value);
-
-            if (MwBot is null)
-            {
-                _logger.LogWarning("MwBot not found");
-                return;
-            }
-
-            _logger.LogInformation("MwBot {mwBotId} initialized successfully", mwBotId);
-
+            _logger.LogWarning("MwBot ID is null");
+            return;
         }
-        catch (Exception ex)
+
+        var mwBotMessage = new MqttClientMessage
         {
-            _logger.LogError(ex, "Error while initializing MwBot with id: {mwBotId}", mwBotId);
-        }
+            MessageType = MessageType.RequestMwBot,
+            Id = mwBotId.Value
+        };
+
+        await PublishClientMessageAsync(mwBotMessage, _cancellationTokenSource.Token);
     }
 
     private void ResetCancellationToken()
@@ -496,10 +487,9 @@ public class MqttMwBotClient
 
         var payload = Encoding.UTF8.GetString(arg.ApplicationMessage.PayloadSegment);
         string topic = arg.ApplicationMessage.Topic;
-        _logger.LogDebug("MwBot {id}: Received message: {payload} from topic: {message.ApplicationMessage.Topic}", MwBot.Id, payload, topic);
 
         var brokerMessage = JsonSerializer.Deserialize<MqttClientMessage>(payload);
-        if (brokerMessage is null || MwBot is null)
+        if (brokerMessage is null)
         {
             _logger.LogWarning("Invalid message received");
             return;
@@ -507,15 +497,26 @@ public class MqttMwBotClient
 
         if (MwBot is null)
         {
-            _logger.LogWarning("MwBot not initialized");
-            return;
+            MwBot = new MwBot
+            {
+                Id = brokerMessage.Id,
+                Status = brokerMessage.Status,
+                BatteryPercentage = brokerMessage.BatteryPercentage,
+                ParkingId = brokerMessage.ParkingId,
+                Parking = brokerMessage.Parking
+            };
         }
+        else
+        {
+            MwBot.Id = brokerMessage.Id;
+            MwBot.Status = brokerMessage.Status;
+            MwBot.BatteryPercentage = brokerMessage.BatteryPercentage;
+        }
+
+        _logger.LogDebug("MwBot {id}: Received message: {payload} from topic: {message.ApplicationMessage.Topic}", MwBot.Id, payload, topic);
 
         try
         {
-            MwBot.Status = brokerMessage.Status;
-            MwBot.BatteryPercentage = brokerMessage.BatteryPercentage;
-
             if (_timer.Enabled) _timer.Stop();
             switch (brokerMessage.MessageType)
             {
@@ -531,13 +532,20 @@ public class MqttMwBotClient
                     await SimulateMovement(MwBotStatus.MovingToSlot, cancellationToken);
                     await SimulateChargingProcess(brokerMessage, cancellationToken);
                     break;
+
                 case MessageType.StartRecharge:
                     _logger.LogInformation("MwBot {id}: Received MessageType.StartRecharge", MwBot.Id);
                     await StartRechargingAsync(cancellationToken);
                     break;
+
                 case MessageType.ChargeCompleted:
                     _logger.LogInformation("MwBot {id}: Received MessageType.ChargeCompleted", MwBot.Id);
                     break;
+
+                case MessageType.ReturnMwBot:
+                    _logger.LogInformation("MwBot {id}: Received MessageType.ReturnMwBot", MwBot.Id);
+                    break;
+
                 default:
                     _logger.LogWarning("MwBot {id}: Invalid message type {type}", MwBot.Id, brokerMessage.MessageType);
                     break;

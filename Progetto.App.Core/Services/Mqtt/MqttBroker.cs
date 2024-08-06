@@ -91,6 +91,10 @@ public class MqttBroker : IHostedService, IDisposable
                     await currentlyChargingRepository.UpdateAsync(mwBotMessage.CurrentlyCharging);
                     break;
 
+                case MessageType.RequestMwBot:
+                    await HandleRequestMwBotMessageAsync(mwBotMessage, mwBot);
+                    break;
+
                 case MessageType.UpdateMwBot:
                     _logger.LogDebug("MqttBroker: MwBot {id} requested MessageType.UpdateMwBot", mwBotMessage.Id);
                     // Done by default
@@ -122,6 +126,21 @@ public class MqttBroker : IHostedService, IDisposable
         }
 
         await Task.CompletedTask;
+    }
+
+    private async Task HandleRequestMwBotMessageAsync(MqttClientMessage mwBotMessage, MwBot mwBot)
+    {
+        var responseMessage = new MqttClientMessage
+        {
+            MessageType = MessageType.ReturnMwBot,
+            Id = mwBot.Id,
+            BatteryPercentage = mwBot.BatteryPercentage,
+            Status = mwBot.Status,
+            ParkingId = mwBot.ParkingId,
+            Parking = mwBot.Parking
+        };
+
+        await PublishMessage(responseMessage);
     }
 
     private async Task HandleDisconnectMessageAsync(MqttClientMessage mwBotMessage, MwBotRepository mwBotRepository)
