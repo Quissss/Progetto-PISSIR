@@ -1,9 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
 using PayPal.REST.Client;
-using PayPal.REST.Models;
 using PayPal.REST.Models.Orders;
 using PayPal.REST.Models.PaymentSources;
 using Progetto.App.Core.Repositories;
@@ -73,7 +70,7 @@ public class PaymentController : ControllerBase
     {
         if (startDate == default || endDate == default)
             return BadRequest();
-        
+
         var payments = await _paymentHistoryRepository.GetPaymentsWithinDateRangeAndType(startDate, endDate, chargeType);
         return Ok(payments);
     }

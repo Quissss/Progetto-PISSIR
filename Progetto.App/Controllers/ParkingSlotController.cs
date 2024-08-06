@@ -1,7 +1,6 @@
 ﻿using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Security;

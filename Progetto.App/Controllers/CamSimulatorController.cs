@@ -79,7 +79,7 @@ public class CamSimulatorController : ControllerBase
     }
 
     private async Task CarDeparting(Request request, Car car)
-    {   
+    {
         if (car.ParkingId != request.ParkingId)
         {
             // TODO: return message to CamSimulator
@@ -202,7 +202,7 @@ public class CamSimulatorController : ControllerBase
             var existingRequest = await immediateRequestRepository.GetByCarPlate(request.LicencePlate);
             if (existingRequest is not null)
             {
-               return BadRequest("Richiesta già in corso");
+                return BadRequest("Richiesta già in corso");
             }
 
             await _carRepository.UpdateCarStatus(request.LicencePlate, CarStatus.WaitForCharge);

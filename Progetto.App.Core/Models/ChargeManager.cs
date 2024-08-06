@@ -237,7 +237,7 @@ public class ChargeManager
             await _immediateRequestsSemaphore.WaitAsync();
 
             var scope = _serviceScopeFactory.CreateScope();
-            var parkingSlotRepository = scope.ServiceProvider.GetRequiredService<ParkingSlotRepository>();  
+            var parkingSlotRepository = scope.ServiceProvider.GetRequiredService<ParkingSlotRepository>();
 
             var immediateRequests = _immediateRequests?.Where(ir => ir.ParkingId == mwBot.ParkingId && ir.RequestDate <= DateTime.Now);
 
