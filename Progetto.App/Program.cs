@@ -37,9 +37,9 @@ services.AddAuthentication().AddGoogle(googleOptions =>
 services.AddSingleton<IPayPalClient, PayPalClient>();
 services.Configure<PayPalClientOptions>(options =>
 {
-    options.ClientId = configuration.GetRequiredSection("PayPal")["ClientId"]!;
-    options.ClientSecret = configuration.GetRequiredSection("PayPal")["ClientSecret"]!;
-    options.PayPalUrl = configuration.GetRequiredSection("PayPal")["PayPalUrl"]!;
+    options.ClientId = configuration["Payment:PayPal:ClientId"]!;
+    options.ClientSecret = configuration["Payment:PayPal:ClientSecret"]!;
+    options.PayPalUrl = configuration["Payment:PayPal:Url"]!;
 });
 #endregion
 
@@ -61,7 +61,7 @@ services.AddAuthorization(option =>
 // Validators
 services.AddValidatorsFromAssemblyContaining<CarValidator>();
 
-// Repositories
+#region Scoped repositories
 services.AddScoped<CarRepository>();
 services.AddScoped<MwBotRepository>();
 services.AddScoped<ParkingRepository>();
@@ -71,6 +71,7 @@ services.AddScoped<ImmediateRequestRepository>();
 services.AddScoped<CurrentlyChargingRepository>();
 services.AddScoped<StopoverRepository>();
 services.AddScoped<PaymentHistoryRepository>();
+#endregion
 
 // Authorization handlers
 services.AddSingleton<ChargeManager>();
