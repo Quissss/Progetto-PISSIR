@@ -20,4 +20,5 @@ public class MwBot
     public MwBotStatus Status { get; set; }
     public int? ParkingId { get; set; }
     public Parking? Parking { get; set; }
+    // TODO: aggiungere posizione attuale (per riconoscere dove si trova il robot allo spegnimento)
 }

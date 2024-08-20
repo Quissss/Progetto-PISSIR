@@ -170,7 +170,7 @@ public class ChargeManager
     {
         ImmediateRequest? immediateRequest = null;
 
-        // Serve reservations
+        // Car entered the parking, serve reservations
         try
         {
             await _reservationsSemaphore.WaitAsync();

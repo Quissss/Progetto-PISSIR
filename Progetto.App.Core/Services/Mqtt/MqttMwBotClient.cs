@@ -454,6 +454,7 @@ public class MqttMwBotClient
 
             _mwBotMessage.MessageType = MessageType.UpdateMwBot;
             _mwBotMessage.Status = MwBotStatus.Recharging;
+            _mwBotMessage.BatteryPercentage = MwBot.BatteryPercentage;
 
             await PublishClientMessageAsync(_mwBotMessage, cancellationToken);
 
