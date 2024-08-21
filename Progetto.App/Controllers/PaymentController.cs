@@ -5,9 +5,11 @@ using Newtonsoft.Json;
 using PayPal.REST.Client;
 using PayPal.REST.Models.Orders;
 using PayPal.REST.Models.PaymentSources;
+using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
 using System.Dynamic;
 using System.Globalization;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace Progetto.App.Controllers;
 
@@ -158,24 +160,43 @@ public class PaymentController : ControllerBase
         if (order.Status == OrderStatus.Completed)
         {
             var item = order.PurchaseUnits.FirstOrDefault()?.Items.FirstOrDefault();
+            var scope = _serviceScopeFactory.CreateScope();
+            var paymentHistoryRepository = scope.ServiceProvider.GetRequiredService<PaymentHistoryRepository>();
 
             if (item?.Name == "Charge")
             {
                 var chargeRepository = _serviceScopeFactory.CreateScope().ServiceProvider.GetRequiredService<CurrentlyChargingRepository>();
                 var charge = await chargeRepository.GetByIdAsync(id);
 
-                charge.ToPay = false;
-
-                await chargeRepository.UpdateAsync(charge);
+                var historicizedRecharge = await paymentHistoryRepository.AddAsync(new PaymentHistory
+                {
+                    StartTime = charge.StartChargingTime.Value,
+                    EndTime = charge.EndChargingTime.Value,
+                    StartChargePercentage = charge.StartChargePercentage,
+                    EndChargePercentage = charge.TargetChargePercentage,
+                    UserId = charge.UserId,
+                    CarPlate = charge.CarPlate,
+                    EnergyConsumed = charge.EnergyConsumed,
+                    TotalCost = charge.TotalCost,
+                    IsCharge = true,
+                });
+                await chargeRepository.DeleteAsync(c => c.Id == id);
             }
             else if (item?.Name == "Stopover")
             {
                 var stopoverRepository = _serviceScopeFactory.CreateScope().ServiceProvider.GetRequiredService<StopoverRepository>();
                 var stopover = await stopoverRepository.GetByIdAsync(id);
 
-                stopover.ToPay = false;
-
-                await stopoverRepository.UpdateAsync(stopover);
+                var historicizedStopover = await paymentHistoryRepository.AddAsync(new PaymentHistory
+                {
+                    StartTime = stopover.StartStopoverTime.Value,
+                    EndTime = stopover.EndStopoverTime.Value,
+                    UserId = stopover.UserId,
+                    CarPlate = stopover.CarPlate,
+                    TotalCost = stopover.TotalCost,
+                    IsCharge = false,
+                });
+                await stopoverRepository.DeleteAsync(s => s.Id == id);
             }
             else
             {

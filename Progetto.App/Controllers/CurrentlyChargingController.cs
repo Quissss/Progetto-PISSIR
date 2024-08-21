@@ -45,7 +45,6 @@ public class CurrentlyChargingController : ControllerBase
         return Ok(recharges);
     }
 
-
     [HttpGet("stopovers")]
     public async Task<IActionResult> GetStopovers([FromQuery] string? carPlate)
     {
@@ -58,50 +57,5 @@ public class CurrentlyChargingController : ControllerBase
         }
 
         return Ok(stopovers);
-    }
-
-    [HttpPost("historicizeCharge")]
-    public async Task<IActionResult> HistoricizeCharge([FromBody] int chargeId)
-    {
-        var scope = _serviceScopeFactory.CreateScope();
-        var paymentHistoryRepository = scope.ServiceProvider.GetRequiredService<PaymentHistoryRepository>();
-
-        var charge = await _currentlyChargingRespository.GetByIdAsync(chargeId);
-        var historicizedRecharge = await paymentHistoryRepository.AddAsync(new PaymentHistory
-        {
-            StartTime = charge.StartChargingTime.Value,
-            EndTime = charge.EndChargingTime.Value,
-            StartChargePercentage = charge.StartChargePercentage,
-            EndChargePercentage = charge.TargetChargePercentage,
-            UserId = charge.UserId,
-            CarPlate = charge.CarPlate,
-            EnergyConsumed = charge.EnergyConsumed,
-            TotalCost = charge.TotalCost,
-            IsCharge = true,
-        });
-        await _currentlyChargingRespository.DeleteAsync(c => c.Id == chargeId);
-
-        return Ok(historicizedRecharge);
-    }
-
-    [HttpPost("historicizeStopover")]
-    public async Task<IActionResult> HistoricizeStopover([FromBody] int stopoverId)
-    {
-        var scope = _serviceScopeFactory.CreateScope();
-        var paymentHistoryRepository = scope.ServiceProvider.GetRequiredService<PaymentHistoryRepository>();
-
-        var stopover = await _stopoverRepository.GetByIdAsync(stopoverId);
-        var historicizedStopover = await paymentHistoryRepository.AddAsync(new PaymentHistory
-        {
-            StartTime = stopover.StartStopoverTime.Value,
-            EndTime = stopover.EndStopoverTime.Value,
-            UserId = stopover.UserId,
-            CarPlate = stopover.CarPlate,
-            TotalCost = stopover.TotalCost,
-            IsCharge = false,
-        });
-        await _stopoverRepository.DeleteAsync(s => s.Id == stopoverId);
-
-        return Ok(historicizedStopover);
     }
 }
