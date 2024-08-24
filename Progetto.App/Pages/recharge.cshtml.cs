@@ -1,12 +1,7 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace Progetto.App.Pages
-{
-    public class RechargeModel : PageModel
-    {
-        public async Task OnGetAsync()
-        {
+namespace Progetto.App.Pages;
 
-        }
-    }
+public class RechargeModel : PageModel
+{
 }

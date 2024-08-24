@@ -6,9 +6,4 @@ namespace Progetto.App.Pages;
 public class DashMwBotModel : PageModel
 {
     public IEnumerable<SelectListItem> Parkings { get; set; }
-
-    public async Task OnGet()
-    {
-
-    }
 }
