@@ -69,15 +69,15 @@
 
                 charges.forEach(charge => {
                     const $row = $('<tr>').html(`
-                        <td>${charge.carPlate}</td>
-                        <td>${charge.parkingSlotId}</td>
-                        <td>${new Date(charge.startChargingTime).toLocaleString()}</td>
-                        <td>${new Date(charge.endChargingTime).toLocaleString()}</td>
-                        <td>${charge.totalCost}</td>
-                        <td>
-                            ${charge.toPay ? `<button class="btn btn-success" onclick="handlePayment(${charge.id}, ${charge.totalCost}, true)">Pay Now</button>` : ''}
-                        </td>
-                    `);
+                                <td>${charge.carPlate}</td>
+                                <td>${charge.parkingSlotId}</td>
+                                <td>${new Date(charge.startChargingTime).toLocaleString()}</td>
+                                <td>${new Date(charge.endChargingTime).toLocaleString()}</td>
+                                <td>${charge.totalCost}</td>
+                                <td>
+                                    ${charge.toPay ? `<button class="btn btn-success" onclick="handlePayment(${charge.id}, true)">Pay Now</button>` : ''}
+                                </td>
+                            `);
                     $tbody.append($row);
                 });
             } catch (error) {
@@ -94,15 +94,15 @@
 
                 stopovers.forEach(stop => {
                     const $row = $('<tr>').html(`
-                        <td>${stop.carPlate}</td>
-                        <td>${stop.parkingSlotId}</td>
-                        <td>${new Date(stop.startStopoverTime).toLocaleString()}</td>
-                        <td>${new Date(stop.endStopoverTime).toLocaleString()}</td>
-                        <td>${stop.totalCost}</td>
-                        <td>
-                            ${stop.toPay ? `<button class="btn btn-success" onclick="handlePayment(${stop.id}, ${stop.totalCost}, false)">Pay Now</button>` : ''}
-                        </td>
-                    `);
+                                <td>${stop.carPlate}</td>
+                                <td>${stop.parkingSlotId}</td>
+                                <td>${new Date(stop.startStopoverTime).toLocaleString()}</td>
+                                <td>${new Date(stop.endStopoverTime).toLocaleString()}</td>
+                                <td>${stop.totalCost}</td>
+                                <td>
+                                    ${stop.toPay ? `<button class="btn btn-success" onclick="handlePayment(${stop.id}, false)">Pay Now</button>` : ''}
+                                </td>
+                            `);
                     $tbody.append($row);
                 });
             } catch (error) {
@@ -110,69 +110,26 @@
             }
         }
 
-        async function handlePayment(id, totalCost, isCharge) {
-            try {
-                let totalCostNumber = parseFloat(totalCost);
+        async function handlePayment(id, isCharge) {
+            const payload = { id: id, isCharge: isCharge };
 
-                const orderRequest = {
-                    intent: "CAPTURE",
-                    purchase_units: [
-                        {
-                            reference_id: id,
-                            amount: {
-                                currency_code: "EUR",
-                                value: totalCostNumber.toFixed(2),
-                                breakdown: {
-                                    item_total: {
-                                        currency_code: "EUR",
-                                        value: totalCostNumber.toFixed(2)
-                                    }
-                                }
-                            }
-                        }
-                    ]
-                };
-
-                const createOrderResponse = await fetch('/api/payment/create-order', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(orderRequest)
+            fetch('/api/payment/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.url) {
+                        window.location.href = data.url;  // Effettua il redirect all'URL di PayPal
+                    } else {
+                        alert('Failed to initiate payment.');
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                    alert('An error occurred during the payment process.');
                 });
-
-                if (!createOrderResponse.ok) {
-                    throw new Error('Errore durante la creazione dell\'ordine.');
-                }
-
-                const orderResponse = await createOrderResponse.json();
-                const orderId = orderResponse.id;
-
-                const paymentSource = {
-                    // Dettagli della fonte di pagamento
-                };
-
-                const confirmOrderResponse = await fetch(`/api/payment/confirm-order?orderId=${orderId}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(paymentSource)
-                });
-
-                if (!confirmOrderResponse.ok) {
-                    throw new Error('Errore durante la conferma dell\'ordine.');
-                }
-
-                const capturePaymentResponse = await fetch(`/api/payment/capture-payment?orderId=${orderId}`, {
-                    method: 'POST'
-                });
-
-                if (!capturePaymentResponse.ok) {
-                    throw new Error('Errore durante la cattura del pagamento.');
-                }
-
-                alert(`Hai pagato €${totalCostNumber.toFixed(2)} con successo.`);
-            } catch (error) {
-                console.error("Errore durante il pagamento:", error);
-                alert("C'è stato un errore durante il pagamento.");
-            }
         }
     </script>
 }

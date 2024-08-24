@@ -39,7 +39,7 @@ public class ChargeManager
 
             if (immediateRequestsList?.Count == 0)
             {
-                _logger.LogWarning("No immediate requests found");
+                _logger.LogInformation("No immediate requests");
                 return;
             }
 
@@ -170,7 +170,7 @@ public class ChargeManager
     {
         ImmediateRequest? immediateRequest = null;
 
-        // Serve reservations
+        // Car entered the parking, serve reservations
         try
         {
             await _reservationsSemaphore.WaitAsync();

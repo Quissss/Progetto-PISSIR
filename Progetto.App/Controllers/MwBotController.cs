@@ -110,6 +110,11 @@ public class MwBotController : ControllerBase
                 return BadRequest();
             }
 
+            if (client.MwBot is null)
+            {
+                client.MwBot = mwBot;
+            }
+
             var connectResult = await client.InitializeAsync(mwBot.Id);
             if (!connectResult)
             {
@@ -152,6 +157,8 @@ public class MwBotController : ControllerBase
 
         try
         {
+            // TODO: togliere l'affidamento della ricarica al bot spento (rimuovere mwbotid da currentlycharging e riassegnarlo quando un bot trova la ricarica non completata)
+
             _logger.LogDebug("Turning off MwBot with id {id}", mwBot.Id);
             var client = _connectedClientsService.GetConnectedClients().FirstOrDefault(c => c.MwBot?.Id == mwBot.Id);
 

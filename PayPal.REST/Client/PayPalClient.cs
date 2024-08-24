@@ -18,7 +18,7 @@ namespace PayPal.REST.Client
         private AuthResponse? _auth = null;
         private readonly string _clientId = string.Empty;
         private readonly string _clientSecret = string.Empty;
-        private readonly string _payPalUrl = string.Empty;
+        private readonly string _payPalUrl = "https://api.sandbox.paypal.com";
         private readonly HttpClient _client;
 
         private readonly JsonSerializerOptions _options;
@@ -31,11 +31,11 @@ namespace PayPal.REST.Client
             Configure();
         }
 
-        public PayPalClient(string clientId, string clientSecret, string payPalUrl = "https://api.paypal.com") : this()
+        public PayPalClient(string clientId, string clientSecret) : this()
         {
             _clientId = clientId;
             _clientSecret = clientSecret;
-            _client = new HttpClient() { BaseAddress = new(payPalUrl) };
+            _client = new HttpClient() { BaseAddress = new(_payPalUrl) };
             Configure();
         }
 

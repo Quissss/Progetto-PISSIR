@@ -91,6 +91,12 @@ public class MqttBroker : IHostedService, IDisposable
                     await currentlyChargingRepository.UpdateAsync(mwBotMessage.CurrentlyCharging);
                     break;
 
+                case MessageType.RequestMwBot:
+                    mwBotMessage.BatteryPercentage = mwBot.BatteryPercentage;
+                    mwBotMessage.ParkingId = mwBot.ParkingId;
+                    await HandleRequestMwBotMessageAsync(mwBotMessage, mwBot);
+                    break;
+
                 case MessageType.UpdateMwBot:
                     _logger.LogDebug("MqttBroker: MwBot {id} requested MessageType.UpdateMwBot", mwBotMessage.Id);
                     // Done by default
@@ -124,6 +130,21 @@ public class MqttBroker : IHostedService, IDisposable
         await Task.CompletedTask;
     }
 
+    private async Task HandleRequestMwBotMessageAsync(MqttClientMessage mwBotMessage, MwBot mwBot)
+    {
+        var responseMessage = new MqttClientMessage
+        {
+            MessageType = MessageType.ReturnMwBot,
+            Id = mwBot.Id,
+            BatteryPercentage = mwBot.BatteryPercentage,
+            Status = mwBot.Status,
+            ParkingId = mwBot.ParkingId,
+            Parking = mwBot.Parking
+        };
+
+        await PublishMessage(responseMessage);
+    }
+
     private async Task HandleDisconnectMessageAsync(MqttClientMessage mwBotMessage, MwBotRepository mwBotRepository)
     {
         using var scope = _serviceScopeFactory.CreateScope();
@@ -138,14 +159,6 @@ public class MqttBroker : IHostedService, IDisposable
         }
         mwBot.Status = MwBotStatus.Offline;
         await mwBotRepository.UpdateAsync(mwBot);
-
-        var currentlyChargingList = await currentlyChargingRepository.GetAllActiveByMwBot(mwBotMessage.Id);
-        foreach (var currentlyCharging in currentlyChargingList)
-        {
-            var parkingSlot = await parkingSlotRepository.GetByIdAsync(currentlyCharging.ParkingSlotId.Value);
-            parkingSlot.Status = ParkingSlotStatus.Free;
-            await parkingSlotRepository.UpdateAsync(parkingSlot);
-        }
 
         _logger.LogDebug("MqttBroker: MwBot {id} disconnected", mwBotMessage.Id);
     }
@@ -269,7 +282,6 @@ public class MqttBroker : IHostedService, IDisposable
         using var scope = _serviceScopeFactory.CreateScope();
         var currentlyChargingRepository = scope.ServiceProvider.GetRequiredService<CurrentlyChargingRepository>();
         var immediateRequestRepository = scope.ServiceProvider.GetRequiredService<ImmediateRequestRepository>();
-        var parkingSlotRepository = scope.ServiceProvider.GetRequiredService<ParkingSlotRepository>();
         var parkingRepository = scope.ServiceProvider.GetRequiredService<ParkingRepository>();
         var carRepository = scope.ServiceProvider.GetRequiredService<CarRepository>();
 
