@@ -22,8 +22,8 @@ public class MqttMwBotClient
     private readonly ILogger<MqttMwBotClient> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private const int _rechargeThreshold = 5; // Battery percentage threshold for recharging
-    private Timer _timer;
-    private Timer _reconnectTimer;
+    private readonly Timer _timer;
+    private readonly Timer _reconnectTimer;
     private CancellationTokenSource _cancellationTokenSource;
     private CancellationToken _cancellationToken;
     private const int _chargeDelay = 1000;

@@ -100,6 +100,10 @@ public class MwBotController : ControllerBase
         try
         {
             _logger.LogDebug("Creating / Retrieving MwBot with id {id}", mwBot.Id);
+
+            mwBot.Status = MwBotStatus.StandBy;
+            await _mwBotRepository.UpdateAsync(mwBot);
+
             var client = new MqttMwBotClient(
                 _loggerFactory.CreateLogger<MqttMwBotClient>(),
                 _serviceScopeFactory);
@@ -110,10 +114,7 @@ public class MwBotController : ControllerBase
                 return BadRequest();
             }
 
-            if (client.MwBot is null)
-            {
-                client.MwBot = mwBot;
-            }
+            client.MwBot ??= mwBot;
 
             var connectResult = await client.InitializeAsync(mwBot.Id);
             if (!connectResult)
@@ -122,8 +123,6 @@ public class MwBotController : ControllerBase
                 return BadRequest();
             }
 
-            client.MwBot.Status = mwBot.Status = MwBotStatus.StandBy;
-            await _mwBotRepository.UpdateAsync(mwBot);
             _connectedClientsService.AddClient(client);
 
             _logger.LogDebug("MwBot {id} initialized", mwBot.Id);

@@ -11,16 +11,6 @@ let ajax = function (item, verb, json = true) {
     });
 };
 
-function turnBot(item, action) {
-    var endpoint = action === "on" ? "on" : "off";
-    $.ajax({
-        type: "PUT",
-        url: url + "/" + item.id + "/" + endpoint, 
-        data: JSON.stringify(item),
-        contentType: "application/json",
-    });
-}
-
 $(function () {
     $("#jsGridCar").jsGrid({
         width: "100%",

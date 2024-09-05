@@ -17,7 +17,7 @@ public class MwBotRepository : GenericRepository<MwBot>
         _context = context;
     }
 
-    public new async Task UpdateAsync(MwBot mwBot)
+    public async Task UpdateAsync(MwBot mwBot)
     {
         _context.MwBots.Update(mwBot);
         await _context.SaveChangesAsync();
@@ -32,6 +32,4 @@ public class MwBotRepository : GenericRepository<MwBot>
     {
         return await _context.MwBots.Where(m => m.Status == MwBotStatus.Offline).ToListAsync();
     }
-
-
 }

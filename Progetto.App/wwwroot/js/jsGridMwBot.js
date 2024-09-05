@@ -33,7 +33,7 @@ $(function () {
     $.ajax({
         url: '/api/Parking',
         method: 'GET',
-        async: false, // Assicurati che i dati siano caricati prima di continuare
+        async: false,
         success: function (data) {
             parkingOptions = data.map(p => ({ value: p.id, text: `${p.name} [${p.city} - ${p.address}]` }));
         },

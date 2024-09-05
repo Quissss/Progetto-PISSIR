@@ -94,6 +94,9 @@ public class MqttBroker : IHostedService, IDisposable
                 case MessageType.RequestMwBot:
                     mwBotMessage.BatteryPercentage = mwBot.BatteryPercentage;
                     mwBotMessage.ParkingId = mwBot.ParkingId;
+
+                    // BADFIX desync with database for some reason
+                    mwBotMessage.Status = mwBot.Status = MwBotStatus.StandBy;
                     await HandleRequestMwBotMessageAsync(mwBotMessage, mwBot);
                     break;
 
