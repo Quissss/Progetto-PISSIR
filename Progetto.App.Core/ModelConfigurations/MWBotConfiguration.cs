@@ -19,6 +19,11 @@ public class MwBotConfiguration : IEntityTypeConfiguration<MwBot>
                 value => (int)value,
                 value => Enum.Parse<MwBotStatus>(value.ToString())
             );
+        builder.Property(b => b.LatestLocation)
+            .HasConversion(
+                value => (int)value,
+                value => Enum.Parse<MwBotLocations>(value.ToString())
+            );
         builder.HasOne(b => b.Parking).WithMany().HasForeignKey(b => b.ParkingId);
     }
 }

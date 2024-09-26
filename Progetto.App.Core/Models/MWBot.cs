@@ -10,6 +10,12 @@ public enum MwBotStatus
     Recharging, // MwBot is recharging
 }
 
+public enum MwBotLocations
+{
+    InDock, // MwBot is in charging station
+    InSlot, // MwBot is in parking slot
+}
+
 /// <summary>
 /// Represents a MwBot (is also used in MqttClientMessage)
 /// </summary>
@@ -20,5 +26,5 @@ public class MwBot
     public MwBotStatus Status { get; set; }
     public int? ParkingId { get; set; }
     public Parking? Parking { get; set; }
-    // TODO: aggiungere posizione attuale (per riconoscere dove si trova il robot allo spegnimento)
+    public MwBotLocations? LatestLocation { get; set; }
 }

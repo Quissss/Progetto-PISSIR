@@ -16,5 +16,7 @@ public class MwBotValidator : AbstractValidator<MwBot>
             .GreaterThanOrEqualTo(0).WithMessage("Battery Percentage must be greater than or equal to 0");
         RuleFor(mw => mw.Status)
             .IsInEnum().WithMessage("Status must be a valid MwBotStatus");
+        RuleFor(mw => mw.LatestLocation)
+            .IsInEnum().WithMessage("Latest Location must be a valid MwBotLocation");
     }
 }
