@@ -95,6 +95,9 @@ namespace Progetto.App.Areas.Identity.Pages.Account
 
             [Display(Name = "Telegram username")]
             public string TelegramUsername { get; set; }
+
+            [Display(Name = "Enable telegram notifications")]
+            public bool IsTelegramNotificationEnabled { get; set; }
         }
 
 
@@ -116,6 +119,7 @@ namespace Progetto.App.Areas.Identity.Pages.Account
                 await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
 
                 user.TelegramUsername = Input.TelegramUsername;
+                user.IsTelegramNotificationEnabled = Input.IsTelegramNotificationEnabled;
 
                 var result = await _userManager.CreateAsync(user, Input.Password);
 

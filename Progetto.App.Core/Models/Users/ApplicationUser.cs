@@ -10,4 +10,5 @@ namespace Progetto.App.Core.Models.Users;
 public class ApplicationUser : IdentityUser
 {
     public string? TelegramUsername { get; set; }
+    public bool IsTelegramNotificationEnabled { get; set; }
 }

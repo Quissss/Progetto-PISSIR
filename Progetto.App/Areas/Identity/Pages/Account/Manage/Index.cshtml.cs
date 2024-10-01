@@ -62,6 +62,9 @@ namespace Progetto.App.Areas.Identity.Pages.Account.Manage
 
             [Display(Name = "Telegram username")]
             public string TelegramUsername { get; set; }
+
+            [Display(Name = "Enable telegram notifications")]
+            public bool IsTelegramNotificationEnabled { get; set; }
         }
 
         private async Task LoadAsync(ApplicationUser user)
@@ -74,7 +77,8 @@ namespace Progetto.App.Areas.Identity.Pages.Account.Manage
             Input = new InputModel
             {
                 PhoneNumber = phoneNumber,
-                TelegramUsername = user.TelegramUsername
+                TelegramUsername = user.TelegramUsername,
+                IsTelegramNotificationEnabled = user.IsTelegramNotificationEnabled
             };
         }
 
@@ -122,6 +126,17 @@ namespace Progetto.App.Areas.Identity.Pages.Account.Manage
                 if (!setTelegramUserResult.Succeeded)
                 {
                     StatusMessage = "Unexpected error when trying to set telegram username.";
+                    return RedirectToPage();
+                }
+            }
+
+            if (Input.IsTelegramNotificationEnabled != user.IsTelegramNotificationEnabled)
+            {
+                user.IsTelegramNotificationEnabled = Input.IsTelegramNotificationEnabled;
+                var result = await _userManager.UpdateAsync(user);
+                if (!result.Succeeded)
+                {
+                    StatusMessage = "Unexpected error when trying to set notification preference.";
                     return RedirectToPage();
                 }
             }

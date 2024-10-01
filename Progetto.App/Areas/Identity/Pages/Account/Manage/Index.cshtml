@@ -25,6 +25,10 @@
                 <label asp-for="Input.TelegramUsername" class="form-label"></label>
                 <span asp-validation-for="Input.TelegramUsername" class="text-danger"></span>
             </div>
+            <div class="form-check mb-3">
+                <input asp-for="Input.IsTelegramNotificationEnabled" class="form-check-input" />
+                <label asp-for="Input.IsTelegramNotificationEnabled" class="form-check-label"></label>
+            </div>
             <button id="update-profile-button" type="submit" class="w-100 btn btn-lg btn-primary">Save</button>
         </form>
     </div>
