@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Progetto.App.Core.Models.Users;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Progetto.App.Core.Models;
@@ -28,7 +29,7 @@ public class Car
     public Parking? Parking { get; set; }
     public int? ParkingSlotId { get; set; }
     public string OwnerId { get; set; }
-    public IdentityUser? Owner { get; set; }
+    public ApplicationUser? Owner { get; set; }
 
     [NotMapped]
     public string StatusName { get { return Status.ToString(); } }

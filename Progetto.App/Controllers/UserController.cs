@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Progetto.App.Core.Models.Users;
 
 namespace Progetto.App.Controllers;
 
@@ -13,9 +14,9 @@ namespace Progetto.App.Controllers;
 [Authorize]
 public class UserController : ControllerBase
 {
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public UserController(UserManager<IdentityUser> userManager)
+    public UserController(UserManager<ApplicationUser> userManager)
     {
         _userManager = userManager;
     }

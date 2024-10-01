@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Progetto.App.Core.Models;
+using Progetto.App.Core.Models.Users;
 using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Security;
 using Progetto.App.Core.Validators;
@@ -20,9 +21,9 @@ public class CarController : ControllerBase
 {
     private readonly ILogger<CarController> _logger;
     private readonly CarRepository _carRepository;
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public CarController(ILogger<CarController> logger, CarRepository repository, UserManager<IdentityUser> userManager)
+    public CarController(ILogger<CarController> logger, CarRepository repository, UserManager<ApplicationUser> userManager)
     {
         _logger = logger;
         _carRepository = repository;

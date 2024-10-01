@@ -6,10 +6,12 @@ using PayPal.REST.Client;
 using PayPal.REST.Models;
 using Progetto.App.Core.Data;
 using Progetto.App.Core.Models;
+using Progetto.App.Core.Models.Users;
 using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Security;
 using Progetto.App.Core.Security.Policies;
 using Progetto.App.Core.Services.Mqtt;
+using Progetto.App.Core.Services.Telegram;
 using Progetto.App.Core.Validators;
 using Serilog;
 
@@ -43,12 +45,16 @@ services.Configure<PayPalClientOptions>(options =>
 });
 #endregion
 
+#region Telegram
+services.AddSingleton<TelegramService>();
+#endregion
+
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 services.AddDbContext<ApplicationDbContext>();
 services.AddDatabaseDeveloperPageExceptionFilter();
 
-services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<ApplicationDbContext>();
 services.AddRazorPages();
 

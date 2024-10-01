@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Progetto.App.Core.Models.Users;
 
 namespace Progetto.App.Core.Models;
 
@@ -16,7 +17,7 @@ public class CurrentlyCharging
     public int MwBotId { get; set; }
     public MwBot? MwBot { get; set; }
     public string? UserId { get; set; }
-    public IdentityUser? User { get; set; }
+    public ApplicationUser? User { get; set; }
     public string? CarPlate { get; set; }
     public Car? Car { get; set; }
     public int? ParkingSlotId { get; set; }
