@@ -103,7 +103,7 @@ public class MqttBroker : IHostedService, IDisposable
 
                     // BADFIX desync with database for some reason
                     mwBotMessage.Status = mwBot.Status = MwBotStatus.StandBy;
-                    await HandleRequestMwBotMessageAsync(mwBotMessage, mwBot);
+                    await HandleRequestMwBotMessageAsync(mwBot);
                     break;
 
                 case MessageType.UpdateMwBot:
@@ -130,16 +130,18 @@ public class MqttBroker : IHostedService, IDisposable
 
             }
 
+            // Default behavior
             _logger.LogDebug("MqttBroker: Updating MwBot {id} with params: {battery} and {status}", mwBot.Id, mwBotMessage.BatteryPercentage, mwBot.Status);
             mwBot.Status = mwBotMessage.Status;
             mwBot.BatteryPercentage = mwBotMessage.BatteryPercentage;
+            mwBot.LatestLocation = mwBotMessage.LatestLocation;
             await mwBotRepository.UpdateAsync(mwBot);
         }
 
         await Task.CompletedTask;
     }
 
-    private async Task HandleRequestMwBotMessageAsync(MqttClientMessage mwBotMessage, MwBot mwBot)
+    private async Task HandleRequestMwBotMessageAsync(MwBot mwBot)
     {
         var responseMessage = new MqttClientMessage
         {
@@ -269,6 +271,7 @@ public class MqttBroker : IHostedService, IDisposable
 
         // Update MwBot status
         mwBot.Status = MwBotStatus.ChargingCar;
+        mwBotMessage.LatestLocation = mwBot.LatestLocation = MwBotLocations.InSlot;
         await mwBotRepository.UpdateAsync(mwBot);
 
         // Prepare and publish the response message
@@ -285,7 +288,7 @@ public class MqttBroker : IHostedService, IDisposable
         await PublishMessage(mwBotMessage);
     }
 
-    private async Task HandleCompletedChargeMessageAsync(MqttClientMessage mwBotMessage, MwBotRepository mwBotRepository)
+    private async Task HandleCompletedChargeMessageAsync(MqttClientMessage mwBotMessage)
     {
         _logger.LogDebug("MqttBroker: MwBot {id} completed charging", mwBotMessage.Id);
 
@@ -411,6 +414,6 @@ public class MqttBroker : IHostedService, IDisposable
     public void Dispose()
     {
         _logger.LogDebug("Disposing MQTT server");
-        _mqttServer?.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
