@@ -28,15 +28,9 @@ $(function () {
                     delete filter.status
                 return ajax(filter, "GET", false);
             },
-            updateItem: function (item) {
-                return ajax(item, "PUT");
-            },
-            insertItem: function (item) {
-                return ajax(item, "POST");
-            },
-            deleteItem: function (item) {
-                return ajax(item, "DELETE");
-            }
+            updateItem: item => ajax(item, "PUT"),
+            deleteItem: item => ajax(item, "DELETE"),
+            insertItem: item => ajax(item, "POST"),
         },
 
         fields: [
@@ -56,18 +50,20 @@ $(function () {
                     { Id: 6, Name: "Parked" },
                 ], valueField: "Id", textField: "Name"
             },
-            
-            { type: "control", editButton: true, deleteButton: true }
+            { type: "control", editButton: true, deleteButton: true, sorting: false }
         ],
 
-        onItemInserting: function (args) {
-            args.item["ownerId"] = userId;
-        },
+        onItemInserting: (args) => args.item["ownerId"] = userId,
     });
 
     // TODO: implement SignalR
     setInterval(function () {
-        let filter = $("#jsGridCar").jsGrid("getFilter");
-        $("#jsGridCar").jsGrid("loadData", filter);
+        let grid = $("#jsGridCar");
+        let sorting = grid.jsGrid("getSorting");
+        let filter = grid.jsGrid("getFilter");
+
+        sorting.field === undefined && sorting.order === undefined ?
+            grid.jsGrid("loadData", filter).done(() => grid.jsGrid()) :
+            grid.jsGrid("loadData", filter).done(() => grid.jsGrid("sort", sorting.field, sorting.order));
     }, 1000);
 });

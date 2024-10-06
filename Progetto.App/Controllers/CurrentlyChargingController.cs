@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Progetto.App.Core.Models;
+using Progetto.App.Core.Models.Users;
 using Progetto.App.Core.Repositories;
+using Progetto.App.Core.Security;
 
 namespace Progetto.App.Controllers;
 
@@ -35,7 +37,12 @@ public class CurrentlyChargingController : ControllerBase
     public async Task<IActionResult> GetRecharges([FromQuery] string? carPlate)
     {
         var currentUser = await _userManager.GetUserAsync(User);
-        var recharges = await _currentlyChargingRespository.GetByUserId(currentUser.Id);
+        var role = User?.Claims?.First(x => x.Type == ClaimName.Role).Value;
+        var isAdmin = (int)Role.Admin == Convert.ToInt32(role);
+
+        var recharges = isAdmin ? 
+                await _currentlyChargingRespository.GetAllAsync() : 
+                await _currentlyChargingRespository.GetByUserId(currentUser.Id);
 
         if (!(string.IsNullOrEmpty(carPlate)))
         {
@@ -49,7 +56,12 @@ public class CurrentlyChargingController : ControllerBase
     public async Task<IActionResult> GetStopovers([FromQuery] string? carPlate)
     {
         var currentUser = await _userManager.GetUserAsync(User);
-        var stopovers = await _stopoverRepository.GetByUserId(currentUser.Id);
+        var role = User?.Claims?.First(x => x.Type == ClaimName.Role).Value;
+        var isAdmin = (int)Role.Admin == Convert.ToInt32(role);
+
+        var stopovers = isAdmin ?
+                await _stopoverRepository.GetAllAsync() :
+                await _stopoverRepository.GetByUserId(currentUser.Id);
 
         if (!(string.IsNullOrEmpty(carPlate)))
         {

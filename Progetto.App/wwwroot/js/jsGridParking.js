@@ -59,22 +59,21 @@ $(function () {
             { name: "country", type: "text", width: 100, title: "Country", filtering: false },
             { name: "energyCostPerKw", type: "number", width: 100, title: "Energy Cost/Min", filtering: false },
             { name: "stopCostPerMinute", type: "number", width: 100, title: "Stop Cost Per Minute", filtering: false },
-            {
-                type: "control",
-                editButton: true,
-                deleteButton: true,
-            }
+            { type: "control", editButton: true, deleteButton: true, sorting: false },
         ],
 
-        rowClick: function (args) {
-            showMap(args.item);
-        }
+        rowClick: (args) => showMap(args.item),
     });
 
     // TODO: implement SignalR
     setInterval(function () {
-        let filter = $("#parkingGrid").jsGrid("getFilter");
-        $("#parkingGrid").jsGrid("loadData", filter);
+        let grid = $("#parkingGrid");
+        let sorting = grid.jsGrid("getSorting");
+        let filter = grid.jsGrid("getFilter");
+
+        sorting.field === undefined && sorting.order === undefined ?
+            grid.jsGrid("loadData", filter).done(() => grid.jsGrid()) :
+            grid.jsGrid("loadData", filter).done(() => grid.jsGrid("sort", sorting.field, sorting.order));
     }, 1000);
 
     function showMap(item) {

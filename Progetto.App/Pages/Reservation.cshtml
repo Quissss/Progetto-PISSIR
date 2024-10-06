@@ -66,12 +66,8 @@
             $.ajax({
                 url: '/api/user/current',
                 method: 'GET',
-                success: function (data) {
-                    $('#userId').val(data.userId);
-                },
-                error: function () {
-                    console.error('Errore durante il caricamento dell\'ID utente.');
-                }
+                success: (data) => $('#userId').val(data.userId),
+                error: () => console.error('Errore durante il caricamento dell\'ID utente.'),
             });
         }
 
@@ -158,12 +154,8 @@
                 data: formData,
                 processData: false,
                 contentType: false,
-                success: function () {
-                    alert('Prenotazione creata con successo!');
-                },
-                error: function () {
-                    alert('Si è verificato un errore durante la creazione della prenotazione.');
-                }
+                success: () => alert('Prenotazione creata con successo!'),
+                error: () => alert('Si è verificato un errore durante la creazione della prenotazione.'),
             });
         }
     </script>

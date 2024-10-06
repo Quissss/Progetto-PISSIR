@@ -17,12 +17,8 @@ $(function () {
         url: '/api/Parking',
         method: 'GET',
         async: false,
-        success: function (data) {
-            parkingOptions = data.map(p => ({ value: p.id, text: `${p.name} [${p.city} - ${p.address}]` }));
-        },
-        error: function (error) {
-            console.error("Errore nel caricamento dei dati dei parcheggi:", error);
-        }
+        success: (data) => parkingOptions = data.map(p => ({ value: p.id, text: `${p.name} [${p.city} - ${p.address}]` })),
+        error: (error) => console.error("Errore nel caricamento dei dati dei parcheggi:", error)
     });
 
     $.getJSON(url + "/statuses", function (statuses) {
@@ -51,18 +47,19 @@ $(function () {
                     }
                 },
                 { name: "status", type: "select", items: statuses, width: 100, title: "Status", valueField: "id", textField: "name" },
-                {
-                    type: "control",
-                    deleteButton: true,
-                    editButton: false,
-                }
+                { type: "control", deleteButton: true, editButton: false, sorting: false },
             ]
         });
     });
 
     // TODO: implement SignalR
     setInterval(function () {
-        let filter = $("#parkingSlotGrid").jsGrid("getFilter");
-        $("#parkingSlotGrid").jsGrid("loadData", filter);
+        let grid = $("#parkingSlotGrid");
+        let sorting = grid.jsGrid("getSorting");
+        let filter = grid.jsGrid("getFilter");
+
+        sorting.field === undefined && sorting.order === undefined ?
+            grid.jsGrid("loadData", filter).done(() => grid.jsGrid()) :
+            grid.jsGrid("loadData", filter).done(() => grid.jsGrid("sort", sorting.field, sorting.order));
     }, 1000);
 });

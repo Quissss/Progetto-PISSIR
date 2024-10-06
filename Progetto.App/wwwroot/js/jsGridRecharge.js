@@ -1,5 +1,5 @@
 
-const url = "/api/CurrentlyCharging";
+const url = "/api/CurrentlyCharging/recharges";
 
 let ajax = function (item, verb, json = true) {
     return $.ajax({
@@ -28,20 +28,31 @@ $(function () {
         },
 
         fields: [
-            { name: "carPlate", type: "text", title: "Car Plate", width: 50, filtering: true },
-            { name: "startChargingTime", type: "text", title: "Start Charging Time", width: 75, filtering: false },
-            { name: "endChargingTime", type: "text", title: "End Charging Time", width: 75, filtering: false },
-            { name: "startChargePercentage", type: "number", title: "Start Charge %", width: 50, filtering: false },
-            { name: "currentChargePercentage", type: "number", title: "Current Charge %", width: 50, filtering: false },
-            { name: "targetChargePercentage", type: "number", title: "Target Charge %", width: 50, filtering: false },
-            { name: "energyConsumed", type: "number", title: "Energy Consumed", width: 50, filtering: false },
-            { name: "totalCost", type: "number", title: "Total Cost", width: 50, filtering: false }
+            { name: "carPlate", type: "text", title: "Car Plate", filtering: true },
+            { name: "startChargingTime", type: "text", title: "Start Time", width: 150, filtering: false, itemTemplate: (value) => formatDate(value) },
+            { name: "endChargingTime", type: "text", title: "End Time", width: 150, filtering: false, itemTemplate: (value) => formatDate(value) },
+            { name: "startChargePercentage", type: "number", title: "Start %", filtering: false, itemTemplate: (value) => value + " %" },
+            { name: "currentChargePercentage", type: "number", title: "Current %", filtering: false, itemTemplate: (value) => value +  " %" },
+            { name: "targetChargePercentage", type: "number", title: "Target %", filtering: false, itemTemplate: (value) => value + " %" },
+            { name: "energyConsumed", type: "number", title: "Energy Consumed", filtering: false, itemTemplate: (value) => value + " kw" },
+            { name: "totalCost", type: "number", title: "Total Cost", filtering: false, itemTemplate: (value) => value + " &euro;" }
         ]
     });
 
+    function formatDate(value) {
+        if (!value) return "";
+        let date = new Date(value);
+        return date.toLocaleString();
+    }
+
     // TODO: implement SignalR
     setInterval(function () {
-        let filter = $("#jsGridRecharge").jsGrid("getFilter");
-        $("#jsGridRecharge").jsGrid("loadData", filter);
+        let grid = $("#jsGridRecharge");
+        let sorting = grid.jsGrid("getSorting");
+        let filter = grid.jsGrid("getFilter");
+
+        sorting.field === undefined && sorting.order === undefined ?
+            grid.jsGrid("loadData", filter).done(() => grid.jsGrid()) :
+            grid.jsGrid("loadData", filter).done(() => grid.jsGrid("sort", sorting.field, sorting.order));
     }, 1000);
 });
