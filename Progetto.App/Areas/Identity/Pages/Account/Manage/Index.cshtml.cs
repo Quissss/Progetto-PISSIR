@@ -65,6 +65,11 @@ namespace Progetto.App.Areas.Identity.Pages.Account.Manage
 
             [Display(Name = "Enable telegram notifications")]
             public bool IsTelegramNotificationEnabled { get; set; }
+
+            [Display(Name = "Telegram verification code")]
+            public string TelegramVerificationCode { get; set; }
+
+            public bool HasTelegramChatId { get; set; }
         }
 
         private async Task LoadAsync(ApplicationUser user)
@@ -78,7 +83,9 @@ namespace Progetto.App.Areas.Identity.Pages.Account.Manage
             {
                 PhoneNumber = phoneNumber,
                 TelegramUsername = user.TelegramUsername,
-                IsTelegramNotificationEnabled = user.IsTelegramNotificationEnabled
+                IsTelegramNotificationEnabled = user.IsTelegramNotificationEnabled,
+                TelegramVerificationCode = user.TelegramVerificationCode,
+                HasTelegramChatId = user.TelegramChatId.HasValue,
             };
         }
 
@@ -133,6 +140,17 @@ namespace Progetto.App.Areas.Identity.Pages.Account.Manage
             if (Input.IsTelegramNotificationEnabled != user.IsTelegramNotificationEnabled)
             {
                 user.IsTelegramNotificationEnabled = Input.IsTelegramNotificationEnabled;
+
+                if (user.IsTelegramNotificationEnabled)
+                {
+                    user.TelegramVerificationCode = Guid.NewGuid().ToString();
+                }
+                else
+                {
+                    user.TelegramVerificationCode = null;
+                    user.TelegramChatId = null;
+                }
+
                 var result = await _userManager.UpdateAsync(user);
                 if (!result.Succeeded)
                 {

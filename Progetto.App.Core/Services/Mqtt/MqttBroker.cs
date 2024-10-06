@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -6,9 +7,12 @@ using MQTTnet;
 using MQTTnet.Server;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Models.Mqtt;
+using Progetto.App.Core.Models.Users;
 using Progetto.App.Core.Repositories;
+using Progetto.App.Core.Services.Telegram;
 using System.Text;
 using System.Text.Json;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace Progetto.App.Core.Services.Mqtt;
 
@@ -17,13 +21,14 @@ namespace Progetto.App.Core.Services.Mqtt;
 /// </summary>
 public class MqttBroker : IHostedService, IDisposable
 {
+    private readonly TelegramService _telegramService;
     private readonly ChargeManager _chargeManager;
     private readonly MqttServer _mqttServer;
     private readonly MqttServerOptions _options;
     private readonly ILogger<MqttBroker> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
 
-    public MqttBroker(ChargeManager chargeManager, ILogger<MqttBroker> logger, IServiceScopeFactory serviceScopeFactory, IConfiguration configuration)
+    public MqttBroker(TelegramService telegramService, ChargeManager chargeManager, ILogger<MqttBroker> logger, IServiceScopeFactory serviceScopeFactory, IConfiguration configuration)
     {
         _options = new MqttServerOptionsBuilder()
             .WithDefaultEndpoint()
@@ -31,6 +36,7 @@ public class MqttBroker : IHostedService, IDisposable
             .WithKeepAlive()
             .Build();
 
+        _telegramService = telegramService;
         _chargeManager = chargeManager;
         _logger = logger;
         _mqttServer = new MqttFactory().CreateMqttServer(_options);
@@ -71,17 +77,17 @@ public class MqttBroker : IHostedService, IDisposable
             switch (mwBotMessage.MessageType)
             {
                 case MessageType.RequestCharge:
-                    _logger.LogInformation("MqttBroker: MwBot {id} requested MessageType.RequestCharge", mwBotMessage.Id);
+                    _logger.LogDebug("MqttBroker: MwBot {id} requested MessageType.RequestCharge", mwBotMessage.Id);
                     await HandleChargeRequestMessageAsync(mwBotMessage);
                     break;
 
                 case MessageType.CompleteCharge:
-                    _logger.LogInformation("MqttBroker: MwBot {id} requested MessageType.CompleteCharge", mwBotMessage.Id);
+                    _logger.LogDebug("MqttBroker: MwBot {id} requested MessageType.CompleteCharge", mwBotMessage.Id);
                     await HandleCompletedChargeMessageAsync(mwBotMessage, mwBotRepository);
                     break;
 
                 case MessageType.RequestRecharge:
-                    _logger.LogInformation("MqttBroker: MwBot {id} requested MessageType.RequestRecharge", mwBotMessage.Id);
+                    _logger.LogDebug("MqttBroker: MwBot {id} requested MessageType.RequestRecharge", mwBotMessage.Id);
                     await HandleRechargeRequestMessageAsync(mwBotMessage, mwBotRepository);
                     break;
 
@@ -114,7 +120,7 @@ public class MqttBroker : IHostedService, IDisposable
                     break;
 
                 case MessageType.DisconnectClient:
-                    _logger.LogInformation("MqttBroker: MwBot {id} requested MessageType.DisconnectClient", mwBotMessage.Id);
+                    _logger.LogDebug("MqttBroker: MwBot {id} requested MessageType.DisconnectClient", mwBotMessage.Id);
                     await HandleDisconnectMessageAsync(mwBotMessage, mwBotRepository);
                     break;
 
@@ -219,9 +225,9 @@ public class MqttBroker : IHostedService, IDisposable
             if (currentlyCharging.ImmediateRequestId.HasValue)
             {
                 immediateRequest = await immediateRequestRepository.GetByIdAsync(currentlyCharging.ImmediateRequestId.Value);
+                await SendTelegramMessage($"Resuming charge for car {immediateRequest.CarPlate}", scope, immediateRequest.UserId);
             }
 
-            // If no immediate request is found, log a warning
             if (immediateRequest == null)
             {
                 _logger.LogWarning("MqttBroker: Immediate request not found for currently charging record");
@@ -249,10 +255,11 @@ public class MqttBroker : IHostedService, IDisposable
                     StartChargePercentage = 0,
                 };
                 await currentlyChargingRepository.AddAsync(currentlyCharging);
+                await SendTelegramMessage($"Starting charge for car {currentlyCharging.CarPlate}", scope, currentlyCharging.UserId);
             }
             else
             {
-                _logger.LogInformation("MqttBroker: No immediate request available for MwBot {id}", mwBot.Id);
+                _logger.LogDebug("MqttBroker: No immediate request available for MwBot {id}", mwBot.Id);
                 return;
             }
         }
@@ -305,6 +312,8 @@ public class MqttBroker : IHostedService, IDisposable
         await currentlyChargingRepository.UpdateAsync(mwBotMessage.CurrentlyCharging);
         await carRepository.UpdateCarStatus(mwBotMessage.CarPlate, CarStatus.Charged);
 
+        await SendTelegramMessage($"Your car with plate {mwBotMessage.CurrentlyCharging.CarPlate} has been charged at {parking.Name}. Total cost: {mwBotMessage.CurrentlyCharging.TotalCost}€", scope, mwBotMessage.CurrentlyCharging.UserId);
+
         mwBotMessage.MessageType = MessageType.ChargeCompleted;
         await PublishMessage(mwBotMessage);
     }
@@ -324,6 +333,31 @@ public class MqttBroker : IHostedService, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "MqttBroker: Error publishing message");
+        }
+    }
+
+    /// <summary>
+    /// Sends a Telegram message to the user
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="scope"></param>
+    /// <param name="userId"></param>
+    /// <returns></returns>
+    private async Task SendTelegramMessage(string message, IServiceScope scope, string userId)
+    {
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await userManager.FindByIdAsync(userId);
+        try
+        {
+            if (user.IsTelegramNotificationEnabled && user.TelegramChatId.HasValue)
+            {
+                await _telegramService.SendMessageAsync(user.TelegramChatId.Value, message);
+                _logger.LogInformation("MqttBroker: Telegram message sent to chat ID {chatId}", user.TelegramChatId.Value);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "MqttBroker: Error sending Telegram message");
         }
     }
 

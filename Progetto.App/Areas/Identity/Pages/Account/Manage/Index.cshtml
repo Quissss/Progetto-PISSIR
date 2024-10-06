@@ -30,6 +30,14 @@
                 <label asp-for="Input.IsTelegramNotificationEnabled" class="form-check-label"></label>
             </div>
             <button id="update-profile-button" type="submit" class="w-100 btn btn-lg btn-primary">Save</button>
+            @if (Model.Input.IsTelegramNotificationEnabled && !string.IsNullOrEmpty(Model.Input.TelegramVerificationCode) && !Model.Input.HasTelegramChatId)
+            {
+                <div class="alert alert-info mt-3">
+                    <p>Per completare la configurazione delle notifiche Telegram, invia il seguente codice al nostro bot:</p>
+                    <p><strong>@Model.Input.TelegramVerificationCode</strong></p>
+                    <p>Bot: <a href="https://t.me/pissir_bot" target="_blank">EcoPlugAndGo</a></p>
+                </div>
+            }
         </form>
     </div>
 </div>

@@ -45,17 +45,14 @@ services.Configure<PayPalClientOptions>(options =>
 });
 #endregion
 
-#region Telegram
-services.AddSingleton<TelegramService>();
-#endregion
-
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 services.AddDbContext<ApplicationDbContext>();
 services.AddDatabaseDeveloperPageExceptionFilter();
 
 services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders();
 services.AddRazorPages();
 
 services.AddAuthorization(option =>
@@ -67,7 +64,7 @@ services.AddAuthorization(option =>
 // Validators
 services.AddValidatorsFromAssemblyContaining<CarValidator>();
 
-#region Scoped repositories
+#region Repositories
 services.AddScoped<CarRepository>();
 services.AddScoped<MwBotRepository>();
 services.AddScoped<ParkingRepository>();
@@ -84,9 +81,14 @@ services.AddSingleton<ChargeManager>();
 services.AddSingleton<IAuthorizationHandler, IsAdminAuthorizationHandler>();
 services.AddSingleton<IAuthorizationHandler, IsPremiumUserAuthorizationHandler>();
 
-// Mqtt
+#region
 services.AddHostedService<MqttBroker>();
 services.AddTransient<MqttMwBotClient>();
+#endregion
+
+#region Telegram
+services.AddSingleton<TelegramService>();
+#endregion
 
 services.AddSingleton<ConnectedClientsService>();
 
@@ -103,6 +105,9 @@ else
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
+var telegramService = app.Services.GetRequiredService<TelegramService>();
+telegramService.StartReceivingUpdates();
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
