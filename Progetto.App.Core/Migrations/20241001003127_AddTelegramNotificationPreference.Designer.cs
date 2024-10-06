@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Progetto.App.Core.Data;
 
@@ -10,9 +11,11 @@ using Progetto.App.Core.Data;
 namespace Progetto.App.Core.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241001003127_AddTelegramNotificationPreference")]
+    partial class AddTelegramNotificationPreference
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.8");
@@ -228,7 +231,7 @@ namespace Progetto.App.Core.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 10, 6, 22, 35, 17, 456, DateTimeKind.Local).AddTicks(3669));
+                        .HasDefaultValue(new DateTime(2024, 10, 1, 2, 31, 26, 808, DateTimeKind.Local).AddTicks(1226));
 
                     b.Property<decimal?>("TargetChargePercentage")
                         .HasColumnType("decimal(5, 2)");
@@ -421,7 +424,7 @@ namespace Progetto.App.Core.Migrations
                     b.Property<DateTime>("PaymentDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 10, 6, 22, 35, 17, 459, DateTimeKind.Local).AddTicks(2331));
+                        .HasDefaultValue(new DateTime(2024, 10, 1, 2, 31, 26, 811, DateTimeKind.Local).AddTicks(540));
 
                     b.Property<decimal?>("StartChargePercentage")
                         .HasColumnType("TEXT");
@@ -505,7 +508,7 @@ namespace Progetto.App.Core.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 10, 6, 22, 35, 17, 460, DateTimeKind.Local).AddTicks(5453));
+                        .HasDefaultValue(new DateTime(2024, 10, 1, 2, 31, 26, 812, DateTimeKind.Local).AddTicks(3628));
 
                     b.Property<bool>("ToPay")
                         .ValueGeneratedOnAdd()
@@ -577,13 +580,7 @@ namespace Progetto.App.Core.Migrations
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("TEXT");
 
-                    b.Property<long?>("TelegramChatId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("TelegramUsername")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("TelegramVerificationCode")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("TwoFactorEnabled")

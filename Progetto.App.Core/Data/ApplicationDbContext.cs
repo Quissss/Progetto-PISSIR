@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Progetto.App.Core.Models;
+using Progetto.App.Core.Models.Users;
 using System.Reflection;
 
 namespace Progetto.App.Core.Data;
@@ -9,7 +10,7 @@ namespace Progetto.App.Core.Data;
 /// <summary>
 /// Application database context
 /// </summary>
-public class ApplicationDbContext : IdentityDbContext
+public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 {
     private readonly IConfiguration _configuration;
 

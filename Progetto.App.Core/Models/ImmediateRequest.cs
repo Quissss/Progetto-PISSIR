@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Progetto.App.Core.Models.Users;
 
 namespace Progetto.App.Core.Models;
 
@@ -14,6 +15,6 @@ public class ImmediateRequest
     public int? ParkingSlotId { get; set; }
     public ParkingSlot? ParkingSlot { get; set; }
     public string UserId { get; set; }
-    public IdentityUser? User { get; set; }
+    public ApplicationUser? User { get; set; }
     public bool FromReservation { get; set; } // True if the request comes from a reservation
 }

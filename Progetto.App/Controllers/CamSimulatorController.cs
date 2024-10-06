@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Progetto.App.Core.Models;
+using Progetto.App.Core.Models.Users;
 using Progetto.App.Core.Repositories;
 
 namespace Progetto.App.Controllers;
@@ -17,7 +18,7 @@ public class CamSimulatorController : ControllerBase
     private ChargeManager _chargeManager { get; set; }
     private readonly ILogger<CamSimulatorController> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
 
     public CamSimulatorController(
         CarRepository carRepository,
@@ -27,7 +28,7 @@ public class CamSimulatorController : ControllerBase
         ChargeManager chargeManager,
         ParkingSlotRepository parkingSlotRepository,
         StopoverRepository stopoverRepository,
-        UserManager<IdentityUser> userManager)
+        UserManager<ApplicationUser> userManager)
     {
         _carRepository = carRepository;
         _reservationRepository = reservationRepository;

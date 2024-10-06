@@ -13,7 +13,7 @@ namespace Progetto.App.Controllers;
 [ApiController]
 public class CurrentlyChargingController : ControllerBase
 {
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly CurrentlyChargingRepository _currentlyChargingRespository;
     private readonly StopoverRepository _stopoverRepository;
     private readonly IServiceScopeFactory _serviceScopeFactory;
@@ -21,7 +21,7 @@ public class CurrentlyChargingController : ControllerBase
 
     public CurrentlyChargingController(
         ILogger<CurrentlyChargingController> logger,
-        UserManager<IdentityUser> userManager,
+        UserManager<ApplicationUser> userManager,
         CurrentlyChargingRepository currentlyChargingRepository,
         StopoverRepository stopoverRepository,
         IServiceScopeFactory serviceScopeFactory)

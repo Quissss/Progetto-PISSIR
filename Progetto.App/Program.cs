@@ -6,10 +6,12 @@ using PayPal.REST.Client;
 using PayPal.REST.Models;
 using Progetto.App.Core.Data;
 using Progetto.App.Core.Models;
+using Progetto.App.Core.Models.Users;
 using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Security;
 using Progetto.App.Core.Security.Policies;
 using Progetto.App.Core.Services.Mqtt;
+using Progetto.App.Core.Services.Telegram;
 using Progetto.App.Core.Validators;
 using Serilog;
 
@@ -48,8 +50,9 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 services.AddDbContext<ApplicationDbContext>();
 services.AddDatabaseDeveloperPageExceptionFilter();
 
-services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders();
 services.AddRazorPages();
 
 services.AddAuthorization(option =>
@@ -61,7 +64,7 @@ services.AddAuthorization(option =>
 // Validators
 services.AddValidatorsFromAssemblyContaining<CarValidator>();
 
-#region Scoped repositories
+#region Repositories
 services.AddScoped<CarRepository>();
 services.AddScoped<MwBotRepository>();
 services.AddScoped<ParkingRepository>();
@@ -78,9 +81,14 @@ services.AddSingleton<ChargeManager>();
 services.AddSingleton<IAuthorizationHandler, IsAdminAuthorizationHandler>();
 services.AddSingleton<IAuthorizationHandler, IsPremiumUserAuthorizationHandler>();
 
-// Mqtt
+#region
 services.AddHostedService<MqttBroker>();
 services.AddTransient<MqttMwBotClient>();
+#endregion
+
+#region Telegram
+services.AddSingleton<TelegramService>();
+#endregion
 
 services.AddSingleton<ConnectedClientsService>();
 
@@ -97,6 +105,9 @@ else
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
+var telegramService = app.Services.GetRequiredService<TelegramService>();
+telegramService.StartReceivingUpdates();
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
