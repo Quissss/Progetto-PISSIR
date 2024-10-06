@@ -83,7 +83,7 @@ public class MqttBroker : IHostedService, IDisposable
 
                 case MessageType.CompleteCharge:
                     _logger.LogDebug("MqttBroker: MwBot {id} requested MessageType.CompleteCharge", mwBotMessage.Id);
-                    await HandleCompletedChargeMessageAsync(mwBotMessage, mwBotRepository);
+                    await HandleCompletedChargeMessageAsync(mwBotMessage);
                     break;
 
                 case MessageType.RequestRecharge:
