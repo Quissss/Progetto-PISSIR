@@ -31,10 +31,17 @@ public class CurrentlyChargingRepository : GenericRepository<CurrentlyCharging>
             .FirstOrDefaultAsync();
     }
 
-    public async Task<CurrentlyCharging?> GetCurrentlyChargingByCarId(string carPlate)
+    public async Task<CurrentlyCharging?> GetChargesByCarPlate(string carPlate)
     {
         return await _context.CurrentlyCharging
             .Where(c => c.CarPlate == carPlate)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<CurrentlyCharging?> GetChargingByCarPlate(string carPlate)
+    {
+        return await _context.CurrentlyCharging
+            .Where(c => c.CarPlate == carPlate && c.EndChargingTime == null && !c.ToPay && c.CurrentChargePercentage < c.TargetChargePercentage)
             .FirstOrDefaultAsync();
     }
 

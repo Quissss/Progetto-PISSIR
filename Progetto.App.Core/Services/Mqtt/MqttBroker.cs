@@ -316,8 +316,8 @@ public class MqttBroker : IHostedService, IDisposable
         await carRepository.UpdateCarStatus(mwBotMessage.CarPlate, CarStatus.Charged);
 
         await SendTelegramMessage($"Your car with plate {mwBotMessage.CurrentlyCharging.CarPlate} has been charged at {parking.Name}.\n" +
-                                $"Total cost: {mwBotMessage.CurrentlyCharging.TotalCost}€\n\n" +
-                                $"Pay now: https://localhost:7237/payments", scope, mwBotMessage.CurrentlyCharging.UserId);
+                          $"Total cost: {mwBotMessage.CurrentlyCharging.TotalCost}€\n" +
+                          $"[Pay now](https://localhost:7237/payments)", scope, mwBotMessage.CurrentlyCharging.UserId);
 
         mwBotMessage.MessageType = MessageType.ChargeCompleted;
         await PublishMessage(mwBotMessage);

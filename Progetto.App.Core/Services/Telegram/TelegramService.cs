@@ -6,6 +6,7 @@ using Progetto.App.Core.Models.Users;
 using Telegram.Bot.Polling;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Progetto.App.Core.Repositories;
 
 namespace Progetto.App.Core.Services.Telegram;
 
@@ -58,10 +59,42 @@ public class TelegramService
 
         if (messageText.StartsWith("/start"))
         {
-            await SendMessageAsync(chatId, "Welcome! Send me your verification code to link your account.");
+            await SendMessageAsync(chatId, "Welcome! If you haven't linked your account, send me your verification code.\n\n" +
+                "Our commands:\n" +
+                "/checkstatus [carplate] - retrieves charge status\n" +
+                "/chargestatus [carplate] - retrieves charge status");
         }
         // TODO: else if (messageText.StartsWith("/stopcharge"))
-        // TODO: else if (messageText.StartsWith("/checkstatus"))
+        else if (messageText.StartsWith("/checkstatus") || messageText.StartsWith("/chargestatus"))
+        {
+            await SendMessageAsync(chatId, "Checking status...");
+            var carPlate = messageText.Split(" ").Skip(1).FirstOrDefault();
+
+            if (string.IsNullOrEmpty(carPlate))
+            {
+                await SendMessageAsync(chatId, "Please, provide a car plate.");
+                return;
+            }
+
+            using var scope = _serviceScopeFactory.CreateScope();
+            var currentlyChargingRepository = scope.ServiceProvider.GetRequiredService<CurrentlyChargingRepository>();
+
+            var currentlyCharging = await currentlyChargingRepository.GetChargingByCarPlate(carPlate);
+
+            if (currentlyCharging == null)
+            {
+                await SendMessageAsync(chatId, $"No active charge found for car plate {carPlate}.");
+                return;
+            }
+
+            var responseMessage = $"Active charge for car {carPlate}:\n" +
+                                    $"- Started at: {currentlyCharging.StartChargingTime}\n" +
+                                    $"- Current charge: {currentlyCharging.CurrentChargePercentage}% / {currentlyCharging.TargetChargePercentage}%\n" +
+                                    $"- Energy consumed: {currentlyCharging.EnergyConsumed} kWh\n" +
+                                    $"- Total cost: {currentlyCharging.TotalCost} EUR";
+
+            await SendMessageAsync(chatId, responseMessage);
+        }
         else
         {
             await HandleVerificationCodeAsync(chatId, messageText);
