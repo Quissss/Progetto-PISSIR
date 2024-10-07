@@ -40,15 +40,12 @@ public class ReservationController : ControllerBase
         if (!ModelState.IsValid)
         {
             _logger.LogWarning("Invalid model state while creating reservation for user {userId}", reservation.UserId);
-            return BadRequest();
+            return BadRequest(ModelState);
         }
 
         try
         {
             _logger.LogDebug("Creating reservation with id {id} for user {user}", reservation.Id, User.Identity.Name);
-
-
-
 
             reservation.ReservationTime = DateTime.Now;
             await _reservationRepository.AddAsync(reservation);

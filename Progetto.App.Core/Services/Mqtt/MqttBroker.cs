@@ -227,7 +227,7 @@ public class MqttBroker : IHostedService, IDisposable
             if (currentlyCharging.ImmediateRequestId.HasValue)
             {
                 immediateRequest = await immediateRequestRepository.GetByIdAsync(currentlyCharging.ImmediateRequestId.Value);
-                await SendTelegramMessage($"Resuming charge for car {immediateRequest.CarPlate}", scope, immediateRequest.UserId);
+                //await SendTelegramMessage($"Resuming charge for car {immediateRequest.CarPlate}", scope, immediateRequest.UserId);
             }
 
             if (immediateRequest == null)
@@ -315,7 +315,9 @@ public class MqttBroker : IHostedService, IDisposable
         await currentlyChargingRepository.UpdateAsync(mwBotMessage.CurrentlyCharging);
         await carRepository.UpdateCarStatus(mwBotMessage.CarPlate, CarStatus.Charged);
 
-        await SendTelegramMessage($"Your car with plate {mwBotMessage.CurrentlyCharging.CarPlate} has been charged at {parking.Name}. Total cost: {mwBotMessage.CurrentlyCharging.TotalCost}€", scope, mwBotMessage.CurrentlyCharging.UserId);
+        await SendTelegramMessage($"Your car with plate {mwBotMessage.CurrentlyCharging.CarPlate} has been charged at {parking.Name}.\n" +
+                                $"Total cost: {mwBotMessage.CurrentlyCharging.TotalCost}€\n\n" +
+                                $"Pay now: https://localhost:7237/payments", scope, mwBotMessage.CurrentlyCharging.UserId);
 
         mwBotMessage.MessageType = MessageType.ChargeCompleted;
         await PublishMessage(mwBotMessage);

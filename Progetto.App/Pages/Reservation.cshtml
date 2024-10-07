@@ -155,7 +155,7 @@
                 processData: false,
                 contentType: false,
                 success: () => alert('Prenotazione creata con successo!'),
-                error: () => alert('Si è verificato un errore durante la creazione della prenotazione.'),
+                error: (message) => alert('Si è verificato un errore durante la creazione della prenotazione:' + message),
             });
         }
     </script>

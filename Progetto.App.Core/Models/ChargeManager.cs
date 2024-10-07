@@ -4,7 +4,7 @@ using Progetto.App.Core.Repositories;
 
 namespace Progetto.App.Core.Models;
 
-public class ChargeManager
+public class ChargeManager : IDisposable
 {
     private List<Reservation>? _reservations;
     private Queue<ImmediateRequest>? _immediateRequests;
@@ -14,6 +14,10 @@ public class ChargeManager
     private readonly SemaphoreSlim _immediateRequestsSemaphore = new SemaphoreSlim(1, 1);
     private readonly ImmediateRequestRepository _immediateRequestRepository;
     private readonly ReservationRepository _reservationRepository;
+
+    private Timer? _reservationCheckTimer;
+    private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(1); // Check interval for reservations cleanup
+    private readonly TimeSpan _expirationTime = TimeSpan.FromMinutes(2); // Expiration time for reservations
 
     public ChargeManager(ILogger<ChargeManager> logger, IServiceScopeFactory serviceScopeFactory)
     {
@@ -28,6 +32,46 @@ public class ChargeManager
 
         GetReservations().GetAwaiter().GetResult();
         GetImmediateRequests().GetAwaiter().GetResult();
+
+        _reservationCheckTimer = new Timer(CheckExpiredReservations, null, TimeSpan.Zero, _checkInterval);
+    }
+
+    private async void CheckExpiredReservations(object? state)
+    {
+        _logger.LogDebug("Checking for expired reservations...");
+
+        await _reservationsSemaphore.WaitAsync();
+        try
+        {
+            // Filter outdated reservations
+            var expiredReservations = _reservations?.Where(r => r.RequestDate.HasValue && (DateTime.Now - r.RequestDate.Value) > _expirationTime).ToList();
+
+            if (expiredReservations?.Count > 0)
+            {
+                foreach (var reservation in expiredReservations)
+                {
+                    _logger.LogInformation("Removing expired reservation with ID {Id}", reservation.Id);
+
+                    _reservations?.Remove(reservation);
+
+                    var provider = _serviceScopeFactory.CreateScope().ServiceProvider;
+                    var reservationRepository = provider.GetRequiredService<ReservationRepository>();
+                    await reservationRepository.DeleteAsync(r => r.Id == reservation.Id);
+                }
+            }
+            else
+            {
+                _logger.LogDebug("No expired reservations found.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while checking for expired reservations.");
+        }
+        finally
+        {
+            _reservationsSemaphore.Release();
+        }
     }
 
     public async Task RemoveImmediateRequestByCarPlate(string carPlate)
@@ -258,5 +302,10 @@ public class ChargeManager
         }
 
         return immediateRequest;
+    }
+
+    public void Dispose()
+    {
+        _reservationCheckTimer?.Dispose();
     }
 }

@@ -192,6 +192,7 @@ public class CamSimulatorController : ControllerBase
 
         var reservations = await _reservationRepository.UpdateCarIsInside(request.LicencePlate, request.ParkingId, true);
         await _chargeManager.UpdateReservationsCarIsInside(request.LicencePlate, request.ParkingId, true);
+
         if (!reservations.Any())
         {
             var scope = _serviceScopeFactory.CreateScope();
@@ -221,7 +222,8 @@ public class CamSimulatorController : ControllerBase
             await immediateRequestRepository.AddAsync(immediateRequest);
             var chargeIR = await _chargeManager.AddImmediateRequest(immediateRequest, request.ParkingId);
 
-            return Ok(immediateRequest);
+            var personInQueue = reservations.Count(r => r.RequestDate < immediateRequest.RequestDate);
+            return Ok(personInQueue + 1);
         }
 
         return Ok(reservations);

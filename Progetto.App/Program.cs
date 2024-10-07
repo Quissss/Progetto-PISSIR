@@ -90,6 +90,9 @@ services.AddTransient<MqttMwBotClient>();
 services.AddSingleton<TelegramService>();
 #endregion
 
+services.AddEndpointsApiExplorer();
+services.AddSwaggerGen();
+
 services.AddSingleton<ConnectedClientsService>();
 
 var app = builder.Build();
@@ -108,6 +111,12 @@ else
 
 var telegramService = app.Services.GetRequiredService<TelegramService>();
 telegramService.StartReceivingUpdates();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
