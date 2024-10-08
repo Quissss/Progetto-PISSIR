@@ -11,18 +11,22 @@ using Progetto.App.Core.Models;
 
 namespace MonitorSimulator
 {
-    public partial class Form1 : Form
+    public partial class MonitorSimulatorForm : Form
     {
-        private static readonly HttpClient client = new HttpClient();
+        private static readonly HttpClient client = new();
 
-        public Form1()
+        public MonitorSimulatorForm()
         {
             InitializeComponent();
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        }
 
+        private async void Form1_Load(object sender, EventArgs e)
+        {
             LoadParkingStatuses();
-            LoadParkings();
+            await LoadParkings();
+            await LoadParkingSlots();
         }
 
         private async void buttonSearch_Click(object sender, EventArgs e)
@@ -94,8 +98,6 @@ namespace MonitorSimulator
                 int statusId = (comboBoxParkingStatus.SelectedItem as ComboBoxItem).Id;
                 int parkingId = (comboBoxParking.SelectedItem as ComboBoxItem).Id;
 
-                var status = (ParkingSlotStatus)statusId;
-
                 var queryParams = new Dictionary<string, string>();
                 if (!string.IsNullOrEmpty(slotNumber))
                 {
@@ -103,7 +105,7 @@ namespace MonitorSimulator
                 }
                 if (statusId > 0)
                 {
-                    queryParams.Add("statusId", statusId.ToString());
+                    queryParams.Add("status", statusId.ToString());
                 }
                 if (parkingId > 0)
                 {
@@ -116,7 +118,7 @@ namespace MonitorSimulator
                 response.EnsureSuccessStatusCode();
 
                 var jsonString = await response.Content.ReadAsStringAsync();
-                                
+
                 if (jsonString.Trim().StartsWith("[") || jsonString.Trim().StartsWith("{"))
                 {
                     var parkingSlots = JsonSerializer.Deserialize<List<ParkingSlotWithName>>(jsonString, new JsonSerializerOptions
@@ -126,11 +128,11 @@ namespace MonitorSimulator
 
                     dataGridViewParkingSlots.AutoGenerateColumns = false;
                     dataGridViewParkingSlots.Columns.Clear();
-                         
+
                     var slotNumberColumn = new DataGridViewTextBoxColumn
                     {
                         Name = "Slot Number",
-                        DataPropertyName = "Number" 
+                        DataPropertyName = "Number"
                     };
                     dataGridViewParkingSlots.Columns.Add(slotNumberColumn);
 
@@ -156,13 +158,7 @@ namespace MonitorSimulator
 
     public class ParkingSlotWithName : ParkingSlot
     {
-        public string ParkingName
-        {
-            get
-            {
-                return Parking != null ? Parking.Name : string.Empty;
-            }
-        }
+        public string ParkingName => Parking != null ? Parking.Name : string.Empty;
     }
 
     public class ComboBoxItem

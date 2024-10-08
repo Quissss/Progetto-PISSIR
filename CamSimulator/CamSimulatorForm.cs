@@ -4,17 +4,21 @@ using System.Text.Json;
 
 namespace CamSimulator
 {
-    public partial class Form1 : Form
+    public partial class CamSimulatorForm : Form
     {
-        private static readonly HttpClient client = new HttpClient();
+        private static readonly HttpClient client = new();
 
-        public Form1()
+        public CamSimulatorForm()
         {
             InitializeComponent();
-            LoadParkings();
         }
 
-        private async void LoadParkings()
+        private async void Form1_Load(object sender, EventArgs e)
+        {
+            await LoadParkings();
+        }
+
+        private async Task LoadParkings()
         {
             try
             {
@@ -29,7 +33,6 @@ namespace CamSimulator
                 var parkings = JsonSerializer.Deserialize<List<CamParking>>(responseData, option);
 
                 cmbParkings.Items.Clear();
-
                 cmbParkings.DataSource = (parkings);
 
                 if (cmbParkings.Items.Count > 0)
