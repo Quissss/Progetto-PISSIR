@@ -1,0 +1,92 @@
+﻿@page
+@{
+    ViewData["Title"] = "Abbonati a Premium";
+}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8 subscription-container p-5 shadow-lg rounded bg-light">
+        <h2 class="text-center mb-4 font-weight-bold text-primary display-4">
+            <i class="fas fa-star fa-lg text-warning mr-2"></i>
+            <strong>Abbonati a Premium</strong>
+        </h2>
+
+        @if (ViewBag.Message != null)
+        {
+            <div class="alert alert-success text-center">
+                @ViewBag.Message
+            </div>
+        }
+
+        <form method="post" action="/api/bohnonricordolaroute">
+            <div class="form-group">
+                <label class="font-weight-bold h4">Seleziona un piano: </label>
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <label class="plan-option p-4 border rounded shadow-sm d-block bg-white position-relative plan-hover">
+                            <input type="radio" name="plan" value="Base" required class="position-absolute" style="opacity: 0;">
+                            <i class="fas fa-check-circle fa-3x text-success mb-2"></i>
+                            <div class="h5 font-weight-bold mt-3">Base</div>
+                            <div class="h6">€5/mese</div>
+                        </label>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="plan-option p-4 border rounded shadow-sm d-block bg-white position-relative plan-hover">
+                            <input type="radio" name="plan" value="Standard" class="position-absolute" style="opacity: 0;">
+                            <i class="fas fa-gem fa-3x text-info mb-2"></i>
+                            <div class="h5 font-weight-bold mt-3">Standard</div>
+                            <div class="h6">€10/mese</div>
+                        </label>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="plan-option p-4 border rounded shadow-sm d-block bg-white position-relative plan-hover">
+                            <input type="radio" name="plan" value="Premium" class="position-absolute" style="opacity: 0;">
+                            <i class="fas fa-crown fa-3x text-warning mb-2"></i>
+                            <div class="h5 font-weight-bold mt-3">Premium</div>
+                            <div class="h6">€15/mese</div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <button type="submit" class="btn btn-gradient-primary btn-lg rounded-pill mt-4 px-5 py-3 shadow-lg hover-shadow">Abbonati Ora</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .btn-gradient-primary {
+        background: linear-gradient(45deg, #007bff, #00b4d8);
+        color: white;
+        border: none;
+    }
+
+        .btn-gradient-primary:hover {
+            background: linear-gradient(45deg, #0056b3, #0096c7);
+        }
+
+    .plan-hover:hover {
+        background-color: #f8f9fa;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        transform: scale(1.05);
+        transition: all 0.3s ease-in-out;
+    }
+
+    input[type="radio"]:checked + .plan-option {
+        border: 2px solid #007bff; 
+        box-shadow: 0 0 20px rgba(0, 123, 255, 0.5);
+        background-color: #e7f3ff; 
+    }
+
+
+    .plan-option input[type="radio"]:checked + .plan-option {
+        background-color: #e7f3ff; 
+        border: 2px solid #007bff; 
+        box-shadow: 0 0 20px rgba(0, 123, 255, 0.5);
+    }
+
+    .hover-shadow:hover {
+        box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+    }
+</style>
