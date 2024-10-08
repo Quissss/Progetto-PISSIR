@@ -27,9 +27,8 @@ public class MwBotController : ControllerBase
     private readonly ConnectedClientsService _connectedClientsService;
 
     public MwBotController(
-        ILogger<MwBotController> logger,
-        MwBotRepository mwBotRespository,
         ILoggerFactory loggerFactory,
+        ILogger<MwBotController> logger,
         IServiceScopeFactory serviceScopeFactory,
         ConnectedClientsService connectedClientsService)
     {
@@ -40,11 +39,6 @@ public class MwBotController : ControllerBase
 
         var provider = serviceScopeFactory.CreateScope().ServiceProvider;
         _mwBotRepository = provider.GetRequiredService<MwBotRepository>();
-    }
-
-    public async Task InitializeConnectedClients()
-    {
-        await _connectedClientsService.InitializeConnectedClients();
     }
 
     [HttpPost]
@@ -291,6 +285,4 @@ public class MwBotController : ControllerBase
 
         return BadRequest();
     }
-
-    //[HttpGet("chargelevel/{id}")]
 }

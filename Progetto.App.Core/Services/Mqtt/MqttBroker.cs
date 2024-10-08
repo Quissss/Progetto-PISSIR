@@ -341,6 +341,43 @@ public class MqttBroker : IHostedService, IDisposable
         }
     }
 
+    private async Task StopCharge(CurrentlyCharging currentCharge)
+    {
+        // TODO: send message to MwBot to stop charging
+        // TODO: send back to broker a complete charge
+
+        using var scope = _serviceScopeFactory.CreateScope();
+        var currentlyChargingRepository = scope.ServiceProvider.GetRequiredService<CurrentlyChargingRepository>();
+        var mwBotRepository = scope.ServiceProvider.GetRequiredService<MwBotRepository>();
+        var parkingSlotRepository = scope.ServiceProvider.GetRequiredService<ParkingSlotRepository>();
+        var parkingRepository = scope.ServiceProvider.GetRequiredService<ParkingRepository>();
+        var carRepository = scope.ServiceProvider.GetRequiredService<CarRepository>();
+
+        var id = currentCharge.Id;
+
+        currentCharge.ToPay = true;
+        currentCharge.EndChargingTime = DateTime.Now;
+        await currentlyChargingRepository.UpdateAsync(currentCharge);
+
+        var mwBot = await mwBotRepository.GetByIdAsync(currentCharge.MwBotId);
+        mwBot.Status = MwBotStatus.StandBy;
+        await mwBotRepository.UpdateAsync(mwBot);
+
+        var car = await carRepository.GetCarByPlate(currentCharge.CarPlate);
+        car.Status = CarStatus.Charged;
+        car.ParkingSlotId = null;
+        await carRepository.UpdateAsync(car);
+
+        var parkingSlot = await parkingSlotRepository.GetByIdAsync(currentCharge.ParkingSlotId.Value);
+        parkingSlot.Status = ParkingSlotStatus.Free;
+        await parkingSlotRepository.UpdateAsync(parkingSlot);
+
+        var parking = await parkingRepository.GetByIdAsync(parkingSlot.ParkingId);
+        await SendTelegramMessage($"Your car with plate {currentCharge.CarPlate} has been charged at {parking.Name}.\n" +
+                                    $"Total cost: {currentCharge.TotalCost}€\n" +
+                                    $"[Pay now](https://localhost:7237/payments)", scope, currentCharge.UserId);
+    }
+
     /// <summary>
     /// Sends a Telegram message to the user
     /// </summary>

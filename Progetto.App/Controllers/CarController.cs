@@ -73,7 +73,7 @@ public class CarController : ControllerBase
         {
             _logger.LogDebug("Deleting car with licence plate {licencePlate}", licencePlate);
 
-            var existingCar = await _carRepository.GetCarByLicencePlate(licencePlate);
+            var existingCar = await _carRepository.GetCarByPlate(licencePlate);
             if (existingCar == null)
             {
                 _logger.LogWarning("Reservation with plate {licencePlate} doesn't exist", licencePlate);
@@ -168,7 +168,7 @@ public class CarController : ControllerBase
         {
             _logger.LogDebug("Getting car with licence plate {licencePlate}", licencePlate);
 
-            var car = await _carRepository.GetCarByLicencePlate(licencePlate);
+            var car = await _carRepository.GetCarByPlate(licencePlate);
             if (car == null)
             {
                 _logger.LogWarning("Car with licence plate {licencePlate} not found", licencePlate);

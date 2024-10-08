@@ -50,7 +50,7 @@ public class CamSimulatorController : ControllerBase
 
         // Simulazione dell'elaborazione della targa
         string responseMessage = $"Targa rilevata: {request.LicencePlate} sul parcheggio n.{request.ParkingId}";
-        var car = await _carRepository.GetCarByLicencePlate(request.LicencePlate);
+        var car = await _carRepository.GetCarByPlate(request.LicencePlate);
 
         if (car == null)
         {
@@ -151,7 +151,7 @@ public class CamSimulatorController : ControllerBase
         freeSlot.Status = ParkingSlotStatus.Occupied;
         await _parkingSlotRepository.UpdateAsync(freeSlot);
 
-        var car = await _carRepository.GetCarByLicencePlate(request.LicencePlate);
+        var car = await _carRepository.GetCarByPlate(request.LicencePlate);
         if (car is null)
         {
             return NotFound("Auto non trovata");

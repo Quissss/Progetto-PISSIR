@@ -261,7 +261,7 @@ public class ChargeManager : IDisposable
 
                 if (nextReservation?.CarPlate is not null)
                 {
-                    var car = await _carRepository.GetCarByLicencePlate(nextReservation.CarPlate);
+                    var car = await _carRepository.GetCarByPlate(nextReservation.CarPlate);
                     if (car is null) return null;
                     car.Status = CarStatus.InCharge;
                     await _carRepository.UpdateAsync(car);

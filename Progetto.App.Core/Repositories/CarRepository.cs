@@ -17,7 +17,7 @@ public class CarRepository : GenericRepository<Car>
         _context = context;
     }
 
-    public async Task<Car?> GetCarByLicencePlate(string licencePlate)
+    public async Task<Car?> GetCarByPlate(string licencePlate)
     {
         return await _context.Cars.Where(c => c.LicencePlate == licencePlate).FirstOrDefaultAsync();
     }

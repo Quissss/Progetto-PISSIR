@@ -165,6 +165,10 @@ public class MqttMwBotClient
 
             if (!Timer.Enabled) Timer.Start();
         }
+        catch (TaskCanceledException)
+        {
+            _logger.LogInformation("Operazione annullata.");
+        }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error processing received arg: {arg}", arg);
@@ -413,6 +417,7 @@ public class MqttMwBotClient
 
         while (mwBotMessage.CurrentCarCharge < mwBotMessage.TargetBatteryPercentage && MwBot.BatteryPercentage > RechargeThreshold)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             await Task.Delay(ChargeDelay, cancellationToken); // Simulate one second
 
             mwBotMessage.CurrentCarCharge += chargeRate;

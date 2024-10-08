@@ -14,6 +14,7 @@ public enum MessageType
     ChargeCompleted, // broker → client
     RequestMwBot, // client → broker
     ReturnMwBot, // broker → client
+    StopCharging, // broker → client
 }
 
 /// <summary>
