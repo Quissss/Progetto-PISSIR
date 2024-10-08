@@ -42,11 +42,6 @@ public class MwBotController : ControllerBase
         _mwBotRepository = provider.GetRequiredService<MwBotRepository>();
     }
 
-    public async Task InitializeConnectedClients()
-    {
-        await _connectedClientsService.InitializeConnectedClients();
-    }
-
     [HttpPost]
     public async Task<ActionResult<MwBot>> AddMwBot([FromBody] MwBot mwBot)
     {

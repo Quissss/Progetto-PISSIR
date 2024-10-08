@@ -563,7 +563,6 @@ public class MqttMwBotClient
             }
 
             await MqttClient.PublishAsync(message);
-            Logger.LogDebug("MwBot {id}: Published message {payload}", MwBot?.Id, payload);
         }
         catch (Exception ex)
         {
