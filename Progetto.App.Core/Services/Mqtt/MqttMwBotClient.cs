@@ -71,6 +71,7 @@ public class MqttMwBotClient
 
         _mqttClient = new MqttFactory().CreateMqttClient();
         _mqttClient.ApplicationMessageReceivedAsync += async (e) => await HandleReceivedApplicationMessage(e, CancellationToken);
+        _mqttClient.DisconnectedAsync += async (e) => await HandleClientDisconnectedAsync(e);
 
         _timer.Elapsed += async (sender, e) => await TimedProcessChargeRequest(CancellationToken);
         _reconnectTimer.Elapsed += async (sender, e) => await TimedAttemptReconnectAsync(CancellationToken);
@@ -319,6 +320,12 @@ public class MqttMwBotClient
                 return;
             }
 
+            if (!MqttClient.IsConnected)
+            {
+                Logger.LogWarning("MwBot {id}: Disconnected. Attempting to reconnect...", MwBot.Id);
+                await WaitForReconnection(cancellationToken);
+            }
+
             if (MwBot.BatteryPercentage <= RechargeThreshold || (MwBot.Status == MwBotStatus.Recharging || MwBot.Status == MwBotStatus.MovingToDock)) // Recharge if battery is low / resuming recharge
             {
                 Logger.LogInformation("MwBot {id} battery is low: {batteryPercentage}%", MwBot.Id, MwBot.BatteryPercentage);
@@ -413,6 +420,14 @@ public class MqttMwBotClient
 
         while (mwBotMessage.CurrentCarCharge < mwBotMessage.TargetBatteryPercentage && MwBot.BatteryPercentage > RechargeThreshold)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!MqttClient.IsConnected)
+            {
+                Logger.LogWarning("MwBot {id}: Disconnected during charging. Waiting for reconnection...", MwBot?.Id);
+                await WaitForReconnection(cancellationToken);
+            }
+
             await Task.Delay(ChargeDelay, cancellationToken); // Simulate one second
 
             mwBotMessage.CurrentCarCharge += chargeRate;
@@ -558,15 +573,21 @@ public class MqttMwBotClient
 
             if (!MqttClient.IsConnected)
             {
-                Logger.LogWarning("MwBot {id}: Client is not connected, cannot publish message", MwBot?.Id);
-                return;
+                Logger.LogWarning("MwBot {id}: Client is not connected, attempting to reconnect...", MwBot?.Id);
+                var isConnected = await ConnectAsync();
+
+                if (!isConnected)
+                {
+                    Logger.LogError("MwBot {id}: Unable to reconnect to MQTT broker.", MwBot?.Id);
+                    return;
+                }
             }
 
             await MqttClient.PublishAsync(message);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error publishing message {payload}", payload);
+            Logger.LogError(ex, "MwBot {id}: Error publishing message {payload}", MwBot?.Id, payload);
         }
     }
 
@@ -574,19 +595,25 @@ public class MqttMwBotClient
     {
         try
         {
-            Logger.BeginScope("Connecting to MQTT server");
-            await MqttClient.ConnectAsync(Options);
-            Logger.LogInformation("Connected to MQTT server");
+            Logger.LogInformation("MwBot {id}: Connecting to MQTT server...", MwBot?.Id);
+            await MqttClient.ConnectAsync(Options, CancellationToken.None);
+            Logger.LogInformation("MwBot {id}: Connected to MQTT server", MwBot?.Id);
+
+            await MqttClient.SubscribeAsync($"mwbot{MwBot?.Id}");
+
+            if (ReconnectTimer.Enabled) ReconnectTimer.Stop();
+            if (!Timer.Enabled) Timer.Start();
+
             return true;
         }
         catch (OperationCanceledException)
         {
-            Logger.LogWarning("Timeout while connecting.");
+            Logger.LogWarning("MwBot {id}: Timeout while connecting.", MwBot?.Id);
             return false;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error connecting to MQTT server");
+            Logger.LogError(ex, "MwBot {id}: Error connecting to MQTT server", MwBot?.Id);
             return false;
         }
     }
@@ -625,8 +652,43 @@ public class MqttMwBotClient
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error disconnecting from MQTT server");
+            Logger.LogError(ex, "MwBot {id}: Error disconnecting from MQTT server", MwBot.Id);
             return false;
+        }
+    }
+
+    private async Task HandleClientDisconnectedAsync(MqttClientDisconnectedEventArgs e)
+    {
+        Logger.LogWarning("MwBot {id}: Disconnected from MQTT broker. Reason: {reason}", MwBot?.Id, e.ReasonString);
+
+        CancellationTokenSource.Cancel();
+        ResetCancellationToken();
+
+        if (Timer.Enabled) Timer.Stop();
+        if (!ReconnectTimer.Enabled) ReconnectTimer.Start();
+
+        await Task.CompletedTask;
+    }
+
+    private async Task WaitForReconnection(CancellationToken cancellationToken)
+    {
+        while (!MqttClient.IsConnected)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            Logger.LogInformation("MwBot {id}: Attempting to reconnect...", MwBot?.Id);
+            var isConnected = await ConnectAsync();
+
+            if (isConnected)
+            {
+                Logger.LogInformation("MwBot {id}: Reconnected successfully.", MwBot?.Id);
+                return;
+            }
+            else
+            {
+                Logger.LogWarning("MwBot {id}: Reconnection attempt failed. Retrying in 5 seconds...", MwBot?.Id);
+                await Task.Delay(5000, cancellationToken);
+            }
         }
     }
 }

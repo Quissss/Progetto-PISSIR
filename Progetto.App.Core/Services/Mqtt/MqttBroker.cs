@@ -59,7 +59,7 @@ public class MqttBroker : IHostedService, IDisposable
 
         string payload = Encoding.UTF8.GetString(arg.ApplicationMessage.PayloadSegment);
         var mwBotMessage = JsonSerializer.Deserialize<MqttClientMessage>(payload);
-        _logger.LogDebug("MqttBroker: MwBot message: {mwBotMessage}", mwBotMessage);
+        //_logger.LogDebug("MqttBroker: MwBot message: {mwBotMessage}", mwBotMessage);
 
         if (mwBotMessage != null)
         {
@@ -276,6 +276,7 @@ public class MqttBroker : IHostedService, IDisposable
         mwBotMessage.MessageType = MessageType.StartCharging;
         mwBotMessage.Status = MwBotStatus.ChargingCar;
         mwBotMessage.ImmediateRequest = immediateRequest;
+        mwBotMessage.UserId = immediateRequest.UserId;
         mwBotMessage.CurrentlyCharging = currentlyCharging;
         mwBotMessage.CarPlate = currentlyCharging.CarPlate;
         mwBotMessage.BatteryPercentage = mwBot.BatteryPercentage;
