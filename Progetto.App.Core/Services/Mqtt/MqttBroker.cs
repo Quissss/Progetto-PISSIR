@@ -70,7 +70,7 @@ public class MqttBroker : IHostedService, IDisposable
             var mwBot = await mwBotRepository.GetByIdAsync(mwBotMessage.Id);
             if (mwBot is null)
             {
-                _logger.LogDebug("MqttBroker: MwBot doesn't exist");
+                _logger.LogWarning("MqttBroker: MwBot doesn't exist");
                 return;
             }
 
@@ -225,7 +225,6 @@ public class MqttBroker : IHostedService, IDisposable
             if (currentlyCharging.ImmediateRequestId.HasValue)
             {
                 immediateRequest = await immediateRequestRepository.GetByIdAsync(currentlyCharging.ImmediateRequestId.Value);
-                //await SendTelegramMessage($"Resuming charge for car {immediateRequest.CarPlate}", scope, immediateRequest.UserId);
             }
 
             if (immediateRequest == null)

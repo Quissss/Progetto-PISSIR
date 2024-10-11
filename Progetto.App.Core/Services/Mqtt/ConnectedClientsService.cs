@@ -31,6 +31,12 @@ public class ConnectedClientsService
 
             foreach (var singleMwBot in mwBotList)
             {
+                if (_connectedClients.Any(c => c.MwBot?.Id == singleMwBot.Id))
+                {
+                    _logger.LogWarning("Client for MwBot {id} already exists. Skipping initialization.", singleMwBot.Id);
+                    continue;
+                }
+
                 _logger.LogDebug("Creating MqttMwBotClient for MwBot with id {id}", singleMwBot.Id);
                 var client = new MqttMwBotClient(
                     _loggerFactory.CreateLogger<MqttMwBotClient>(),
@@ -69,6 +75,10 @@ public class ConnectedClientsService
 
     public void RemoveClient(MqttMwBotClient client)
     {
-        _connectedClients.Remove(client);
+        if (_connectedClients.Remove(client))
+        {
+            client.Dispose();
+            _logger.LogInformation("Client for MwBot {id} removed and disposed.", client.MwBot?.Id);
+        }
     }
 }
