@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MonitorSimulatorForm));
             comboBoxParkingStatus = new ComboBox();
             comboBoxParking = new ComboBox();
             textBoxSlotNumber = new TextBox();
@@ -62,9 +63,11 @@
             // 
             // buttonSearch
             // 
+            buttonSearch.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             buttonSearch.Location = new Point(12, 99);
+            buttonSearch.MaximumSize = new Size(200, 50);
             buttonSearch.Name = "buttonSearch";
-            buttonSearch.Size = new Size(200, 23);
+            buttonSearch.Size = new Size(200, 50);
             buttonSearch.TabIndex = 3;
             buttonSearch.Text = "Cerca";
             buttonSearch.UseVisualStyleBackColor = true;
@@ -72,22 +75,25 @@
             // 
             // dataGridViewParkingSlots
             // 
+            dataGridViewParkingSlots.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             dataGridViewParkingSlots.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridViewParkingSlots.Location = new Point(12, 128);
+            dataGridViewParkingSlots.Location = new Point(218, 12);
             dataGridViewParkingSlots.Name = "dataGridViewParkingSlots";
-            dataGridViewParkingSlots.Size = new Size(776, 310);
+            dataGridViewParkingSlots.Size = new Size(254, 137);
             dataGridViewParkingSlots.TabIndex = 4;
             // 
             // MonitorSimulatorForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 450);
+            ClientSize = new Size(484, 161);
             Controls.Add(dataGridViewParkingSlots);
             Controls.Add(buttonSearch);
             Controls.Add(textBoxSlotNumber);
             Controls.Add(comboBoxParking);
             Controls.Add(comboBoxParkingStatus);
+            Icon = (Icon)resources.GetObject("$this.Icon");
+            MinimumSize = new Size(500, 200);
             Name = "MonitorSimulatorForm";
             Text = "Monitor Simulator";
             Load += Form1_Load;

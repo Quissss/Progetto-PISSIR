@@ -55,37 +55,41 @@ namespace MonitorSimulator
 
         private async Task LoadParkings()
         {
-            try
+            HttpResponseMessage? response = null;
+            do
             {
-                var response = await client.GetAsync("https://localhost:7237/api/Parking");
-                response.EnsureSuccessStatusCode();
-
-                var responseData = await response.Content.ReadAsStringAsync();
-                var option = new JsonSerializerOptions
+                try
                 {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                };
-                var parkings = JsonSerializer.Deserialize<List<Parking>>(responseData, option);
-
-                comboBoxParking.Items.Clear();
-                comboBoxParking.Items.Add(new ComboBoxItem { Name = "Tutti i parcheggi", Id = 0 });
-
-                foreach (var parking in parkings)
-                {
-                    comboBoxParking.Items.Add(new ComboBoxItem { Name = parking.Name, Id = parking.Id });
+                    response = await client.GetAsync("https://localhost:7237/api/Parking");
+                    response.EnsureSuccessStatusCode();
                 }
-
-                comboBoxParking.DisplayMember = "Name";
-                comboBoxParking.ValueMember = "Id";
-
-                if (comboBoxParking.Items.Count > 0)
+                catch (Exception ex)
                 {
-                    comboBoxParking.SelectedIndex = 0;
-                }
+                    MessageBox.Show($"Errore nel caricamento dei parcheggi: {ex.Message}", "Errore", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                } 
+            } while (response == null);
+
+            var responseData = await response.Content.ReadAsStringAsync();
+            var option = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
+            var parkings = JsonSerializer.Deserialize<List<Parking>>(responseData, option);
+
+            comboBoxParking.Items.Clear();
+            comboBoxParking.Items.Add(new ComboBoxItem { Name = "Tutti i parcheggi", Id = 0 });
+
+            foreach (var parking in parkings)
+            {
+                comboBoxParking.Items.Add(new ComboBoxItem { Name = parking.Name, Id = parking.Id });
             }
-            catch (Exception ex)
+
+            comboBoxParking.DisplayMember = "Name";
+            comboBoxParking.ValueMember = "Id";
+
+            if (comboBoxParking.Items.Count > 0)
             {
-                MessageBox.Show($"Errore nel caricamento dei parcheggi: {ex.Message}", "Errore", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                comboBoxParking.SelectedIndex = 0;
             }
         }
 
@@ -94,9 +98,9 @@ namespace MonitorSimulator
         {
             try
             {
-                string slotNumber = textBoxSlotNumber.Text.Trim();
-                int statusId = (comboBoxParkingStatus.SelectedItem as ComboBoxItem).Id;
-                int parkingId = (comboBoxParking.SelectedItem as ComboBoxItem).Id;
+                var slotNumber = textBoxSlotNumber.Text.Trim();
+                var statusId = (comboBoxParkingStatus.SelectedItem as ComboBoxItem).Id;
+                var parkingId = (comboBoxParking.SelectedItem as ComboBoxItem).Id;
 
                 var queryParams = new Dictionary<string, string>();
                 if (!string.IsNullOrEmpty(slotNumber))
