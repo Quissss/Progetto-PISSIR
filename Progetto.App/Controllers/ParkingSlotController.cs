@@ -14,7 +14,6 @@ namespace Progetto.App.Controllers;
 /// </summary>
 [Route("api/[controller]")]
 [ApiController]
-[Authorize]
 public class ParkingSlotController : ControllerBase
 {
     private readonly ILogger<ParkingSlotController> _logger;

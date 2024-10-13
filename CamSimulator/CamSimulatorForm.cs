@@ -4,49 +4,56 @@ using System.Text.Json;
 
 namespace CamSimulator
 {
-    public partial class Form1 : Form
+    public partial class CamSimulatorForm : Form
     {
-        private static readonly HttpClient client = new HttpClient();
+        private static readonly HttpClient client = new();
 
-        public Form1()
+        public CamSimulatorForm()
         {
             InitializeComponent();
-            LoadParkings();
         }
 
-        private async void LoadParkings()
+        private async void Form1_Load(object sender, EventArgs e)
         {
-            try
+            await LoadParkings();
+        }
+
+        private async Task LoadParkings()
+        {
+            HttpResponseMessage? response = null;
+            do
             {
-                var response = await client.GetAsync("https://localhost:7237/api/Parking");
-                response.EnsureSuccessStatusCode();
-
-                var responseData = await response.Content.ReadAsStringAsync();
-                var option = new JsonSerializerOptions
+                try
                 {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                };
-                var parkings = JsonSerializer.Deserialize<List<CamParking>>(responseData, option);
-
-                cmbParkings.Items.Clear();
-
-                cmbParkings.DataSource = (parkings);
-
-                if (cmbParkings.Items.Count > 0)
-                {
-                    cmbParkings.SelectedIndex = 0;
+                    response = await client.GetAsync("https://localhost:7237/api/Parking");
+                    response.EnsureSuccessStatusCode();
                 }
-            }
-            catch (Exception ex)
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Errore nel caricamento dei parcheggi: {ex.Message}", "Errore", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            } while (response == null);
+
+            var responseData = await response.Content.ReadAsStringAsync();
+            var option = new JsonSerializerOptions
             {
-                MessageBox.Show($"Errore nel caricamento dei parcheggi: {ex.Message}", "Errore", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
+            var parkings = JsonSerializer.Deserialize<List<CamParking>>(responseData, option);
+
+            cmbParkings.Items.Clear();
+            cmbParkings.DataSource = (parkings);
+
+            if (cmbParkings.Items.Count > 0)
+            {
+                cmbParkings.SelectedIndex = 0;
             }
         }
 
         private async void btnSend_Click(object sender, EventArgs e)
         {
             string targa = txtLicensePlate.Text;
-            CamParking selectedParking = cmbParkings.SelectedItem as CamParking;
+            CamParking? selectedParking = cmbParkings.SelectedItem as CamParking;
 
             if (string.IsNullOrWhiteSpace(targa))
             {
@@ -95,9 +102,6 @@ namespace CamSimulator
 
     public class CamParking : Parking
     {
-        public override string ToString()
-        {
-            return $"{Name}, {Address}, {City}";
-        }
+        public override string ToString() => $"{Name}, {Address}, {City}";
     }
 }

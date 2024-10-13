@@ -95,6 +95,14 @@ public class MwBotController : ControllerBase
         {
             _logger.LogDebug("Creating / Retrieving MwBot with id {id}", mwBot.Id);
 
+            var existingClient = _connectedClientsService.GetConnectedClients().FirstOrDefault(c => c.MwBot?.Id == mwBot.Id);
+
+            if (existingClient != null)
+            {
+                _logger.LogWarning("MwBot {id} is already turned on", mwBot.Id);
+                return BadRequest("MwBot is already turned on");
+            }
+
             mwBot.Status = MwBotStatus.StandBy;
             await _mwBotRepository.UpdateAsync(mwBot);
 
@@ -159,10 +167,11 @@ public class MwBotController : ControllerBase
             {
                 await client.DisconnectAsync();
                 _connectedClientsService.RemoveClient(client);
+                client.Dispose();
             }
 
             mwBot.Status = MwBotStatus.Offline;
-            _ = _mwBotRepository.UpdateAsync(mwBot);
+            await _mwBotRepository.UpdateAsync(mwBot);
 
             _logger.LogDebug("MwBot with id {id} turned off", mwBot.Id);
             return Ok(mwBot);

@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PayPal.REST", "PayPal.REST\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CamSimulator", "CamSimulator\CamSimulator.csproj", "{CAEA18D4-1E2B-4BF3-A36D-7530DEA994BE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonitorSimulator", "MonitorSimulator\MonitorSimulator.csproj", "{C60CF53D-32ED-4AF2-937E-E2D18B407CCC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{CAEA18D4-1E2B-4BF3-A36D-7530DEA994BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CAEA18D4-1E2B-4BF3-A36D-7530DEA994BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CAEA18D4-1E2B-4BF3-A36D-7530DEA994BE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C60CF53D-32ED-4AF2-937E-E2D18B407CCC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C60CF53D-32ED-4AF2-937E-E2D18B407CCC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C60CF53D-32ED-4AF2-937E-E2D18B407CCC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C60CF53D-32ED-4AF2-937E-E2D18B407CCC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
