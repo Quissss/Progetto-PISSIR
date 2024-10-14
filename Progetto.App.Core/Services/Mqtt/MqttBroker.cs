@@ -12,7 +12,6 @@ using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Services.Telegram;
 using System.Text;
 using System.Text.Json;
-using static System.Formats.Asn1.AsnWriter;
 
 namespace Progetto.App.Core.Services.Mqtt;
 
@@ -134,7 +133,7 @@ public class MqttBroker : IHostedService, IDisposable
             mwBot.BatteryPercentage = mwBotMessage.BatteryPercentage;
             mwBot.LatestLocation = mwBotMessage.LatestLocation;
 
-            _logger.LogDebug("MqttBroker: Updating MwBot {id} with battery: {battery}% and status: {status} and location: {location}", mwBot.Id, mwBotMessage.BatteryPercentage, mwBot.Status, mwBot.LatestLocation);
+            _logger.LogDebug("MqttBroker: Updating MwBot {id} with battery: {battery}% | status: {status} | location: {location}", mwBot.Id, mwBotMessage.BatteryPercentage, mwBot.Status, mwBot.LatestLocation);
             await mwBotRepository.UpdateAsync(mwBot);
         }
 
@@ -295,8 +294,6 @@ public class MqttBroker : IHostedService, IDisposable
         var parkingRepository = scope.ServiceProvider.GetRequiredService<ParkingRepository>();
         var carRepository = scope.ServiceProvider.GetRequiredService<CarRepository>();
 
-        await immediateRequestRepository.DeleteAsync(ir => ir.Id == mwBotMessage.ImmediateRequestId);
-
         var parking = await parkingRepository.GetByIdAsync(mwBotMessage.ParkingId.Value);
         if (parking is null)
         {
@@ -311,10 +308,12 @@ public class MqttBroker : IHostedService, IDisposable
         mwBotMessage.Parking = parking;
         await currentlyChargingRepository.UpdateAsync(mwBotMessage.CurrentlyCharging);
         await carRepository.UpdateCarStatus(mwBotMessage.CarPlate, CarStatus.Charged);
+        await immediateRequestRepository.DeleteAsync(ir => ir.Id == mwBotMessage.ImmediateRequestId);
 
         await SendTelegramMessage($"Your car with plate {mwBotMessage.CurrentlyCharging.CarPlate} has been charged at {parking.Name}.\n" +
                           $"Total cost: {mwBotMessage.CurrentlyCharging.TotalCost}€\n" +
-                          $"[Pay now](https://localhost:7237/payments)", scope, mwBotMessage.CurrentlyCharging.UserId);
+                          $"[Pay now](https://localhost:7237/payments)\n\n" +
+                          $"** link not clickable because it's localhost **", scope, mwBotMessage.CurrentlyCharging.UserId);
 
         mwBotMessage.MessageType = MessageType.ChargeCompleted;
         await PublishMessage(mwBotMessage);
@@ -338,41 +337,28 @@ public class MqttBroker : IHostedService, IDisposable
         }
     }
 
-    private async Task StopCharge(CurrentlyCharging currentCharge)
+    public async Task SendStopChargeToBot(CurrentlyCharging currentCharge)
     {
-        // TODO: send message to MwBot to stop charging
-        // TODO: send back to broker a complete charge
-
-        using var scope = _serviceScopeFactory.CreateScope();
-        var currentlyChargingRepository = scope.ServiceProvider.GetRequiredService<CurrentlyChargingRepository>();
+        var scope = _serviceScopeFactory.CreateScope();
         var mwBotRepository = scope.ServiceProvider.GetRequiredService<MwBotRepository>();
-        var parkingSlotRepository = scope.ServiceProvider.GetRequiredService<ParkingSlotRepository>();
-        var parkingRepository = scope.ServiceProvider.GetRequiredService<ParkingRepository>();
-        var carRepository = scope.ServiceProvider.GetRequiredService<CarRepository>();
-
-        var id = currentCharge.Id;
-
-        currentCharge.ToPay = true;
-        currentCharge.EndChargingTime = DateTime.Now;
-        await currentlyChargingRepository.UpdateAsync(currentCharge);
-
         var mwBot = await mwBotRepository.GetByIdAsync(currentCharge.MwBotId);
-        mwBot.Status = MwBotStatus.StandBy;
-        await mwBotRepository.UpdateAsync(mwBot);
 
-        var car = await carRepository.GetCarByPlate(currentCharge.CarPlate);
-        car.Status = CarStatus.Charged;
-        car.ParkingSlotId = null;
-        await carRepository.UpdateAsync(car);
+        var mwBotMessage = new MqttClientMessage
+        {
+            MessageType = MessageType.StopCharging,
+            Id = currentCharge.MwBotId,
+            Status = MwBotStatus.StandBy,
+            CurrentlyCharging = currentCharge,
+            CarPlate = currentCharge.CarPlate,
+            ParkingSlotId = currentCharge.ParkingSlotId,
+            UserId = currentCharge.UserId,
+            BatteryPercentage = mwBot.BatteryPercentage,
+            TargetBatteryPercentage = currentCharge.TargetChargePercentage,
+            ParkingId = mwBot.ParkingId,
+            Parking = mwBot.Parking
+        };
 
-        var parkingSlot = await parkingSlotRepository.GetByIdAsync(currentCharge.ParkingSlotId.Value);
-        parkingSlot.Status = ParkingSlotStatus.Free;
-        await parkingSlotRepository.UpdateAsync(parkingSlot);
-
-        var parking = await parkingRepository.GetByIdAsync(parkingSlot.ParkingId);
-        await SendTelegramMessage($"Your car with plate {currentCharge.CarPlate} has been charged at {parking.Name}.\n" +
-                                    $"Total cost: {currentCharge.TotalCost}€\n" +
-                                    $"[Pay now](https://localhost:7237/payments)", scope, currentCharge.UserId);
+        await PublishMessage(mwBotMessage);
     }
 
     /// <summary>
@@ -388,7 +374,7 @@ public class MqttBroker : IHostedService, IDisposable
         var user = await userManager.FindByIdAsync(userId);
         try
         {
-            if (user.IsTelegramNotificationEnabled && user.TelegramChatId.HasValue)
+            if (_telegramService != null && user != null && user.IsTelegramNotificationEnabled && user.TelegramChatId.HasValue)
             {
                 await _telegramService.SendMessageAsync(user.TelegramChatId.Value, message);
                 _logger.LogInformation("MqttBroker: Telegram message sent to chat ID {chatId}", user.TelegramChatId.Value);

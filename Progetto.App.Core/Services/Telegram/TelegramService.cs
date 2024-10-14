@@ -7,6 +7,8 @@ using Telegram.Bot.Polling;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Progetto.App.Core.Repositories;
+using Microsoft.Extensions.Hosting;
+using Progetto.App.Core.Services.Mqtt;
 
 namespace Progetto.App.Core.Services.Telegram;
 
@@ -14,13 +16,15 @@ public class TelegramService
 {
     private readonly string _botToken;
     private readonly TelegramBotClient _botClient;
+    private readonly IServiceProvider _serviceProvider;
     private readonly IServiceScopeFactory _serviceScopeFactory;
 
-    public TelegramService(IConfiguration configuration, IServiceScopeFactory serviceScopeFactory)
+    public TelegramService(IConfiguration configuration, IServiceScopeFactory serviceScopeFactory, IServiceProvider serviceProvider)
     {
         _botToken = configuration["Telegram:BotToken"];
         _botClient = new TelegramBotClient(_botToken);
         _serviceScopeFactory = serviceScopeFactory;
+        _serviceProvider = serviceProvider;
     }
 
     public async Task SendMessageAsync(long chatId, string message)
@@ -57,17 +61,60 @@ public class TelegramService
         var chatId = update.Message.Chat.Id;
         var messageText = update.Message.Text;
 
+        if (chatId == 0 || string.IsNullOrWhiteSpace(messageText))
+        {
+            return;
+        }
+
         if (messageText.StartsWith("/start"))
         {
             await SendMessageAsync(chatId, "Welcome! If you haven't linked your account, send me your verification code.\n\n" +
                 "Our commands:\n" +
-                "/checkstatus [carplate] - retrieves charge status\n" +
-                "/chargestatus [carplate] - retrieves charge status");
+                "/status [carplate] - get charge status for given car\n" +
+                "/stop [carplate] - stops charge for given car");
         }
-        // TODO: else if (messageText.StartsWith("/stopcharge"))
-        else if (messageText.StartsWith("/checkstatus") || messageText.StartsWith("/chargestatus"))
+        else if (messageText.StartsWith("/stop"))
         {
-            await SendMessageAsync(chatId, "Checking status...");
+            var carPlate = messageText.Split(" ").Skip(1).FirstOrDefault();
+            if (string.IsNullOrEmpty(carPlate))
+            {
+                await SendMessageAsync(chatId, "Please, provide a car plate.");
+                return;
+            }
+
+            await SendMessageAsync(chatId, "Stopping charge...");
+
+            using var scope = _serviceScopeFactory.CreateScope();
+            var carRepository = scope.ServiceProvider.GetRequiredService<CarRepository>();
+            var currentlyChargingRepository = scope.ServiceProvider.GetRequiredService<CurrentlyChargingRepository>();
+
+            var car = await carRepository.GetCarByPlate(carPlate);
+            if (car == null)
+            {
+                await SendMessageAsync(chatId, $"Car plate {carPlate} not found.");
+                return;
+            }
+
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var carUser = await userManager.FindByIdAsync(car.OwnerId);
+            if (carUser != null && carUser.TelegramChatId != chatId)
+            {
+                await SendMessageAsync(chatId, $"You are not the owner of car plate {carPlate}.");
+                return;
+            }
+
+            var currentlyCharging = await currentlyChargingRepository.GetChargingByCarPlate(carPlate);
+            if (currentlyCharging == null)
+            {
+                await SendMessageAsync(chatId, $"No active charge found for car plate {carPlate}.");
+                return;
+            }
+
+            var mqttBroker = _serviceProvider.GetRequiredService<MqttBroker>();
+            await mqttBroker.SendStopChargeToBot(currentlyCharging);
+        }
+        else if (messageText.StartsWith("/status"))
+        {
             var carPlate = messageText.Split(" ").Skip(1).FirstOrDefault();
 
             if (string.IsNullOrEmpty(carPlate))
@@ -76,6 +123,7 @@ public class TelegramService
                 return;
             }
 
+            await SendMessageAsync(chatId, "Checking status...");
             using var scope = _serviceScopeFactory.CreateScope();
             var currentlyChargingRepository = scope.ServiceProvider.GetRequiredService<CurrentlyChargingRepository>();
 
@@ -83,7 +131,7 @@ public class TelegramService
 
             if (currentlyCharging == null)
             {
-                await SendMessageAsync(chatId, $"No active charge found for car plate {carPlate}.");
+                await SendMessageAsync(chatId, $"No active charge found for car {carPlate}.");
                 return;
             }
 

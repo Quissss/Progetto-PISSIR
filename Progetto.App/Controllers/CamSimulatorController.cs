@@ -60,32 +60,37 @@ public class CamSimulatorController : ControllerBase
 
         if (car.Status == CarStatus.OutOfParking)
         {
-            await CarEntering(request, car);
+            responseMessage = await CarEntering(request, car);
         }
         else
         {
-            await CarDeparting(request, car);
+            responseMessage = await CarDeparting(request, car);
         }
 
         return Ok(responseMessage);
     }
 
-    private async Task CarEntering(Request request, Car car)
+    private async Task<string> CarEntering(Request request, Car car)
     {
-        _logger.LogInformation("Detected carplate {plate} on arrival", request.LicencePlate);
+        var responseMessage = $"Detected carplate {request.LicencePlate} on arrival";
+        _logger.LogInformation(responseMessage);
 
         car.Status = CarStatus.Waiting;
         car.ParkingId = request.ParkingId;
         await _carRepository.UpdateAsync(car);
+
+        return responseMessage;
     }
 
-    private async Task CarDeparting(Request request, Car car)
+    private async Task<string> CarDeparting(Request request, Car car)
     {
+        var responseMessage = $"Detected carplate {request.LicencePlate} on departure";
+
         if (car.ParkingId != request.ParkingId)
         {
-            // TODO: return message to CamSimulator
-            _logger.LogWarning("Carplate {plate} is not in parking {parkingId}", request.LicencePlate, request.ParkingId);
-            return;
+            responseMessage = $"Carplate {request.LicencePlate} is not in parking {request.ParkingId}";
+            _logger.LogWarning(responseMessage);
+            return responseMessage;
         }
 
         _logger.LogInformation("Detected carplate {plate} on departure", request.LicencePlate);
@@ -126,6 +131,8 @@ public class CamSimulatorController : ControllerBase
             stopover.ToPay = true;
             await _stopoverRepository.UpdateAsync(stopover);
         }
+
+        return responseMessage;
     }
 
     [HttpPost("park")]
@@ -172,7 +179,6 @@ public class CamSimulatorController : ControllerBase
         await _stopoverRepository.AddAsync(stopover);
         stopover.ParkingSlot = freeSlot;
 
-        // TODO: implement update elsewhere
         await _carRepository.UpdateCarStatus(request.LicencePlate, CarStatus.Parked);
 
         return Ok("Selezionata sosta. Riservato posto numero: " + stopover.ParkingSlot.Number);

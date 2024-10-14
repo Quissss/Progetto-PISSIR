@@ -53,14 +53,13 @@ namespace CamSimulator
         private async void btnSend_Click(object sender, EventArgs e)
         {
             string targa = txtLicensePlate.Text;
-            CamParking? selectedParking = cmbParkings.SelectedItem as CamParking;
-
             if (string.IsNullOrWhiteSpace(targa))
             {
                 MessageBox.Show("Inserisci una targa", "Attenzione", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
+            var selectedParking = cmbParkings.SelectedItem as CamParking;
             if (selectedParking == null)
             {
                 MessageBox.Show("Seleziona un parcheggio", "Attenzione", MessageBoxButtons.OK, MessageBoxIcon.Warning);

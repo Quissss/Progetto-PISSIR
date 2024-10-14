@@ -61,8 +61,9 @@ services.AddAuthorization(option =>
     option.AddPolicy(PolicyNames.IsPremiumUser, policy => policy.AddRequirements(new IsPremiumUser()));
 });
 
-// Validators
+#region Validators
 services.AddValidatorsFromAssemblyContaining<CarValidator>();
+#endregion
 
 #region Repositories
 services.AddScoped<CarRepository>();
@@ -76,13 +77,15 @@ services.AddScoped<StopoverRepository>();
 services.AddScoped<PaymentHistoryRepository>();
 #endregion
 
-// Authorization handlers
 services.AddSingleton<ChargeManager>();
+#region Authorization handlers
 services.AddSingleton<IAuthorizationHandler, IsAdminAuthorizationHandler>();
 services.AddSingleton<IAuthorizationHandler, IsPremiumUserAuthorizationHandler>();
+#endregion
 
-#region
-services.AddHostedService<MqttBroker>();
+#region Mqtt
+services.AddSingleton<MqttBroker>(); // For TelegramService to get the MqttBroker instance
+services.AddHostedService(provider => provider.GetRequiredService<MqttBroker>());
 services.AddTransient<MqttMwBotClient>();
 #endregion
 
