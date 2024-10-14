@@ -60,7 +60,6 @@ public class TelegramService
 
         var chatId = update.Message.Chat.Id;
         var messageText = update.Message.Text;
-
         if (chatId == 0 || string.IsNullOrWhiteSpace(messageText))
         {
             return;
@@ -75,78 +74,88 @@ public class TelegramService
         }
         else if (messageText.StartsWith("/stop"))
         {
-            var carPlate = messageText.Split(" ").Skip(1).FirstOrDefault();
-            if (string.IsNullOrEmpty(carPlate))
-            {
-                await SendMessageAsync(chatId, "Please, provide a car plate.");
-                return;
-            }
-
-            await SendMessageAsync(chatId, "Stopping charge...");
-
-            using var scope = _serviceScopeFactory.CreateScope();
-            var carRepository = scope.ServiceProvider.GetRequiredService<CarRepository>();
-            var currentlyChargingRepository = scope.ServiceProvider.GetRequiredService<CurrentlyChargingRepository>();
-
-            var car = await carRepository.GetCarByPlate(carPlate);
-            if (car == null)
-            {
-                await SendMessageAsync(chatId, $"Car plate {carPlate} not found.");
-                return;
-            }
-
-            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-            var carUser = await userManager.FindByIdAsync(car.OwnerId);
-            if (carUser != null && carUser.TelegramChatId != chatId)
-            {
-                await SendMessageAsync(chatId, $"You are not the owner of car plate {carPlate}.");
-                return;
-            }
-
-            var currentlyCharging = await currentlyChargingRepository.GetChargingByCarPlate(carPlate);
-            if (currentlyCharging == null)
-            {
-                await SendMessageAsync(chatId, $"No active charge found for car plate {carPlate}.");
-                return;
-            }
-
-            var mqttBroker = _serviceProvider.GetRequiredService<MqttBroker>();
-            await mqttBroker.SendStopChargeToBot(currentlyCharging);
+            await HandleStopCommandAsync(chatId, messageText);
         }
         else if (messageText.StartsWith("/status"))
         {
-            var carPlate = messageText.Split(" ").Skip(1).FirstOrDefault();
-
-            if (string.IsNullOrEmpty(carPlate))
-            {
-                await SendMessageAsync(chatId, "Please, provide a car plate.");
-                return;
-            }
-
-            await SendMessageAsync(chatId, "Checking status...");
-            using var scope = _serviceScopeFactory.CreateScope();
-            var currentlyChargingRepository = scope.ServiceProvider.GetRequiredService<CurrentlyChargingRepository>();
-
-            var currentlyCharging = await currentlyChargingRepository.GetChargingByCarPlate(carPlate);
-
-            if (currentlyCharging == null)
-            {
-                await SendMessageAsync(chatId, $"No active charge found for car {carPlate}.");
-                return;
-            }
-
-            var responseMessage = $"Active charge for car {carPlate}:\n" +
-                                    $"- Started at: {currentlyCharging.StartChargingTime}\n" +
-                                    $"- Current charge: {currentlyCharging.CurrentChargePercentage}% / {currentlyCharging.TargetChargePercentage}%\n" +
-                                    $"- Energy consumed: {currentlyCharging.EnergyConsumed} kWh\n" +
-                                    $"- Total cost: {currentlyCharging.TotalCost} EUR";
-
-            await SendMessageAsync(chatId, responseMessage);
+            await HandleStatusCommandAsync(chatId, messageText);
         }
         else
         {
             await HandleVerificationCodeAsync(chatId, messageText);
         }
+    }
+
+    private async Task HandleStopCommandAsync(long chatId, string messageText)
+    {
+        var carPlate = messageText.Split(" ").Skip(1).FirstOrDefault();
+        if (string.IsNullOrEmpty(carPlate))
+        {
+            await SendMessageAsync(chatId, "Please, provide a car plate.");
+            return;
+        }
+
+        await SendMessageAsync(chatId, "Stopping charge...");
+
+        using var scope = _serviceScopeFactory.CreateScope();
+        var carRepository = scope.ServiceProvider.GetRequiredService<CarRepository>();
+        var currentlyChargingRepository = scope.ServiceProvider.GetRequiredService<CurrentlyChargingRepository>();
+
+        var car = await carRepository.GetCarByPlate(carPlate);
+        if (car == null)
+        {
+            await SendMessageAsync(chatId, $"Car plate {carPlate} not found.");
+            return;
+        }
+
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var carUser = await userManager.FindByIdAsync(car.OwnerId);
+        if (carUser != null && carUser.TelegramChatId != chatId)
+        {
+            await SendMessageAsync(chatId, $"You are not the owner of car plate {carPlate}.");
+            return;
+        }
+
+        var currentlyCharging = await currentlyChargingRepository.GetChargingByCarPlate(carPlate);
+        if (currentlyCharging == null)
+        {
+            await SendMessageAsync(chatId, $"No active charge found for car plate {carPlate}.");
+            return;
+        }
+
+        var mqttBroker = _serviceProvider.GetRequiredService<MqttBroker>();
+        await mqttBroker.SendStopChargeToBot(currentlyCharging);
+    }
+
+    private async Task HandleStatusCommandAsync(long chatId, string messageText)
+    {
+        var carPlate = messageText.Split(" ").Skip(1).FirstOrDefault();
+
+        if (string.IsNullOrEmpty(carPlate))
+        {
+            await SendMessageAsync(chatId, "Please, provide a car plate.");
+            return;
+        }
+
+        await SendMessageAsync(chatId, "Checking status...");
+        using var scope = _serviceScopeFactory.CreateScope();
+        var currentlyChargingRepository = scope.ServiceProvider.GetRequiredService<CurrentlyChargingRepository>();
+
+        var currentlyCharging = await currentlyChargingRepository.GetChargingByCarPlate(carPlate);
+
+        if (currentlyCharging == null)
+        {
+            await SendMessageAsync(chatId, $"No active charge found for car {carPlate}.");
+            return;
+        }
+
+        var responseMessage = $"Active charge for car {carPlate}:\n" +
+                                $"- Started at: {currentlyCharging.StartChargingTime}\n" +
+                                $"- Current charge: {currentlyCharging.CurrentChargePercentage}% / {currentlyCharging.TargetChargePercentage}%\n" +
+                                $"- Energy consumed: {currentlyCharging.EnergyConsumed} kWh\n" +
+                                $"- Total cost: {currentlyCharging.TotalCost} EUR";
+
+        await SendMessageAsync(chatId, responseMessage);
     }
 
     private async Task HandleVerificationCodeAsync(long chatId, string verificationCode)
