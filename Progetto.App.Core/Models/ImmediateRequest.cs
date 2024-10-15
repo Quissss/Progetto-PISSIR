@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Progetto.App.Core.Models.Users;
+﻿using Progetto.App.Core.Models.Users;
 
 namespace Progetto.App.Core.Models;
 
@@ -17,4 +16,5 @@ public class ImmediateRequest
     public string UserId { get; set; }
     public ApplicationUser? User { get; set; }
     public bool FromReservation { get; set; } // True if the request comes from a reservation
+    public bool IsBeingHandled { get; set; } // True if the request is being handled
 }

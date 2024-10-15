@@ -17,10 +17,10 @@ public class ImmediateRequestRepository : GenericRepository<ImmediateRequest>
         _context = context;
     }
 
-    public async Task<IEnumerable<ImmediateRequest?>> GetAllWithNoReservation()
+    public async Task<IEnumerable<ImmediateRequest?>> GetUnhandledWithNoReservation()
     {
         return await _context.ImmediateRequests
-            .Where(ir => ir.FromReservation == false)
+            .Where(ir => ir.FromReservation == false && ir.IsBeingHandled == false)
             .ToListAsync();
     }
 

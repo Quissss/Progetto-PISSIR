@@ -8,10 +8,13 @@ public class ChargeManager : IDisposable
 {
     private List<Reservation>? _reservations;
     private Queue<ImmediateRequest>? _immediateRequests;
+
     private readonly ILogger<ChargeManager> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
-    private readonly SemaphoreSlim _reservationsSemaphore = new SemaphoreSlim(1, 1);
-    private readonly SemaphoreSlim _immediateRequestsSemaphore = new SemaphoreSlim(1, 1);
+
+    private readonly SemaphoreSlim _reservationsSemaphore = new(1, 1);
+    private readonly SemaphoreSlim _immediateRequestsSemaphore = new(1, 1);
+
     private readonly ImmediateRequestRepository _immediateRequestRepository;
     private readonly ReservationRepository _reservationRepository;
 
@@ -141,7 +144,7 @@ public class ChargeManager : IDisposable
         _logger.BeginScope("Retrieving immediate requests");
         try
         {
-            var immediateRequests = await _immediateRequestRepository.GetAllWithNoReservation();
+            var immediateRequests = await _immediateRequestRepository.GetUnhandledWithNoReservation();
             if (immediateRequests?.Count() > 0)
                 _immediateRequests = new Queue<ImmediateRequest>(immediateRequests.OrderBy(ir => ir?.RequestDate).Cast<ImmediateRequest>());
             _logger.LogInformation("Retrieved {count} immediate requests", _immediateRequests?.Count);

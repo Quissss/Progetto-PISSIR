@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Models.Users;
 using Progetto.App.Core.Repositories;
+using Telegram.Bot.Requests;
+using Telegram.Bot.Types;
 
 namespace Progetto.App.Controllers;
 

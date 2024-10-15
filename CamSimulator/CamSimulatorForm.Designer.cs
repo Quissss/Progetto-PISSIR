@@ -83,6 +83,8 @@
             Controls.Add(txtLicensePlate);
             Icon = (Icon)resources.GetObject("$this.Icon");
             Margin = new Padding(4, 3, 4, 3);
+            MaximumSize = new Size(330, 145);
+            MinimumSize = new Size(330, 145);
             Name = "CamSimulatorForm";
             Text = "Simulatore telecamera";
             Load += Form1_Load;

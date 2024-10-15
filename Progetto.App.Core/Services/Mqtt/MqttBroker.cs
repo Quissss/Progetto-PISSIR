@@ -256,6 +256,11 @@ public class MqttBroker : IHostedService, IDisposable
                     StartChargePercentage = 0,
                 };
                 await currentlyChargingRepository.AddAsync(currentlyCharging);
+
+                // Update the immediate request status
+                immediateRequest.IsBeingHandled = true;
+                await immediateRequestRepository.UpdateAsync(immediateRequest);
+
                 await SendTelegramMessage($"Starting charge for car {currentlyCharging.CarPlate}", scope, currentlyCharging.UserId);
             }
             else
