@@ -99,6 +99,7 @@ public class MqttBroker : IHostedService, IDisposable
                 case MessageType.RequestMwBot:
                     mwBotMessage.BatteryPercentage = mwBot.BatteryPercentage;
                     mwBotMessage.ParkingId = mwBot.ParkingId;
+                    mwBotMessage.LatestLocation = mwBot.LatestLocation;
 
                     // BADFIX desync with database for some reason
                     mwBotMessage.Status = mwBot.Status = MwBotStatus.StandBy;
@@ -149,7 +150,8 @@ public class MqttBroker : IHostedService, IDisposable
             BatteryPercentage = mwBot.BatteryPercentage,
             Status = mwBot.Status,
             ParkingId = mwBot.ParkingId,
-            Parking = mwBot.Parking
+            Parking = mwBot.Parking,
+            LatestLocation = mwBot.LatestLocation
         };
 
         await PublishMessage(responseMessage);
@@ -192,6 +194,7 @@ public class MqttBroker : IHostedService, IDisposable
         confirmMessage.Id = mwBot.Id;
         confirmMessage.Status = mwBot.Status;
         confirmMessage.BatteryPercentage = mwBot.BatteryPercentage;
+        confirmMessage.LatestLocation = mwBot.LatestLocation;
 
         await PublishMessage(confirmMessage);
         _logger.LogDebug("MqttBroker: Confirmation sent to MwBot {id} to start recharging", mwBotMessage.Id);
@@ -267,7 +270,6 @@ public class MqttBroker : IHostedService, IDisposable
 
         // Update MwBot status
         mwBot.Status = MwBotStatus.ChargingCar;
-        mwBotMessage.LatestLocation = mwBot.LatestLocation = MwBotLocations.InSlot;
         await mwBotRepository.UpdateAsync(mwBot);
 
         // Prepare and publish the response message
@@ -281,6 +283,7 @@ public class MqttBroker : IHostedService, IDisposable
         mwBotMessage.TargetBatteryPercentage = currentlyCharging.TargetChargePercentage;
         mwBotMessage.ParkingSlotId = currentlyCharging.ParkingSlotId;
         mwBotMessage.Parking = await parkingRepository.GetByIdAsync(mwBot.ParkingId.Value);
+        mwBotMessage.LatestLocation = mwBot.LatestLocation;
 
         await PublishMessage(mwBotMessage);
     }
@@ -306,6 +309,7 @@ public class MqttBroker : IHostedService, IDisposable
         mwBotMessage.CurrentlyCharging.ToPay = true;
         mwBotMessage.CurrentlyCharging.TotalCost = Math.Round((decimal)mwBotMessage.CurrentlyCharging.TotalCost, 2);
         mwBotMessage.Parking = parking;
+        mwBotMessage.LatestLocation = MwBotLocations.InSlot;
         await currentlyChargingRepository.UpdateAsync(mwBotMessage.CurrentlyCharging);
         await carRepository.UpdateCarStatus(mwBotMessage.CarPlate, CarStatus.Charged);
         await immediateRequestRepository.DeleteAsync(ir => ir.Id == mwBotMessage.ImmediateRequestId);
@@ -355,7 +359,8 @@ public class MqttBroker : IHostedService, IDisposable
             BatteryPercentage = mwBot.BatteryPercentage,
             TargetBatteryPercentage = currentCharge.TargetChargePercentage,
             ParkingId = mwBot.ParkingId,
-            Parking = mwBot.Parking
+            Parking = mwBot.Parking,
+            LatestLocation = mwBot.LatestLocation
         };
 
         await PublishMessage(mwBotMessage);
