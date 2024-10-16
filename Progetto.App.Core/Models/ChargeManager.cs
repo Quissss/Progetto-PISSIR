@@ -110,11 +110,11 @@ public class ChargeManager : IDisposable
         }
     }
 
-    public async Task UpdateReservationsCarIsInside(string licencePlate, int parkingId, bool carInside)
+    public async Task UpdateReservationsCarIsInside(string plate, int parkingId, bool carInside)
     {
         _reservations?.ForEach(r =>
         {
-            if (r.CarPlate == licencePlate && r.ParkingId == parkingId)
+            if (r.CarPlate == plate && r.ParkingId == parkingId)
             {
                 r.CarIsInside = carInside;
             }

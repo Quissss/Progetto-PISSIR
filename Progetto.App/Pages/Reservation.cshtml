@@ -90,8 +90,8 @@
                 var $carSelect = $('#carPlate');
                 $.each(cars, function (index, car) {
                     $carSelect.append($('<option>', {
-                        value: car.licencePlate,
-                        text: `${car.model} - ${car.licencePlate}`
+                        value: car.plate,
+                        text: `${car.model} - ${car.plate}`
                     }));
                 });
             }).fail(function () {

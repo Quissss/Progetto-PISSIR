@@ -31,10 +31,10 @@ public class ImmediateRequestRepository : GenericRepository<ImmediateRequest>
             .FirstOrDefaultAsync();
     }
 
-    public async Task DeleteByCarPlate(string licencePlate)
+    public async Task DeleteByCarPlate(string plate)
     {
         var immediateRequest = await _context.ImmediateRequests
-            .Where(ir => ir.CarPlate == licencePlate)
+            .Where(ir => ir.CarPlate == plate)
             .FirstOrDefaultAsync();
 
         if (immediateRequest != null)

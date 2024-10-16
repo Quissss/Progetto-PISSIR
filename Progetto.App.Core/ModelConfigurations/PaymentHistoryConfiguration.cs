@@ -18,7 +18,7 @@ public class PaymentHistoryConfiguration : IEntityTypeConfiguration<PaymentHisto
         builder.Property(so => so.EndTime).IsRequired();
         builder.Property(so => so.StartChargePercentage).IsRequired(false);
         builder.Property(so => so.EndChargePercentage).IsRequired(false);
-        builder.HasOne(so => so.Car).WithMany().HasForeignKey(so => so.CarPlate);
+        builder.HasOne(so => so.Car).WithMany().HasForeignKey(so => so.CarPlate).OnDelete(DeleteBehavior.NoAction);
         builder.HasOne(so => so.User).WithMany().HasForeignKey(so => so.UserId);
         builder.Property(so => so.TotalCost).HasColumnType("decimal(5, 2)");
     }

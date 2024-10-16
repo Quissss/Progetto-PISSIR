@@ -20,7 +20,7 @@ public enum CarStatus
 /// </summary>
 public class Car
 {
-    public string LicencePlate { get; set; }
+    public string Plate { get; set; }
     public string Brand { get; set; }
     public string Model { get; set; }
     public bool IsElectric { get; set; }

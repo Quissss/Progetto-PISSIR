@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Progetto.App.Core.Models.Users;
+﻿using Progetto.App.Core.Models.Users;
 
 namespace Progetto.App.Core.Models;
 

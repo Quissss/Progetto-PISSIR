@@ -43,57 +43,64 @@ public class CarController : ControllerBase
 
         if (!ModelState.IsValid)
         {
-            _logger.LogWarning("Invalid model state while creating car with licence plate {licencePlate}", car.LicencePlate);
+            _logger.LogWarning("Invalid model state while creating car with licence plate {plate}", car.Plate);
             return BadRequest();
         }
 
         try
         {
-            _logger.LogDebug("Creating car with licence plate {licencePlate}", car.LicencePlate);
+            _logger.LogDebug("Creating car with licence plate {plate}", car.Plate);
 
             await _carRepository.AddAsync(car);
-            await _hubContext.Clients.All.SendAsync("CarAdded", car);
+            var connectionId = Request.Headers["X-Connection-Id"].ToString();
+            await _hubContext.Clients.AllExcept(connectionId).SendAsync("CarAdded", car);
 
-            _logger.LogDebug("Car with licence plate {licencePlate} created", car.LicencePlate);
+            _logger.LogDebug("Car with licence plate {plate} created", car.Plate);
             return Ok(car);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error while creating car with licence plate {licencePlate}", car.LicencePlate);
+            _logger.LogError(ex, "Error while creating car with licence plate {plate}", car.Plate);
         }
 
         return BadRequest();
     }
 
     [HttpDelete]
-    public async Task<ActionResult> DeleteCar([FromBody] string licencePlate)
+    public async Task<ActionResult> DeleteCar([FromBody] Car car)
     {
-        if (string.IsNullOrEmpty(licencePlate))
+        var validator = new CarValidator();
+        var result = validator.Validate(car);
+        result.AddToModelState(ModelState);
+
+        if (!ModelState.IsValid)
         {
-            _logger.LogWarning("Invalid licence plate {licencePlate}", licencePlate);
+            _logger.LogWarning("Invalid model state while creating car with licence plate {plate}", car.Plate);
             return BadRequest();
         }
 
+        var plate = car.Plate;
         try
         {
-            _logger.LogDebug("Deleting car with licence plate {licencePlate}", licencePlate);
+            _logger.LogDebug("Deleting car with licence plate {plate}", plate);
 
-            var existingCar = await _carRepository.GetCarByLicencePlate(licencePlate);
+            var existingCar = await _carRepository.GetCarByLicencePlate(plate);
             if (existingCar == null)
             {
-                _logger.LogWarning("Reservation with plate {licencePlate} doesn't exist", licencePlate);
+                _logger.LogWarning("Reservation with plate {plate} doesn't exist", plate);
                 return NotFound();
             }
 
-            await _carRepository.DeleteAsync(c => c.LicencePlate == licencePlate);
-            await _hubContext.Clients.All.SendAsync("CarDeleted", licencePlate);
+            await _carRepository.DeleteAsync(c => c.Plate == plate);
+            var connectionId = Request.Headers["X-Connection-Id"].ToString();
+            await _hubContext.Clients.AllExcept(connectionId).SendAsync("CarDeleted", plate);
 
-            _logger.LogDebug("Car with licence plate {licencePlate} deleted", licencePlate);
+            _logger.LogDebug("Car with licence plate {plate} deleted", plate);
             return Ok();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error while deleting car with licence plate {licencePlate}", licencePlate);
+            _logger.LogError(ex, "Error while deleting car with licence plate {plate}", plate);
         }
 
         return BadRequest();
@@ -109,7 +116,7 @@ public class CarController : ControllerBase
 
         if (!ModelState.IsValid)
         {
-            _logger.LogWarning("Invalid model state while updating car with licence plate {licencePlate}", car.LicencePlate);
+            _logger.LogWarning("Invalid model state while updating car with licence plate {plate}", car.Plate);
             return BadRequest();
         }
 
@@ -117,26 +124,27 @@ public class CarController : ControllerBase
         {
             if (!(await _carRepository.CheckEntityExists(car)))
             {
-                _logger.LogWarning("Car with licence plate {licencePlate} not found", car.LicencePlate);
+                _logger.LogWarning("Car with licence plate {plate} not found", car.Plate);
                 return NotFound(car);
             }
 
             await _carRepository.UpdateAsync(car);
-            await _hubContext.Clients.All.SendAsync("CarUpdated", car);
+            var connectionId = Request.Headers["X-Connection-Id"].ToString();
+            await _hubContext.Clients.AllExcept(connectionId).SendAsync("CarUpdated", car);
 
             _logger.LogDebug("Updated car with values: {car}", car);
             return Ok(car);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error while updating car with licence plate {licencePlate}", car.LicencePlate);
+            _logger.LogError(ex, "Error while updating car with licence plate {plate}", car.Plate);
         }
 
         return BadRequest();
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Car>>> GetAllCars([FromQuery] string? licencePlate, [FromQuery] CarStatus? status)
+    public async Task<ActionResult<IEnumerable<Car>>> GetAllCars([FromQuery] string? plate, [FromQuery] CarStatus? status)
     {
         try
         {
@@ -144,9 +152,9 @@ public class CarController : ControllerBase
             var user = await _userManager.GetUserAsync(User);
             var cars = await _carRepository.GetCarsByOwner(user.Id);
 
-            if (!string.IsNullOrEmpty(licencePlate))
-                cars = cars.Where(car => car.LicencePlate.Contains(licencePlate)).ToList();
-            if (status.HasValue)
+            if (!string.IsNullOrEmpty(plate))
+                cars = cars.Where(car => car.Plate.Contains(plate)).ToList();
+            if (status.HasValue) 
                 cars = cars.Where(car => car.Status == status).ToList();
 
             _logger.LogDebug("Returning {count} cars", cars.Count());
@@ -161,33 +169,33 @@ public class CarController : ControllerBase
         return BadRequest();
     }
 
-    [HttpGet("{licencePlate}")]
+    [HttpGet("{plate}")]
     [Authorize(Policy = PolicyNames.IsAdmin)]
-    public async Task<ActionResult<Car>> GetCarByLicencePlate(string licencePlate)
+    public async Task<ActionResult<Car>> GetCarByLicencePlate(string plate)
     {
-        if (string.IsNullOrEmpty(licencePlate))
+        if (string.IsNullOrEmpty(plate))
         {
-            _logger.LogWarning("Invalid licence plate {licencePlate}", licencePlate);
+            _logger.LogWarning("Invalid licence plate {plate}", plate);
             return BadRequest();
         }
 
         try
         {
-            _logger.LogDebug("Getting car with licence plate {licencePlate}", licencePlate);
+            _logger.LogDebug("Getting car with licence plate {plate}", plate);
 
-            var car = await _carRepository.GetCarByLicencePlate(licencePlate);
+            var car = await _carRepository.GetCarByLicencePlate(plate);
             if (car == null)
             {
-                _logger.LogWarning("Car with licence plate {licencePlate} not found", licencePlate);
+                _logger.LogWarning("Car with licence plate {plate} not found", plate);
                 return NotFound();
             }
 
-            _logger.LogDebug("Returning car with licence plate {licencePlate}", licencePlate);
+            _logger.LogDebug("Returning car with licence plate {plate}", plate);
             return Ok(car);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error while getting car with licence plate {licencePlate}", licencePlate);
+            _logger.LogError(ex, "Error while getting car with licence plate {plate}", plate);
         }
 
         return BadRequest();
@@ -195,7 +203,7 @@ public class CarController : ControllerBase
 
     [HttpGet("owner/{ownerId}")]
     [Authorize(Policy = PolicyNames.IsAdmin)]
-    public async Task<ActionResult<IEnumerable<Car>>> GetCarsByOwner(string ownerId)
+    public async Task<ActionResult<IEnumerable<Car>>> GetCarsByOwner(string ownerId, [FromQuery] string? plate, [FromQuery] CarStatus? status)
     {
         if (string.IsNullOrEmpty(ownerId))
         {
@@ -214,6 +222,11 @@ public class CarController : ControllerBase
                 return NotFound();
             }
 
+            if (!string.IsNullOrEmpty(plate))
+                cars = cars.Where(car => car.Plate.Contains(plate)).ToList();
+            if (status.HasValue)
+                cars = cars.Where(car => car.Status == status).ToList();
+
             _logger.LogDebug("Returning cars of user {ownerId}", ownerId);
             return Ok(cars);
         }
@@ -226,7 +239,7 @@ public class CarController : ControllerBase
     }
 
     [HttpGet("my-cars")]
-    public async Task<ActionResult<IEnumerable<Car>>> GetMyCars()
+    public async Task<ActionResult<IEnumerable<Car>>> GetMyCars([FromQuery] string? plate, [FromQuery] CarStatus? status)
     {
         var userId = (await _userManager.GetUserAsync(User))?.Id.ToString();
 
@@ -247,49 +260,17 @@ public class CarController : ControllerBase
                 return NotFound();
             }
 
+            if (!string.IsNullOrEmpty(plate))
+                cars = cars.Where(car => car.Plate.Contains(plate)).ToList();
+            if (status.HasValue)
+                cars = cars.Where(car => car.Status == status).ToList();
+
             _logger.LogDebug("Returning cars of user {user}", userId);
             return Ok(cars);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error while getting cars of user {user}", userId);
-        }
-
-        return BadRequest();
-    }
-
-    [HttpGet("my-cars/{licencePlate}")]
-    public async Task<ActionResult<IEnumerable<Car>>> GetMyCar(string licencePlate)
-    {
-        var userId = (await _userManager.GetUserAsync(User))?.Id.ToString();
-
-        if (string.IsNullOrEmpty(userId))
-        {
-            _logger.LogWarning("Invalid user {user}", userId);
-            return BadRequest();
-        }
-
-        if (string.IsNullOrEmpty(licencePlate))
-        {
-            _logger.LogWarning("Invalid licence plate {licencePlate}", licencePlate);
-            return BadRequest();
-        }
-
-        try
-        {
-            _logger.LogDebug("Getting car with licence plate {licencePlate} of user {user}", licencePlate, userId);
-
-            var myCars = await _carRepository.GetCarsByOwner(userId);
-
-            var car = myCars.Where(c => c.LicencePlate == licencePlate).FirstOrDefault();
-            if (car == null)
-                return NotFound();
-
-            return Ok(car);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error while getting car with licence plate {licencePlate} of user {user}", licencePlate, userId);
         }
 
         return BadRequest();

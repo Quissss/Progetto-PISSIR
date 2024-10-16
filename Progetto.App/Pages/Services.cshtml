@@ -45,7 +45,7 @@
                                     <div class="card-body">
                                         <h5 class="card-title">
                                             <i class="fa-solid fa-car"></i>
-                                            Auto: <span>${car.licencePlate}</span>
+                                            Auto: <span>${car.plate}</span>
                                         </h5>
                                         <h6 class="card-subtitle mb-2 text-muted">
                                             <i class="fa-solid fa-car-side"></i>
@@ -55,10 +55,10 @@
                                             <span class="badge bg-info text-dark">${car.statusName}</span>
                                         </p>
                                         <div class="d-flex justify-content-around mt-3">
-                                            <button class="btn btn-primary" onclick="recharge('${car.licencePlate}', '${car.parkingId}')">
+                                            <button class="btn btn-primary" onclick="recharge('${car.plate}', '${car.parkingId}')">
                                                 <i class="fa-solid fa-battery-full"></i> Ricarica
                                             </button>
-                                            <button class="btn btn-secondary" onclick="park('${car.licencePlate}', '${car.parkingId}')">
+                                            <button class="btn btn-secondary" onclick="park('${car.plate}', '${car.parkingId}')">
                                                 <i class="fa-solid fa-parking"></i> Sosta
                                             </button>
                                         </div>
@@ -75,7 +75,7 @@
             });
         }
 
-        function recharge(licencePlate, parkingId) {
+        function recharge(plate, parkingId) {
             var rechargePercentage = prompt('Inserisci la percentuale di ricarica desiderata (0-100): ');
 
             rechargePercentage = parseFloat(rechargePercentage);
@@ -84,7 +84,7 @@
                 return;
             }
 
-            alert('Ricarica richiesta per la macchina con targa: ' + licencePlate + ' con percentuale di ricarica: ' + rechargePercentage + '%');
+            alert('Ricarica richiesta per la macchina con targa: ' + plate + ' con percentuale di ricarica: ' + rechargePercentage + '%');
 
             fetch(`/api/CamSimulator/recharge`, {
                 method: 'POST',
@@ -92,7 +92,7 @@
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ 
-                    licencePlate: licencePlate,
+                    plate: plate,
                     parkingId: parkingId,
                     chargeLevel: rechargePercentage
                 }),
@@ -105,12 +105,12 @@
             })
             .catch((error) => {
                 console.error('Error:', error);
-                alert(`Errore durante la richiesta di ricarica dell\'auto con targa: ${licencePlate}`);
+                alert(`Errore durante la richiesta di ricarica dell\'auto con targa: ${plate}`);
             });
         }
 
-        function park(licencePlate, parkingId) {
-            alert('Sosta richiesta per macchina con targa: ' + licencePlate);
+        function park(plate, parkingId) {
+            alert('Sosta richiesta per macchina con targa: ' + plate);
 
             fetch(`/api/CamSimulator/park`, {
                 method: 'POST',
@@ -118,7 +118,7 @@
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    licencePlate: licencePlate,
+                    plate: plate,
                     parkingId: parkingId
                 }),
             })
@@ -129,7 +129,7 @@
             })
             .catch((error) => {
                 console.error('Error:', error);
-                alert('Errore durante richiesta della sosta dell\'auto con targa: ' + licencePlate);
+                alert('Errore durante richiesta della sosta dell\'auto con targa: ' + plate);
             });
         }
     </script>

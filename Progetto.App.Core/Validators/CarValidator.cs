@@ -10,7 +10,7 @@ public class CarValidator : AbstractValidator<Car>
 {
     public CarValidator()
     {
-        RuleFor(c => c.LicencePlate)
+        RuleFor(c => c.Plate)
             .NotEmpty().WithMessage("Licence Plate is required")
             .Matches(@"^[A-Z]{2}\d{3}[A-Z]{2}$").WithMessage("Licence Plate must be in the format AA123AA");
         RuleFor(c => c.Brand)
