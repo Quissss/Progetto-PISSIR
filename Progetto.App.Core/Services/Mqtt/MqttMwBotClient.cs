@@ -456,18 +456,17 @@ public class MqttMwBotClient : IDisposable
         int delayRange = maxDelaySeconds - minDelaySeconds;
         int delay = minDelaySeconds + (int)(delayRange * (1 - MwBot.BatteryPercentage / 100));
 
-        if (status == MwBotStatus.MovingToSlot)
+        switch(status)
         {
-            _logger.LogInformation("MwBot {id}: Simulating movement to car {delay} seconds...", MwBot.Id, delay);
-        }
-        else if (status == MwBotStatus.MovingToDock)
-        {
-            _logger.LogInformation("MwBot {id}: Simulating movement to dock {delay} seconds...", MwBot.Id, delay);
-        }
-        else
-        {
-            _logger.LogWarning("Invalid status");
-            return;
+            case MwBotStatus.MovingToSlot:
+                _logger.LogInformation("MwBot {id}: Simulating movement to car {delay} seconds...", MwBot.Id, delay);
+                break;
+            case MwBotStatus.MovingToDock:
+                _logger.LogInformation("MwBot {id}: Simulating movement to dock {delay} seconds...", MwBot.Id, delay);
+                break;
+            default:
+                _logger.LogWarning("MwBot {id}: Invalid status", MwBot.Id);
+                return;
         }
 
         var changeSuccess = await ChangeBotStatus(status);
@@ -562,14 +561,13 @@ public class MqttMwBotClient : IDisposable
         {
             _logger.LogInformation("MwBot {botId}: Car charged to {carCharge}%", MwBot.Id, mwBotMessage.CurrentCarCharge);
             await CompleteChargingProcess(mwBotMessage);
-            lock (_timerLock) if (!_timer.Enabled) _timer.Start();
         }
         else
         {
             _logger.LogInformation("MwBot {botId}: Stopping charging process due to low battery", MwBot.Id);
-            _isCharging = false;
         }
 
+        lock (_timerLock) if (!_timer.Enabled) _timer.Start();
         _logger.LogInformation("MwBot {id}: Ending SimulateChargingProcess.", MwBot.Id);
     }
 

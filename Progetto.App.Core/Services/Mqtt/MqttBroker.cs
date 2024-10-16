@@ -111,14 +111,6 @@ public class MqttBroker : IHostedService, IDisposable
                     // Done by default
                     break;
 
-                case MessageType.UpdateParkingSlot:
-                    _logger.LogDebug("MqttBroker: MwBot {id} requested MessageType.UpdateParkingSlot", mwBotMessage.Id);
-                    var parkingSlotRepository = scope.ServiceProvider.GetRequiredService<ParkingSlotRepository>();
-                    var parkingSlot = await parkingSlotRepository.GetByIdAsync(mwBotMessage.ParkingSlotId.Value);
-                    parkingSlot.Status = mwBotMessage.ParkingSlot.Status;
-                    await parkingSlotRepository.UpdateAsync(parkingSlot);
-                    break;
-
                 case MessageType.DisconnectClient:
                     _logger.LogDebug("MqttBroker: MwBot {id} requested MessageType.DisconnectClient", mwBotMessage.Id);
                     await HandleDisconnectMessageAsync(mwBotMessage, mwBotRepository);
@@ -186,17 +178,13 @@ public class MqttBroker : IHostedService, IDisposable
             return;
         }
 
-        mwBot.Status = MwBotStatus.MovingToDock;
-        await mwBotRepository.UpdateAsync(mwBot);
+        mwBotMessage.MessageType = MessageType.StartRecharge;
+        mwBotMessage.Id = mwBot.Id;
+        mwBotMessage.Status = mwBot.Status;
+        mwBotMessage.BatteryPercentage = mwBot.BatteryPercentage;
+        mwBotMessage.LatestLocation = mwBot.LatestLocation;
 
-        var confirmMessage = mwBotMessage;
-        confirmMessage.MessageType = MessageType.StartRecharge;
-        confirmMessage.Id = mwBot.Id;
-        confirmMessage.Status = mwBot.Status;
-        confirmMessage.BatteryPercentage = mwBot.BatteryPercentage;
-        confirmMessage.LatestLocation = mwBot.LatestLocation;
-
-        await PublishMessage(confirmMessage);
+        await PublishMessage(mwBotMessage);
         _logger.LogDebug("MqttBroker: Confirmation sent to MwBot {id} to start recharging", mwBotMessage.Id);
     }
 

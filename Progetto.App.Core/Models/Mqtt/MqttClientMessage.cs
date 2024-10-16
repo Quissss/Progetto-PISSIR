@@ -7,7 +7,6 @@ public enum MessageType
     CompleteCharge, // client → broker
     UpdateCharging, // client → broker
     UpdateMwBot, // client → broker
-    UpdateParkingSlot, // client → broker
     StartRecharge, // broker → client
     RequestRecharge, // client → broker
     DisconnectClient, // client → broker
