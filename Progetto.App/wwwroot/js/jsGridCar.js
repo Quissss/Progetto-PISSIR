@@ -1,22 +1,39 @@
-const url = "/api/Car"; 
-
-let ajax = function (item, verb, json = true) {
-    let requestData = json ? JSON.stringify(item) : item;
-
-    return $.ajax({
-        type: verb,
-        url: url,
-        data: requestData,
-        contentType: json ? "application/json" : "application/x-www-form-urlencoded; charset=UTF-8",
-    });
-};
-
 $(function () {
+    const url = "/api/Car";
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/carHub")
+        .build();
+
+    connection.start().catch(err => console.error(err.toString()));
+
+    connection.on("CarAdded", function (car) {
+        $("#jsGridCar").jsGrid("insertItem", car);
+    });
+
+    connection.on("CarUpdated", function (car) {
+        $("#jsGridCar").jsGrid("updateItem", car);
+    });
+
+    connection.on("CarDeleted", function (licencePlate) {
+        $("#jsGridCar").jsGrid("deleteItem", { licencePlate: licencePlate });
+    });
+
+    let ajax = function (item, verb, json = true) {
+        let requestData = json ? JSON.stringify(item) : item;
+
+        return $.ajax({
+            type: verb,
+            url: url,
+            data: requestData,
+            contentType: json ? "application/json" : "application/x-www-form-urlencoded; charset=UTF-8",
+        });
+    };
+
     $("#jsGridCar").jsGrid({
         width: "100%",
         height: "400px",
         editing: true,
-        autoload: true,
+        autoload: false,
         filtering: true,
         inserting: true,
         sorting: true,
@@ -56,14 +73,5 @@ $(function () {
         onItemInserting: (args) => args.item["ownerId"] = userId,
     });
 
-    // TODO: implement SignalR
-    setInterval(function () {
-        let grid = $("#jsGridCar");
-        let sorting = grid.jsGrid("getSorting");
-        let filter = grid.jsGrid("getFilter");
-
-        sorting.field === undefined && sorting.order === undefined ?
-            grid.jsGrid("loadData", filter).done(() => grid.jsGrid()) :
-            grid.jsGrid("loadData", filter).done(() => grid.jsGrid("sort", sorting.field, sorting.order));
-    }, 1000);
+    $("#jsGridCar").jsGrid("loadData");
 });

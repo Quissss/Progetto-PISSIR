@@ -11,6 +11,7 @@ using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Security;
 using Progetto.App.Core.Security.Policies;
 using Progetto.App.Core.Services.Mqtt;
+using Progetto.App.Core.Services.SignalR.Hubs;
 using Progetto.App.Core.Services.Telegram;
 using Progetto.App.Core.Validators;
 using Serilog;
@@ -53,7 +54,9 @@ services.AddDatabaseDeveloperPageExceptionFilter();
 services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
+
 services.AddRazorPages();
+services.AddSignalR();
 
 services.AddAuthorization(option =>
 {
@@ -125,6 +128,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapRazorPages();
+
+#region SignalR
+app.MapHub<CarHub>("/carHub");
+#endregion
 
 // Ensure the MQTT broker is started before initializing clients
 app.Lifetime.ApplicationStarted.Register(async () =>

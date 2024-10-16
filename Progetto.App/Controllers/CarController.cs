@@ -2,10 +2,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Models.Users;
 using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Security;
+using Progetto.App.Core.Services.SignalR.Hubs;
 using Progetto.App.Core.Validators;
 
 namespace Progetto.App.Controllers;
@@ -20,12 +22,14 @@ namespace Progetto.App.Controllers;
 public class CarController : ControllerBase
 {
     private readonly ILogger<CarController> _logger;
+    private readonly IHubContext<CarHub> _hubContext;
     private readonly CarRepository _carRepository;
     private readonly UserManager<ApplicationUser> _userManager;
 
-    public CarController(ILogger<CarController> logger, CarRepository repository, UserManager<ApplicationUser> userManager)
+    public CarController(ILogger<CarController> logger, IHubContext<CarHub> hubContext, CarRepository repository, UserManager<ApplicationUser> userManager)
     {
         _logger = logger;
+        _hubContext = hubContext;
         _carRepository = repository;
         _userManager = userManager;
     }
@@ -48,6 +52,7 @@ public class CarController : ControllerBase
             _logger.LogDebug("Creating car with licence plate {licencePlate}", car.LicencePlate);
 
             await _carRepository.AddAsync(car);
+            await _hubContext.Clients.All.SendAsync("CarAdded", car);
 
             _logger.LogDebug("Car with licence plate {licencePlate} created", car.LicencePlate);
             return Ok(car);
@@ -81,6 +86,7 @@ public class CarController : ControllerBase
             }
 
             await _carRepository.DeleteAsync(c => c.LicencePlate == licencePlate);
+            await _hubContext.Clients.All.SendAsync("CarDeleted", licencePlate);
 
             _logger.LogDebug("Car with licence plate {licencePlate} deleted", licencePlate);
             return Ok();
@@ -116,6 +122,7 @@ public class CarController : ControllerBase
             }
 
             await _carRepository.UpdateAsync(car);
+            await _hubContext.Clients.All.SendAsync("CarUpdated", car);
 
             _logger.LogDebug("Updated car with values: {car}", car);
             return Ok(car);
