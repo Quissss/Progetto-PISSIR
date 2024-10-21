@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -9,10 +10,10 @@ using Progetto.App.Core.Models;
 using Progetto.App.Core.Models.Mqtt;
 using Progetto.App.Core.Models.Users;
 using Progetto.App.Core.Repositories;
+using Progetto.App.Core.Services.SignalR.Hubs;
 using Progetto.App.Core.Services.Telegram;
 using System.Text;
 using System.Text.Json;
-using static System.Formats.Asn1.AsnWriter;
 
 namespace Progetto.App.Core.Services.Mqtt;
 
@@ -26,9 +27,13 @@ public class MqttBroker : IHostedService, IDisposable
     private readonly MqttServer _mqttServer;
     private readonly MqttServerOptions _options;
     private readonly ILogger<MqttBroker> _logger;
+    private readonly IHubContext<CarHub> _carHub;
+    private readonly IHubContext<MwBotHub> _botHub;
+    private readonly IHubContext<RechargeHub> _rechargeHub;
+    private readonly IHubContext<ParkingSlotHub> _parkingSlotHub;
     private readonly IServiceScopeFactory _serviceScopeFactory;
 
-    public MqttBroker(TelegramService telegramService, ChargeManager chargeManager, ILogger<MqttBroker> logger, IServiceScopeFactory serviceScopeFactory, IConfiguration configuration)
+    public MqttBroker(TelegramService telegramService, ChargeManager chargeManager, ILogger<MqttBroker> logger, IHubContext<CarHub> carHub, IHubContext<MwBotHub> botHubContext, IHubContext<RechargeHub> rechargeHubContext, IHubContext<ParkingSlotHub> parkingSlotHubContext, IServiceScopeFactory serviceScopeFactory, IConfiguration configuration)
     {
         _options = new MqttServerOptionsBuilder()
             .WithDefaultEndpoint()
@@ -36,11 +41,15 @@ public class MqttBroker : IHostedService, IDisposable
             .WithKeepAlive()
             .Build();
 
+        _logger = logger;
+        _carHub = carHub;
+        _botHub = botHubContext;
+        _rechargeHub = rechargeHubContext;
+        _parkingSlotHub = parkingSlotHubContext;
+        _serviceScopeFactory = serviceScopeFactory;
         _telegramService = telegramService;
         _chargeManager = chargeManager;
-        _logger = logger;
         _mqttServer = new MqttFactory().CreateMqttServer(_options);
-        _serviceScopeFactory = serviceScopeFactory;
 
         _mqttServer.ClientConnectedAsync += MqttServer_ClientConnectedAsync;
         _mqttServer.ClientDisconnectedAsync += MqttServer_ClientDisconnectedAsync;
@@ -94,7 +103,9 @@ public class MqttBroker : IHostedService, IDisposable
                 case MessageType.UpdateCharging:
                     _logger.LogDebug("MqttBroker: MwBot {id} requested MessageType.UpdateCharging", mwBotMessage.Id);
                     var currentlyChargingRepository = scope.ServiceProvider.GetRequiredService<CurrentlyChargingRepository>();
+
                     await currentlyChargingRepository.UpdateAsync(mwBotMessage.CurrentlyCharging);
+                    await _rechargeHub.Clients.All.SendAsync("RechargeUpdated", mwBotMessage.CurrentlyCharging);
                     break;
 
                 case MessageType.RequestMwBot:
@@ -116,7 +127,9 @@ public class MqttBroker : IHostedService, IDisposable
                     var parkingSlotRepository = scope.ServiceProvider.GetRequiredService<ParkingSlotRepository>();
                     var parkingSlot = await parkingSlotRepository.GetByIdAsync(mwBotMessage.ParkingSlotId.Value);
                     parkingSlot.Status = mwBotMessage.ParkingSlot.Status;
+
                     await parkingSlotRepository.UpdateAsync(parkingSlot);
+                    await _parkingSlotHub.Clients.All.SendAsync("ParkingSlotUpdated", parkingSlot);
                     break;
 
                 case MessageType.DisconnectClient:
@@ -136,6 +149,7 @@ public class MqttBroker : IHostedService, IDisposable
 
             _logger.LogDebug("MqttBroker: Updating MwBot {id} with battery: {battery}% and status: {status} and location: {location}", mwBot.Id, mwBotMessage.BatteryPercentage, mwBot.Status, mwBot.LatestLocation);
             await mwBotRepository.UpdateAsync(mwBot);
+            await _botHub.Clients.All.SendAsync("MwBotUpdated", mwBot);
         }
 
         await Task.CompletedTask;
@@ -170,6 +184,7 @@ public class MqttBroker : IHostedService, IDisposable
         }
         mwBot.Status = MwBotStatus.Offline;
         await mwBotRepository.UpdateAsync(mwBot);
+        await _botHub.Clients.All.SendAsync("MwBotUpdated", mwBot);
 
         _logger.LogDebug("MqttBroker: MwBot {id} disconnected", mwBotMessage.Id);
     }
@@ -187,6 +202,7 @@ public class MqttBroker : IHostedService, IDisposable
 
         mwBot.Status = MwBotStatus.MovingToDock;
         await mwBotRepository.UpdateAsync(mwBot);
+        await _botHub.Clients.All.SendAsync("MwBotUpdated", mwBot);
 
         var confirmMessage = mwBotMessage;
         confirmMessage.MessageType = MessageType.StartRecharge;
@@ -253,7 +269,9 @@ public class MqttBroker : IHostedService, IDisposable
                     CurrentChargePercentage = 0,
                     StartChargePercentage = 0,
                 };
+
                 await currentlyChargingRepository.AddAsync(currentlyCharging);
+                await _rechargeHub.Clients.All.SendAsync("RechargeAdded", currentlyCharging);
                 await SendTelegramMessage($"Starting charge for car {currentlyCharging.CarPlate}", scope, currentlyCharging.UserId);
             }
             else
@@ -265,11 +283,14 @@ public class MqttBroker : IHostedService, IDisposable
 
         // Update car status
         await carRepository.UpdateCarStatus(currentlyCharging.CarPlate, CarStatus.InCharge, currentlyCharging.ParkingSlotId);
+        var car = await carRepository.GetCarByLicencePlate(currentlyCharging.CarPlate);
+        await _carHub.Clients.All.SendAsync("CarUpdated", car);
 
         // Update MwBot status
         mwBot.Status = MwBotStatus.ChargingCar;
         mwBotMessage.LatestLocation = mwBot.LatestLocation = MwBotLocations.InSlot;
         await mwBotRepository.UpdateAsync(mwBot);
+        await _botHub.Clients.All.SendAsync("MwBotUpdated", mwBot);
 
         // Prepare and publish the response message
         mwBotMessage.MessageType = MessageType.StartCharging;
@@ -309,8 +330,13 @@ public class MqttBroker : IHostedService, IDisposable
         mwBotMessage.CurrentlyCharging.ToPay = true;
         mwBotMessage.CurrentlyCharging.TotalCost = Math.Round((decimal)mwBotMessage.CurrentlyCharging.TotalCost, 2);
         mwBotMessage.Parking = parking;
+
         await currentlyChargingRepository.UpdateAsync(mwBotMessage.CurrentlyCharging);
+        await _rechargeHub.Clients.All.SendAsync("RechargeUpdated", mwBotMessage.CurrentlyCharging);
+
         await carRepository.UpdateCarStatus(mwBotMessage.CarPlate, CarStatus.Charged);
+        var car = await carRepository.GetCarByLicencePlate(mwBotMessage.CarPlate);
+        await _carHub.Clients.All.SendAsync("CarUpdated", car);
 
         await SendTelegramMessage($"Your car with plate {mwBotMessage.CurrentlyCharging.CarPlate} has been charged at {parking.Name}.\n" +
                           $"Total cost: {mwBotMessage.CurrentlyCharging.TotalCost}€\n" +

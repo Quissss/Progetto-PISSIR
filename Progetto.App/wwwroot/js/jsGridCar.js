@@ -64,7 +64,7 @@ $(function () {
         width: "100%",
         height: "400px",
         editing: true,
-        autoload: false,
+        autoload: true,
         filtering: true,
         inserting: true,
         sorting: true,
@@ -73,7 +73,6 @@ $(function () {
         controller: {
             loadData: function (filter) {
                 if (filter.status == -1) delete filter.status
-                console.log(filter);
                 return ajax(filter, "GET", false);
             },
             updateItem: item => ajax(item, "PUT"),
@@ -114,6 +113,4 @@ $(function () {
             args.item["status"] = 0;
         },
     });
-
-    $("#jsGridCar").jsGrid("loadData");
 });

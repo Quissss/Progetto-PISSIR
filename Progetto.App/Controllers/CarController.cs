@@ -79,28 +79,27 @@ public class CarController : ControllerBase
             return BadRequest();
         }
 
-        var plate = car.Plate;
         try
         {
-            _logger.LogDebug("Deleting car with licence plate {plate}", plate);
+            _logger.LogDebug("Deleting car with licence plate {plate}", car.Plate);
 
-            var existingCar = await _carRepository.GetCarByLicencePlate(plate);
+            var existingCar = await _carRepository.GetCarByLicencePlate(car.Plate);
             if (existingCar == null)
             {
-                _logger.LogWarning("Reservation with plate {plate} doesn't exist", plate);
+                _logger.LogWarning("Reservation with plate {plate} doesn't exist", car.Plate);
                 return NotFound();
             }
 
-            await _carRepository.DeleteAsync(c => c.Plate == plate);
+            await _carRepository.DeleteAsync(c => c.Plate == car.Plate);
             var connectionId = Request.Headers["X-Connection-Id"].ToString();
-            await _hubContext.Clients.AllExcept(connectionId).SendAsync("CarDeleted", plate);
+            await _hubContext.Clients.AllExcept(connectionId).SendAsync("CarDeleted", car.Plate);
 
-            _logger.LogDebug("Car with licence plate {plate} deleted", plate);
-            return Ok();
+            _logger.LogDebug("Car with licence plate {plate} deleted", car.Plate);
+            return Ok(car);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error while deleting car with licence plate {plate}", plate);
+            _logger.LogError(ex, "Error while deleting car with licence plate {plate}", car.Plate);
         }
 
         return BadRequest();
@@ -122,6 +121,8 @@ public class CarController : ControllerBase
 
         try
         {
+            _logger.LogDebug("Updating car with licence plate {plate}", car.Plate);
+
             if (!(await _carRepository.CheckEntityExists(car)))
             {
                 _logger.LogWarning("Car with licence plate {plate} not found", car.Plate);
@@ -149,8 +150,12 @@ public class CarController : ControllerBase
         try
         {
             _logger.LogDebug("Getting all cars");
-            var user = await _userManager.GetUserAsync(User);
-            var cars = await _carRepository.GetCarsByOwner(user.Id);
+            var cars = await _carRepository.GetAllAsync();
+            if (cars == null)
+            {
+                _logger.LogWarning("No cars found");
+                return NotFound();
+            }
 
             if (!string.IsNullOrEmpty(plate))
                 cars = cars.Where(car => car.Plate.Contains(plate)).ToList();
@@ -158,7 +163,6 @@ public class CarController : ControllerBase
                 cars = cars.Where(car => car.Status == status).ToList();
 
             _logger.LogDebug("Returning {count} cars", cars.Count());
-
             return Ok(cars);
         }
         catch (Exception ex)

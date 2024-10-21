@@ -1,18 +1,62 @@
-const url = "/api/ParkingSlot";
-
-let ajax = function (item, verb, json = true) {
-    return $.ajax({
-        type: verb,
-        url: url,
-        data: json ? JSON.stringify(item) : item,
-        dataType: "json",
-        contentType: json ? "application/json" : "text/plain",
-    });
-};
-
 $(function () {
+    let ajax = function (item, verb, json = true) {
+        let requestData = json ? JSON.stringify(item) : item;
+
+        return $.ajax({
+            type: verb,
+            url: "/api/ParkingSlot",
+            data: requestData,
+            headers: { "X-Connection-Id": connectionId },
+            contentType: json ? "application/json" : "application/x-www-form-urlencoded; charset=UTF-8",
+        });
+    };
+
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/parkingSlotHub")
+        .build();
+
+    let connectionId = null;
+
+    connection.start()
+        .then(() => {
+            console.log("SignalR connected");
+            return connection.invoke("GetConnectionId");
+        })
+        .then(id => {
+            connectionId = id;
+            console.log("Connection ID:", connectionId);
+        })
+        .catch(err => console.error("Error connecting to SignalR:", err));
+
+    connection.on("ParkingSlotAdded", function (parkingSlot) {
+        var grid = $("#parkingSlotGrid");
+        var data = grid.jsGrid("option", "data");
+        data.push(parkingSlot);
+        grid.jsGrid("refresh");
+    });
+
+    connection.on("ParkingSlotUpdated", function (parkingSlot) {
+        var grid = $("#parkingSlotGrid");
+        var data = grid.jsGrid("option", "data");
+        var itemIndex = data.findIndex(item => item.id === parkingSlot.id);
+        if (itemIndex > -1) {
+            data[itemIndex] = parkingSlot;
+            grid.jsGrid("refresh");
+        }
+    });
+
+    connection.on("ParkingSlotDeleted", function (id) {
+        var grid = $("#parkingSlotGrid");
+        var data = grid.jsGrid("option", "data");
+        var itemIndex = data.findIndex(item => item.id === id);
+        if (itemIndex > -1) {
+            data.splice(itemIndex, 1);
+            grid.jsGrid("refresh");
+        }
+    });
+
     let parkingOptions = [];
-    
+
     $.ajax({
         url: '/api/Parking',
         method: 'GET',
@@ -21,26 +65,34 @@ $(function () {
         error: (error) => console.error("Errore nel caricamento dei dati dei parcheggi:", error)
     });
 
-    $.getJSON(url + "/statuses", function (statuses) {
+    $.getJSON("/api/ParkingSlot/statuses", function (statuses) {
         $("#parkingSlotGrid").jsGrid({
             width: "100%",
             height: "400px",
             autoload: true,
             filtering: true,
             inserting: true,
-            editing: false, 
+            editing: false,
             sorting: true,
             paging: true,
+
             controller: {
                 loadData: filter => ajax(filter, "GET", false),
                 insertItem: item => ajax(item, "POST"),
                 deleteItem: item => ajax(item, "DELETE"),
             },
+
             fields: [
                 { name: "id", visible: false, filtering: false },
                 { name: "number", type: "number", width: 50, title: "Slot Number " },
                 {
-                    name: "parkingId", type: "select", width: 100, title: "Location", items: parkingOptions, valueField: "value", textField: "text",
+                    name: "parkingId",
+                    type: "select",
+                    width: 100,
+                    title: "Location",
+                    items: parkingOptions,
+                    valueField: "value",
+                    textField: "text",
                     itemTemplate: function (value, item) {
                         let parking = parkingOptions.find(p => p.value == value);
                         return parking ? parking.text : "";
@@ -51,15 +103,4 @@ $(function () {
             ]
         });
     });
-
-    // TODO: implement SignalR
-    setInterval(function () {
-        let grid = $("#parkingSlotGrid");
-        let sorting = grid.jsGrid("getSorting");
-        let filter = grid.jsGrid("getFilter");
-
-        sorting.field === undefined && sorting.order === undefined ?
-            grid.jsGrid("loadData", filter).done(() => grid.jsGrid()) :
-            grid.jsGrid("loadData", filter).done(() => grid.jsGrid("sort", sorting.field, sorting.order));
-    }, 1000);
 });

@@ -1,21 +1,9 @@
-﻿const url = "/api/MwBot";
-
-let ajax = function (item, verb, json = true) {
-    let requestData = json ? JSON.stringify(item) : item;
-
-    return $.ajax({
-        type: verb,
-        url: url,
-        data: requestData,
-        contentType: json ? "application/json" : "text/plain",
-    });
-};
-
+﻿
 function turnBot(item, action) {
     var endpoint = action === "on" ? "on" : "off";
     $.ajax({
         type: "PUT",
-        url: url + "/" + endpoint,
+        url: "/api/MwBot/" + endpoint,
         data: JSON.stringify(item),
         contentType: "application/json",
         success: function (response) {
@@ -29,6 +17,62 @@ function turnBot(item, action) {
 }
 
 $(function () {
+    let ajax = function (item, verb, json = true) {
+        let requestData = json ? JSON.stringify(item) : item;
+
+        return $.ajax({
+            type: verb,
+            url: "/api/MwBot",
+            data: requestData,
+            headers: { "X-Connection-Id": connectionId },
+            contentType: json ? "application/json" : "application/x-www-form-urlencoded; charset=UTF-8",
+        });
+    };
+
+    const connection = new signalR.HubConnectionBuilder()
+    .withUrl("/mwBotHub")
+        .build();
+
+    let connectionId = null;
+
+    connection.start()
+    .then(() => {
+            console.log("SignalR connected");
+            return connection.invoke("GetConnectionId");
+        })
+        .then(id => {
+            connectionId = id;
+            console.log("Connection ID:", connectionId);
+        })
+        .catch(err => console.error("Error connecting to SignalR:", err));
+
+    connection.on("MwBotAdded", function (bot) {
+        var grid = $("#mwBotGrid");
+        var data = grid.jsGrid("option", "data");
+        data.push(bot);
+        grid.jsGrid("refresh");
+    });
+
+    connection.on("MwBotUpdated", function (bot) {
+        var grid = $("#mwBotGrid");
+        var data = grid.jsGrid("option", "data");
+        var itemIndex = data.findIndex(item => item.id === bot.id);
+        if (itemIndex > -1) {
+            data[itemIndex] = bot;
+            grid.jsGrid("refresh");
+        }
+    });
+
+    connection.on("MwBotDeleted", function (id) {
+        var grid = $("#mwBotGrid");
+        var data = grid.jsGrid("option", "data");
+        var itemIndex = data.findIndex(item => item.id === id);
+        if (itemIndex > -1) {
+            data.splice(itemIndex, 1);
+            grid.jsGrid("refresh");
+        }
+    });
+
     let parkingOptions = [];
 
     $.ajax({
@@ -67,11 +111,18 @@ $(function () {
                 }
             },
             {
-                name: "status", type: "select", title: "Status", items: [
+                name: "status",
+                type: "select",
+                title: "Status",
+                items: [
                     {},
                     { Name: "Offline", Id: 0 },
                     { Name: "Online", Id: 1 }
-                ], valueField: "Id", textField: "Name", editing: false,
+                ],
+                valueField: "Id",
+                textField: "Name",
+                editing: false,
+                inserting: false,
                 itemTemplate: function (value) {
                     switch (value) {
                         case 0: return "Offline";
@@ -96,20 +147,27 @@ $(function () {
                             .addClass("btn btn-sm btn-outline-danger fa-solid fa-power-off")
                             .on("click", () => turnBot(item, "off"));
                     }
-                }
+                },
+                editing: false,
+                inserting: false,
             },
             { type: "control", editButton: true, deleteButton: true, sorting: false }
-        ]
+        ],
+
+
+        onItemInserting: (args) => {
+            args.item["status"] = 0;
+        },
     });
 
     // TODO: implement SignalR
-    setInterval(function () {
-        let grid = $("#mwBotGrid");
-        let sorting = grid.jsGrid("getSorting");
-        let filter = grid.jsGrid("getFilter");
+    //setInterval(function () {
+    //    let grid = $("#mwBotGrid");
+    //    let sorting = grid.jsGrid("getSorting");
+    //    let filter = grid.jsGrid("getFilter");
 
-        sorting.field === undefined && sorting.order === undefined ?
-            grid.jsGrid("loadData", filter).done(() => grid.jsGrid()) :
-            grid.jsGrid("loadData", filter).done(() => grid.jsGrid("sort", sorting.field, sorting.order));
-    }, 1000);
+    //    sorting.field === undefined && sorting.order === undefined ?
+    //        grid.jsGrid("loadData", filter).done(() => grid.jsGrid()) :
+    //        grid.jsGrid("loadData", filter).done(() => grid.jsGrid("sort", sorting.field, sorting.order));
+    //}, 1000);
 });

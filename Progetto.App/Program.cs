@@ -84,7 +84,7 @@ services.AddSingleton<ChargeManager>();
 services.AddSingleton<IAuthorizationHandler, IsAdminAuthorizationHandler>();
 services.AddSingleton<IAuthorizationHandler, IsPremiumUserAuthorizationHandler>();
 
-#region
+#region Mqtt
 services.AddHostedService<MqttBroker>();
 services.AddTransient<MqttMwBotClient>();
 #endregion
@@ -131,6 +131,10 @@ app.MapRazorPages();
 
 #region SignalR
 app.MapHub<CarHub>("/carHub");
+app.MapHub<MwBotHub>("/mwBotHub");
+app.MapHub<ParkingHub>("/parkingHub");
+app.MapHub<RechargeHub>("/rechargeHub");
+app.MapHub<ParkingSlotHub>("/parkingSlotHub");
 #endregion
 
 // Ensure the MQTT broker is started before initializing clients
