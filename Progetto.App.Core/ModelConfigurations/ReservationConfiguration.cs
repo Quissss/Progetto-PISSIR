@@ -16,7 +16,7 @@ public class ReservationConfiguration : IEntityTypeConfiguration<Reservation>
         builder.Property(r => r.RequestDate).IsRequired();
         builder.Property(r => r.RequestedChargeLevel).IsRequired();
         builder.HasOne(r => r.Parking).WithMany().HasForeignKey(r => r.ParkingId);
-        builder.HasOne(r => r.Car).WithMany().HasForeignKey(r => r.CarPlate);
+        builder.HasOne(r => r.Car).WithMany().HasForeignKey(r => r.CarPlate).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne(r => r.User).WithMany().HasForeignKey(r => r.UserId);
         builder.Property(r => r.CarIsInside).IsRequired();
     }

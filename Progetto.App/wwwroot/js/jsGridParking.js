@@ -1,20 +1,100 @@
-﻿const url = "/api/Parking";
+﻿$(function () {
+    let ajax = function (item, verb, json = true) {
+        let requestData = json ? JSON.stringify(item) : item;
 
-let ajax = function (item, verb, json = true) {
-    return $.ajax({
-        type: verb,
-        url: url,
-        data: json ? JSON.stringify(item) : item,
-        dataType: "json",
-        contentType: json ? "application/json" : "text/plain",
+        return $.ajax({
+            type: verb,
+            url: "/api/Parking",
+            data: requestData,
+            headers: { "X-Connection-Id": connectionId },
+            contentType: json ? "application/json" : "application/x-www-form-urlencoded; charset=UTF-8",
+        });
+    };
+
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/parkingHub")
+        .build();
+
+    let connectionId = null;
+
+    connection.start()
+        .then(() => {
+            console.log("SignalR connected");
+            return connection.invoke("GetConnectionId");
+        })
+        .then(id => {
+            connectionId = id;
+            console.log("Connection ID:", connectionId);
+        })
+        .catch(err => console.error("Error connecting to SignalR:", err));
+
+    connection.on("ParkingAdded", function (parking) {
+        var grid = $("#parkingGrid");
+        var data = grid.jsGrid("option", "data");
+        data.push(parking);
+        grid.jsGrid("refresh");
     });
-};
 
-$(function () {
+    connection.on("ParkingUpdated", function (parking) {
+        var grid = $("#parkingGrid");
+        var data = grid.jsGrid("option", "data");
+        var itemIndex = data.findIndex(item => item.id === parking.id);
+        if (itemIndex > -1) {
+            data[itemIndex] = parking;
+            grid.jsGrid("refresh");
+        }
+    });
+
+    connection.on("ParkingDeleted", function (id) {
+        var grid = $("#parkingGrid");
+        var data = grid.jsGrid("option", "data");
+        var itemIndex = data.findIndex(item => item.id === id);
+        if (itemIndex > -1) {
+            data.splice(itemIndex, 1);
+            grid.jsGrid("refresh");
+        }
+    });
+
+    $("#parkingGrid").jsGrid({
+        width: "100%",
+        height: "400px",
+        autoload: true,
+        filtering: true,
+        inserting: true,
+        editing: true,
+        sorting: true,
+        paging: true,
+
+        controller: {
+            loadData: filter => ajax(filter, "GET", false),
+            updateItem: item => ajax(item, "PUT"),
+            deleteItem: item => ajax(item, "DELETE"),
+            insertItem: item => ajax(item, "POST"),
+        },
+
+        fields: [
+            { name: "id", visible: false },
+            { name: "name", type: "text", width: 150, title: "Name" },
+            { name: "address", type: "text", width: 200, title: "Address" },
+            { name: "city", type: "text", width: 100, title: "City" },
+            { name: "province", type: "text", width: 100, title: "Province", filtering: false },
+            { name: "postalCode", type: "text", width: 100, title: "Postal Code", filtering: false },
+            { name: "country", type: "text", width: 100, title: "Country", filtering: false },
+            { name: "energyCostPerKw", type: "number", width: 100, title: "Energy Cost/Min", filtering: false },
+            { name: "stopCostPerMinute", type: "number", width: 100, title: "Stop Cost Per Minute", filtering: false },
+            { type: "control", editButton: true, deleteButton: true, sorting: false },
+        ],
+
+        rowClick: (args) => showMap(args.item),
+    });
+
+
+    // Map integration
+
     let map = L.map('map').setView([45.4642, 9.1900], 13); // Default Milan, Italy
     let routingControl;
     let userPosition;
-    
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
     }).addTo(map);
@@ -33,48 +113,6 @@ $(function () {
     } else {
         console.error("Geolocation is not supported by this browser.");
     }
-
-    $("#parkingGrid").jsGrid({
-        width: "100%",
-        height: "400px",
-        autoload: true,
-        filtering: true,
-        inserting: true,
-        editing: true,
-        sorting: true,
-        paging: true,
-        controller: {
-            loadData: filter => ajax(filter, "GET", false),
-            updateItem: item => ajax(item, "PUT"),
-            deleteItem: item => ajax(item, "DELETE"),
-            insertItem: item => ajax(item, "POST"),
-        },
-        fields: [
-            { name: "id", visible: false },
-            { name: "name", type: "text", width: 150, title: "Name" },
-            { name: "address", type: "text", width: 200, title: "Address" },
-            { name: "city", type: "text", width: 100, title: "City" },
-            { name: "province", type: "text", width: 100, title: "Province", filtering: false },
-            { name: "postalCode", type: "text", width: 100, title: "Postal Code", filtering: false },
-            { name: "country", type: "text", width: 100, title: "Country", filtering: false },
-            { name: "energyCostPerKw", type: "number", width: 100, title: "Energy Cost/Min", filtering: false },
-            { name: "stopCostPerMinute", type: "number", width: 100, title: "Stop Cost Per Minute", filtering: false },
-            { type: "control", editButton: true, deleteButton: true, sorting: false },
-        ],
-
-        rowClick: (args) => showMap(args.item),
-    });
-
-    // TODO: implement SignalR
-    setInterval(function () {
-        let grid = $("#parkingGrid");
-        let sorting = grid.jsGrid("getSorting");
-        let filter = grid.jsGrid("getFilter");
-
-        sorting.field === undefined && sorting.order === undefined ?
-            grid.jsGrid("loadData", filter).done(() => grid.jsGrid()) :
-            grid.jsGrid("loadData", filter).done(() => grid.jsGrid("sort", sorting.field, sorting.order));
-    }, 1000);
 
     function showMap(item) {
         if (!item || !item.address) {

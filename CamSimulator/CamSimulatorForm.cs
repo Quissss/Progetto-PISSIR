@@ -91,7 +91,7 @@ namespace CamSimulator
 
         private async Task<HttpResponseMessage> InviaTarga(string targa, int parkingId)
         {
-            var targaRequest = new { LicencePlate = targa, ParkingId = parkingId };
+            var targaRequest = new { CarPlate = targa, ParkingId = parkingId };
             var option = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
             var jsonContent = JsonSerializer.Serialize(targaRequest, option);
             var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");

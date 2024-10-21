@@ -19,21 +19,10 @@
     </div>
 </div>
 
-
 @section Scripts {
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.js"></script>
-    <script>
-        const userId = @Html.Raw(Json.Serialize(Model.UserId));
-
-        $(document).ready(function () {
-            var userId = '@Model.UserId';
-            $.ajax({
-                url: '/api/Car/GetCarsByOwner/' + userId,
-                method: 'GET',
-                success: (data) => $("#jsGridCar").jsGrid({ data: data }),
-                error: (error) => console.log("Errore nel caricamento dei dati delle auto:", error),
-            });
-        });
+    <script type="text/javascript">
+        window.userId = @Html.Raw(Json.Serialize(Model.UserId));
     </script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.js"></script>
     <script type="text/javascript" src="~/js/jsGridCar.js" asp-append-version="true"></script>
 }

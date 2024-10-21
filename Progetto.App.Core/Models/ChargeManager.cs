@@ -1,6 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Progetto.App.Core.Repositories;
+using Progetto.App.Core.Services.SignalR.Hubs;
 
 namespace Progetto.App.Core.Models;
 
@@ -10,6 +12,8 @@ public class ChargeManager : IDisposable
     private Queue<ImmediateRequest>? _immediateRequests;
 
     private readonly ILogger<ChargeManager> _logger;
+    private readonly IHubContext<CarHub> _carHubContext;
+    private readonly IHubContext<ParkingSlotHub> _parkingSlotHubContext;
     private readonly IServiceScopeFactory _serviceScopeFactory;
 
     private readonly SemaphoreSlim _reservationsSemaphore = new(1, 1);
@@ -22,12 +26,15 @@ public class ChargeManager : IDisposable
     private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(1); // Check interval for reservations cleanup
     private readonly TimeSpan _expirationTime = TimeSpan.FromMinutes(2); // Expiration time for reservations
 
-    public ChargeManager(ILogger<ChargeManager> logger, IServiceScopeFactory serviceScopeFactory)
+    public ChargeManager(ILogger<ChargeManager> logger, IServiceScopeFactory serviceScopeFactory, IHubContext<CarHub> carHubContext, IHubContext<ParkingSlotHub> parkingSlotHubContext)
     {
         _reservations = new List<Reservation>();
         _immediateRequests = new Queue<ImmediateRequest>();
         _serviceScopeFactory = serviceScopeFactory;
         _logger = logger;
+
+        _carHubContext = carHubContext;
+        _parkingSlotHubContext = parkingSlotHubContext;
 
         var provider = _serviceScopeFactory.CreateScope().ServiceProvider;
         _immediateRequestRepository = provider.GetRequiredService<ImmediateRequestRepository>();
@@ -113,11 +120,11 @@ public class ChargeManager : IDisposable
         }
     }
 
-    public async Task UpdateReservationsCarIsInside(string licencePlate, int parkingId, bool carInside)
+    public async Task UpdateReservationsCarIsInside(string plate, int parkingId, bool carInside)
     {
         _reservations?.ForEach(r =>
         {
-            if (r.CarPlate == licencePlate && r.ParkingId == parkingId)
+            if (r.CarPlate == plate && r.ParkingId == parkingId)
             {
                 r.CarIsInside = carInside;
             }
@@ -180,6 +187,7 @@ public class ChargeManager : IDisposable
 
                     freeSlot.Status = ParkingSlotStatus.Occupied;
                     await _parkingSlotRepository.UpdateAsync(freeSlot);
+                    await _parkingSlotHubContext.Clients.All.SendAsync("ParkingSlotUpdated", freeSlot);
 
                     return immediateRequest;
                 }
@@ -261,6 +269,7 @@ public class ChargeManager : IDisposable
 
                 freeSlot.Status = ParkingSlotStatus.Occupied;
                 await _parkingSlotRepository.UpdateAsync(freeSlot);
+                await _parkingSlotHubContext.Clients.All.SendAsync("ParkingSlotUpdated", freeSlot);
 
                 if (nextReservation?.CarPlate is not null)
                 {
@@ -268,6 +277,7 @@ public class ChargeManager : IDisposable
                     if (car is null) return null;
                     car.Status = CarStatus.InCharge;
                     await _carRepository.UpdateAsync(car);
+                    await _carHubContext.Clients.All.SendAsync("CarUpdated", car);
                 }
 
                 _logger.LogInformation("MwBot {mwBot}: Created immediate request for user {immediateRequest.UserId} at {immediateRequest.RequestDate}.", mwBot.Id, immediateRequest.UserId, immediateRequest.RequestDate);
