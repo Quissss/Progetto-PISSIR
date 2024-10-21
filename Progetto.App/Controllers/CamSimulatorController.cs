@@ -161,6 +161,7 @@ public class CamSimulatorController : ControllerBase
         }
         freeSlot.Status = ParkingSlotStatus.Occupied;
         await _parkingSlotRepository.UpdateAsync(freeSlot);
+        await _parkingSlotHubContext.Clients.All.SendAsync("ParkingSlotUpdated", freeSlot);
 
         var car = await _carRepository.GetCarByLicencePlate(request.CarPlate);
         if (car is null)
@@ -170,6 +171,7 @@ public class CamSimulatorController : ControllerBase
         car.ParkingSlotId = freeSlot.Id;
         car.Status = CarStatus.WaitForParking;
         await _carRepository.UpdateAsync(car);
+        await _carHubContext.Clients.All.SendAsync("CarUpdated", car);
 
         var stopover = new Stopover
         {

@@ -22,24 +22,91 @@
 </div>
 
 @section Scripts {
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.js"></script>
     <script>
-        $(document).ready(function() {
-            setInterval(loadCars, 1000);
-        });
+        $(document).ready(function () {
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl("/carHub")
+                .build();
 
-        function loadCars() {
-            $.getJSON("/api/Car/my-cars", function (data) {
+            let connectionId = null;
+
+            connection.start()
+                .then(() => {
+                    console.log("SignalR connected");
+                    return connection.invoke("GetConnectionId");
+                })
+                .then(id => {
+                    connectionId = id;
+                    console.log("Connection ID:", connectionId);
+                    loadInitialCars();
+                })
+                .catch(err => console.error("Error connecting to SignalR:", err));
+
+            connection.on("CarAdded", function (car) {
+                if (car.status === 1) {
+                    addCarCard(car);
+                    $("#noCarsMessage").hide();
+                }
+            });
+
+            connection.on("CarUpdated", function (car) {
+                if (car.status === 1) {
+                    updateCarCard(car);
+                } else {
+                    removeCarCard(car.plate);
+                }
+                checkNoCarsMessage();
+            });
+
+            connection.on("CarDeleted", function (plate) {
+                removeCarCard(plate);
+                checkNoCarsMessage();
+            });
+
+            function loadInitialCars() {
+                $.getJSON("/api/Car/my-cars", function (data) {
+                    data = data.filter(car => car.status === 1);
+                    if (data.length > 0) {
+                        $("#noCarsMessage").hide();
+                        data.forEach(car => {
+                            addCarCard(car);
+                        });
+                    } else {
+                        $("#noCarsMessage").show();
+                    }
+                }).fail(function () {
+                    alert("Errore nel caricamento delle auto.");
+                });
+            }
+
+            function addCarCard(car) {
                 const carCardsContainer = $("#carCards");
-                const noCarsMessageContainer = $("#noCarsMessage");
-                carCardsContainer.empty();
+                const cardHtml = generateCarCardHtml(car);
+                carCardsContainer.append(cardHtml);
+            }
 
-                data = data.filter(car => car.status === 1);
-                if (data.length > 0) {
-                    noCarsMessageContainer.hide();
-                    data.forEach(car => {
-                        const cardHtml = `
-                            <div class="col-md-6 col-lg-4 mb-4">
+            function updateCarCard(car) {
+                removeCarCard(car.plate);
+                addCarCard(car);
+            }
+
+            function removeCarCard(plate) {
+                $(`#carCard-${plate}`).remove();
+            }
+
+            function checkNoCarsMessage() {
+                const carCardsContainer = $("#carCards");
+                if (carCardsContainer.children().length === 0) {
+                    $("#noCarsMessage").show();
+                } else {
+                    $("#noCarsMessage").hide();
+                }
+            }
+
+            function generateCarCardHtml(car) {
+                return `
+                            <div class="col-md-6 col-lg-4 mb-4" id="carCard-${car.plate}">
                                 <div class="card mt-4 shadow-sm">
                                     <div class="card-body">
                                         <h5 class="card-title">
@@ -51,7 +118,7 @@
                                             Marca: <span>${car.brand}</span>, Modello: <span>${car.model}</span>
                                         </h6>
                                         <p class="card-text">
-                                            <span class="badge bg-info text-dark">${car.statusName}</span>
+                                            <span class="badge bg-info text-dark">${getStatusName(car.status)}</span>
                                         </p>
                                         <div class="d-flex justify-content-around mt-3">
                                             <button class="btn btn-primary" onclick="recharge('${car.plate}', '${car.parkingId}')">
@@ -64,72 +131,80 @@
                                     </div>
                                 </div>
                             </div>`;
-                        carCardsContainer.append(cardHtml);
-                    });
-                } else {
-                    noCarsMessageContainer.show();
-                }
-            }).fail(function() {
-                alert("Errore nel caricamento delle auto.");
-            });
-        }
-
-        function recharge(plate, parkingId) {
-            var rechargePercentage = prompt('Inserisci la percentuale di ricarica desiderata (0-100): ');
-
-            rechargePercentage = parseFloat(rechargePercentage);
-            if (isNaN(rechargePercentage) || rechargePercentage < 0 || rechargePercentage > 100) {
-                alert('Valore non valido. Inserisci un numero tra 0 e 100.');
-                return;
             }
 
-            alert('Ricarica richiesta per la macchina con targa: ' + plate + ' con percentuale di ricarica: ' + rechargePercentage + '%');
+            function getStatusName(status) {
+                switch (status) {
+                    case 0: return "Out Of Parking";
+                    case 1: return "Waiting";
+                    case 2: return "Waiting For Charge";
+                    case 3: return "Waiting For ParkingSlot";
+                    case 4: return "In Charge";
+                    case 5: return "Charged";
+                    case 6: return "Parked";
+                    default: return "Unknown";
+                }
+            }
 
-            fetch(`/api/CamSimulator/recharge`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ 
-                    carPlate: plate,
-                    parkingId: parkingId,
-                    chargeLevel: rechargePercentage
-                }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Success:', data);
-                alert(`La tua ricarica verrà presa in carico. Posizione in coda: ${data}`);
-                loadCars();
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-                alert(`Errore durante la richiesta di ricarica dell\'auto con targa: ${plate}`);
-            });
-        }
+            function recharge(plate, parkingId) {
+                var rechargePercentage = prompt('Inserisci la percentuale di ricarica desiderata (0-100): ');
 
-        function park(plate, parkingId) {
-            alert('Sosta richiesta per macchina con targa: ' + plate);
+                rechargePercentage = parseFloat(rechargePercentage);
+                if (isNaN(rechargePercentage) || rechargePercentage < 0 || rechargePercentage > 100) {
+                    alert('Valore non valido. Inserisci un numero tra 0 e 100.');
+                    return;
+                }
 
-            fetch(`/api/CamSimulator/park`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    plate: plate,
-                    parkingId: parkingId
-                }),
-            })
-            .then(response => response.text())
-            .then(data => {
-                alert(data);
-                loadCars();
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-                alert('Errore durante richiesta della sosta dell\'auto con targa: ' + plate);
-            });
-        }
+                alert('Ricarica richiesta per la macchina con targa: ' + plate + ' con percentuale di ricarica: ' + rechargePercentage + '%');
+
+                fetch(`/api/CamSimulator/recharge`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Connection-Id': connectionId
+                    },
+                    body: JSON.stringify({
+                        carPlate: plate,
+                        parkingId: parkingId,
+                        chargeLevel: rechargePercentage
+                    }),
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Success:', data);
+                        alert(`La tua ricarica verrà presa in carico. Posizione in coda: ${data}`);
+                        loadCars();
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                        alert(`Errore durante la richiesta di ricarica dell\'auto con targa: ${plate}`);
+                    });
+            }
+
+            function park(plate, parkingId) {
+                alert('Sosta richiesta per macchina con targa: ' + plate);
+
+                fetch(`/api/CamSimulator/park`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Connection-Id': connectionId
+                    },
+                    body: JSON.stringify({
+                        plate: plate,
+                        parkingId: parkingId
+                    }),
+                })
+                    .then(response => response.text())
+                    .then(data => {
+                        alert(data);
+                        loadCars();
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                        alert('Errore durante richiesta della sosta dell\'auto con targa: ' + plate);
+                    });
+            }
+        });
     </script>
 }

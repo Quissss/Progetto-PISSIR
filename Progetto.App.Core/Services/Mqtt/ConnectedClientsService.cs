@@ -1,20 +1,24 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
+using Progetto.App.Core.Services.SignalR.Hubs;
 
 namespace Progetto.App.Core.Services.Mqtt;
 
 public class ConnectedClientsService
 {
+    private readonly ILoggerFactory _loggerFactory;
+    private readonly IHubContext<MwBotHub> _mwBotHubContext;
     private readonly ILogger<ConnectedClientsService> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
-    private readonly ILoggerFactory _loggerFactory;
     private readonly List<MqttMwBotClient> _connectedClients;
 
-    public ConnectedClientsService(ILogger<ConnectedClientsService> logger, IServiceScopeFactory serviceScopeFactory, ILoggerFactory loggerFactory)
+    public ConnectedClientsService(ILogger<ConnectedClientsService> logger, IServiceScopeFactory serviceScopeFactory, ILoggerFactory loggerFactory, IHubContext<MwBotHub> mwBotHubContext)
     {
         _logger = logger;
+        _mwBotHubContext = mwBotHubContext;
         _serviceScopeFactory = serviceScopeFactory;
         _loggerFactory = loggerFactory;
         _connectedClients = new List<MqttMwBotClient>();
@@ -48,6 +52,7 @@ public class ConnectedClientsService
                     _logger.LogError("Failed to connect MwBot with id {id} to MQTT server while getting connected clients", singleMwBot.Id);
                     singleMwBot.Status = MwBotStatus.Offline;
                     await mwBotRepository.UpdateAsync(singleMwBot);
+                    await _mwBotHubContext.Clients.All.SendAsync("MwBotUpdated", singleMwBot);
                 }
                 else
                 {
