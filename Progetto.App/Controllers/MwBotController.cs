@@ -30,7 +30,6 @@ public class MwBotController : ControllerBase
     private readonly ConnectedClientsService _connectedClientsService;
 
     public MwBotController(
-        ILogger<MwBotController> logger,
         MwBotRepository mwBotRespository,
         IHubContext<MwBotHub> hubContext,
         ILoggerFactory loggerFactory,

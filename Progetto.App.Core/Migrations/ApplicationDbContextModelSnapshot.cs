@@ -228,7 +228,7 @@ namespace Progetto.App.Core.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 10, 16, 23, 55, 24, 497, DateTimeKind.Local).AddTicks(8328));
+                        .HasDefaultValue(new DateTime(2024, 10, 22, 0, 56, 20, 286, DateTimeKind.Local).AddTicks(8135));
 
                     b.Property<decimal?>("TargetChargePercentage")
                         .HasColumnType("decimal(5, 2)");
@@ -271,6 +271,9 @@ namespace Progetto.App.Core.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("FromReservation")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsBeingHandled")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("ParkingId")
@@ -421,7 +424,7 @@ namespace Progetto.App.Core.Migrations
                     b.Property<DateTime>("PaymentDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 10, 16, 23, 55, 24, 500, DateTimeKind.Local).AddTicks(3260));
+                        .HasDefaultValue(new DateTime(2024, 10, 22, 0, 56, 20, 289, DateTimeKind.Local).AddTicks(5939));
 
                     b.Property<decimal?>("StartChargePercentage")
                         .HasColumnType("TEXT");
@@ -505,7 +508,7 @@ namespace Progetto.App.Core.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 10, 16, 23, 55, 24, 501, DateTimeKind.Local).AddTicks(1450));
+                        .HasDefaultValue(new DateTime(2024, 10, 22, 0, 56, 20, 290, DateTimeKind.Local).AddTicks(5181));
 
                     b.Property<bool>("ToPay")
                         .ValueGeneratedOnAdd()

@@ -22,15 +22,15 @@ public class ReservationRepository : GenericRepository<Reservation>
         return await _context.Reservations.Where(r => r.UserId == userId).ToListAsync();
     }
 
-    public async Task<IEnumerable<Reservation?>> GetByCarPlate(string LicencePlate)
+    public async Task<IEnumerable<Reservation?>> GetByCarPlate(string plate)
     {
-        return await _context.Reservations.Where(r => r.CarPlate == LicencePlate).ToListAsync();
+        return await _context.Reservations.Where(r => r.CarPlate == plate).ToListAsync();
     }
 
-    public async Task<IEnumerable<Reservation?>> UpdateCarIsInside(string LicencePlate, int ParkingId, bool CarInside)
+    public async Task<IEnumerable<Reservation?>> UpdateCarIsInside(string plate, int parkingId, bool carInside)
     {
-        var reservations = await _context.Reservations.Where(r => r.CarPlate == LicencePlate && r.ParkingId == ParkingId).ToListAsync();
-        reservations.ForEach(r => r.CarIsInside = CarInside);
+        var reservations = await _context.Reservations.Where(r => r.CarPlate == plate && r.ParkingId == parkingId).ToListAsync();
+        reservations.ForEach(r => r.CarIsInside = carInside);
         await _context.SaveChangesAsync();
         return reservations;
     }

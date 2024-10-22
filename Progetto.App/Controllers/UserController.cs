@@ -34,11 +34,10 @@ public class UserController : ControllerBase
         return Ok(new { UserId = user.Id });
     }
 
-
     [HttpPost("upgrade-to-premium")]
     public async Task<IActionResult> UpgradeToPremium()
     {
-
+        // TODO: Implement paypal payment
         var user = await _userManager.GetUserAsync(User);
         if (user == null)
         {
@@ -57,10 +56,7 @@ public class UserController : ControllerBase
             await _userManager.RemoveClaimAsync(user, premiumClaim);
             await _userManager.AddClaimAsync(user, new Claim("IsPremium", "1"));
         }
+
         return Ok(new { message = "Utente aggiornato a Premium con successo!" });
     }
-
-
-
-
 }

@@ -11,8 +11,8 @@ using Progetto.App.Core.Data;
 namespace Progetto.App.Core.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241015225702_Add-IR-IsBeingHandledFlag")]
-    partial class AddIRIsBeingHandledFlag
+    [Migration("20241021225623_Add_IR_IsBeingHandledFlag")]
+    partial class Add_IR_IsBeingHandledFlag
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -154,7 +154,7 @@ namespace Progetto.App.Core.Migrations
 
             modelBuilder.Entity("Progetto.App.Core.Models.Car", b =>
                 {
-                    b.Property<string>("LicencePlate")
+                    b.Property<string>("Plate")
                         .HasMaxLength(10)
                         .HasColumnType("TEXT");
 
@@ -186,7 +186,7 @@ namespace Progetto.App.Core.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("LicencePlate");
+                    b.HasKey("Plate");
 
                     b.HasIndex("OwnerId");
 
@@ -231,7 +231,7 @@ namespace Progetto.App.Core.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 10, 16, 0, 57, 1, 992, DateTimeKind.Local).AddTicks(2869));
+                        .HasDefaultValue(new DateTime(2024, 10, 22, 0, 56, 20, 286, DateTimeKind.Local).AddTicks(8135));
 
                     b.Property<decimal?>("TargetChargePercentage")
                         .HasColumnType("decimal(5, 2)");
@@ -270,9 +270,6 @@ namespace Progetto.App.Core.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("CarLicencePlate")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("CarPlate")
                         .HasColumnType("TEXT");
 
@@ -300,7 +297,7 @@ namespace Progetto.App.Core.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CarLicencePlate");
+                    b.HasIndex("CarPlate");
 
                     b.HasIndex("ParkingId");
 
@@ -333,7 +330,7 @@ namespace Progetto.App.Core.Migrations
 
                     b.HasIndex("ParkingId");
 
-                    b.ToTable("MWBots", (string)null);
+                    b.ToTable("MwBots", (string)null);
                 });
 
             modelBuilder.Entity("Progetto.App.Core.Models.Parking", b =>
@@ -430,7 +427,7 @@ namespace Progetto.App.Core.Migrations
                     b.Property<DateTime>("PaymentDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 10, 16, 0, 57, 1, 995, DateTimeKind.Local).AddTicks(1504));
+                        .HasDefaultValue(new DateTime(2024, 10, 22, 0, 56, 20, 289, DateTimeKind.Local).AddTicks(5939));
 
                     b.Property<decimal?>("StartChargePercentage")
                         .HasColumnType("TEXT");
@@ -514,7 +511,7 @@ namespace Progetto.App.Core.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 10, 16, 0, 57, 1, 996, DateTimeKind.Local).AddTicks(4409));
+                        .HasDefaultValue(new DateTime(2024, 10, 22, 0, 56, 20, 290, DateTimeKind.Local).AddTicks(5181));
 
                     b.Property<bool>("ToPay")
                         .ValueGeneratedOnAdd()
@@ -686,7 +683,8 @@ namespace Progetto.App.Core.Migrations
                 {
                     b.HasOne("Progetto.App.Core.Models.Car", "Car")
                         .WithMany()
-                        .HasForeignKey("CarPlate");
+                        .HasForeignKey("CarPlate")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Progetto.App.Core.Models.ImmediateRequest", "ImmediateRequest")
                         .WithMany()
@@ -722,7 +720,7 @@ namespace Progetto.App.Core.Migrations
                 {
                     b.HasOne("Progetto.App.Core.Models.Car", "Car")
                         .WithMany()
-                        .HasForeignKey("CarLicencePlate");
+                        .HasForeignKey("CarPlate");
 
                     b.HasOne("Progetto.App.Core.Models.Parking", "Parking")
                         .WithMany()
@@ -774,7 +772,7 @@ namespace Progetto.App.Core.Migrations
                     b.HasOne("Progetto.App.Core.Models.Car", "Car")
                         .WithMany()
                         .HasForeignKey("CarPlate")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("Progetto.App.Core.Models.Users.ApplicationUser", "User")
@@ -792,7 +790,8 @@ namespace Progetto.App.Core.Migrations
                 {
                     b.HasOne("Progetto.App.Core.Models.Car", "Car")
                         .WithMany()
-                        .HasForeignKey("CarPlate");
+                        .HasForeignKey("CarPlate")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("Progetto.App.Core.Models.Parking", "Parking")
                         .WithMany()
@@ -817,7 +816,8 @@ namespace Progetto.App.Core.Migrations
                 {
                     b.HasOne("Progetto.App.Core.Models.Car", "Car")
                         .WithMany()
-                        .HasForeignKey("CarPlate");
+                        .HasForeignKey("CarPlate")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Progetto.App.Core.Models.ParkingSlot", "ParkingSlot")
                         .WithMany()

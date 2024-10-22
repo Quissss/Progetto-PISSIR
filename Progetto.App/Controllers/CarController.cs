@@ -83,7 +83,7 @@ public class CarController : ControllerBase
         {
             _logger.LogDebug("Deleting car with licence plate {plate}", car.Plate);
 
-            var existingCar = await _carRepository.GetCarByPlate(licencePlate);
+            var existingCar = await _carRepository.GetCarByPlate(car.Plate);
             if (existingCar == null)
             {
                 _logger.LogWarning("Reservation with plate {plate} doesn't exist", car.Plate);
@@ -175,7 +175,7 @@ public class CarController : ControllerBase
 
     [HttpGet("{plate}")]
     [Authorize(Policy = PolicyNames.IsAdmin)]
-    public async Task<ActionResult<Car>> GetCarByLicencePlate(string plate)
+    public async Task<ActionResult<Car>> GetCarByPlate(string plate)
     {
         if (string.IsNullOrEmpty(plate))
         {
@@ -187,7 +187,7 @@ public class CarController : ControllerBase
         {
             _logger.LogDebug("Getting car with licence plate {plate}", plate);
 
-            var car = await _carRepository.GetCarByPlate(licencePlate);
+            var car = await _carRepository.GetCarByPlate(plate);
             if (car == null)
             {
                 _logger.LogWarning("Car with licence plate {plate} not found", plate);

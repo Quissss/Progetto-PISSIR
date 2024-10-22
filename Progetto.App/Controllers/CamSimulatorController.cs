@@ -82,7 +82,7 @@ public class CamSimulatorController : ControllerBase
 
     private async Task<string> CarEntering(Request request, Car car)
     {
-        var responseMessage = $"Detected carplate {request.LicencePlate} on arrival";
+        var responseMessage = $"Detected carplate {request.CarPlate} on arrival";
         _logger.LogInformation(responseMessage);
 
         car.Status = CarStatus.Waiting;
@@ -95,11 +95,11 @@ public class CamSimulatorController : ControllerBase
 
     private async Task<string> CarDeparting(Request request, Car car)
     {
-        var responseMessage = $"Detected carplate {request.LicencePlate} on departure";
+        var responseMessage = $"Detected carplate {request.CarPlate} on departure";
 
         if (car.ParkingId != request.ParkingId)
         {
-            responseMessage = $"Carplate {request.LicencePlate} is not in parking {request.ParkingId}";
+            responseMessage = $"Carplate {request.CarPlate} is not in parking {request.ParkingId}";
             _logger.LogWarning(responseMessage);
             return responseMessage;
         }
@@ -158,7 +158,7 @@ public class CamSimulatorController : ControllerBase
         }
 
         var userId = (await _userManager.GetUserAsync(User))?.Id.ToString();
-        _logger.LogInformation("L'utente {user} richiede parcheggio per la targa {LicencePlate}", userId, request.CarPlate);
+        _logger.LogInformation("L'utente {user} richiede parcheggio per la targa {Plate}", userId, request.CarPlate);
 
         var scope = _serviceScopeFactory.CreateScope();
         var _stopoverRepository = scope.ServiceProvider.GetRequiredService<StopoverRepository>();
@@ -172,7 +172,7 @@ public class CamSimulatorController : ControllerBase
         await _parkingSlotRepository.UpdateAsync(freeSlot);
         await _parkingSlotHubContext.Clients.All.SendAsync("ParkingSlotUpdated", freeSlot);
 
-        var car = await _carRepository.GetCarByPlate(request.LicencePlate);
+        var car = await _carRepository.GetCarByPlate(request.CarPlate);
         if (car is null)
         {
             return NotFound("Auto non trovata");
@@ -194,8 +194,8 @@ public class CamSimulatorController : ControllerBase
         await _stopoverRepository.AddAsync(stopover);
         stopover.ParkingSlot = freeSlot;
 
-        // TODO: implement update elsewhere
         await _carRepository.UpdateCarStatus(request.CarPlate, CarStatus.Parked);
+        await _carHubContext.Clients.All.SendAsync("CarUpdated", car);
 
         return Ok("Selezionata sosta. Riservato posto numero: " + stopover.ParkingSlot.Number);
     }
@@ -229,7 +229,8 @@ public class CamSimulatorController : ControllerBase
                 return BadRequest("Richiesta già in corso");
             }
 
-            await _carRepository.UpdateCarStatus(request.CarPlate, CarStatus.WaitForCharge);
+            var car = await _carRepository.UpdateCarStatus(request.CarPlate, CarStatus.WaitForCharge);
+            await _carHubContext.Clients.All.SendAsync("CarUpdated", car);
 
             var immediateRequest = new ImmediateRequest
             {

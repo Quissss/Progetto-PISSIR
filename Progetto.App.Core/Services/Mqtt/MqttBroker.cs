@@ -123,16 +123,6 @@ public class MqttBroker : IHostedService, IDisposable
                     // Done by default
                     break;
 
-                case MessageType.UpdateParkingSlot:
-                    _logger.LogDebug("MqttBroker: MwBot {id} requested MessageType.UpdateParkingSlot", mwBotMessage.Id);
-                    var parkingSlotRepository = scope.ServiceProvider.GetRequiredService<ParkingSlotRepository>();
-                    var parkingSlot = await parkingSlotRepository.GetByIdAsync(mwBotMessage.ParkingSlotId.Value);
-                    parkingSlot.Status = mwBotMessage.ParkingSlot.Status;
-
-                    await parkingSlotRepository.UpdateAsync(parkingSlot);
-                    await _parkingSlotHub.Clients.All.SendAsync("ParkingSlotUpdated", parkingSlot);
-                    break;
-
                 case MessageType.DisconnectClient:
                     _logger.LogDebug("MqttBroker: MwBot {id} requested MessageType.DisconnectClient", mwBotMessage.Id);
                     await HandleDisconnectMessageAsync(mwBotMessage, mwBotRepository);
@@ -141,7 +131,6 @@ public class MqttBroker : IHostedService, IDisposable
                 default:
                     _logger.LogDebug("MqttBroker: Invalid topic {topic}", arg.ApplicationMessage.Topic);
                     break;
-
             }
 
             mwBot.Status = mwBotMessage.Status;
@@ -287,8 +276,7 @@ public class MqttBroker : IHostedService, IDisposable
         }
 
         // Update car status
-        await carRepository.UpdateCarStatus(currentlyCharging.CarPlate, CarStatus.InCharge, currentlyCharging.ParkingSlotId);
-        var car = await carRepository.GetCarByLicencePlate(currentlyCharging.CarPlate);
+        var car = await carRepository.UpdateCarStatus(currentlyCharging.CarPlate, CarStatus.InCharge, currentlyCharging.ParkingSlotId);
         await _carHub.Clients.All.SendAsync("CarUpdated", car);
 
         // Update MwBot status
@@ -337,8 +325,7 @@ public class MqttBroker : IHostedService, IDisposable
         await currentlyChargingRepository.UpdateAsync(mwBotMessage.CurrentlyCharging);
         await _rechargeHub.Clients.All.SendAsync("RechargeUpdated", mwBotMessage.CurrentlyCharging);
 
-        await carRepository.UpdateCarStatus(mwBotMessage.CarPlate, CarStatus.Charged);
-        var car = await carRepository.GetCarByLicencePlate(mwBotMessage.CarPlate);
+        var car = await carRepository.UpdateCarStatus(mwBotMessage.CarPlate, CarStatus.Charged);
         await _carHub.Clients.All.SendAsync("CarUpdated", car);
 
         await immediateRequestRepository.DeleteAsync(ir => ir.Id == mwBotMessage.ImmediateRequestId);

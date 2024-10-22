@@ -159,15 +159,4 @@ $(function () {
             args.item["status"] = 0;
         },
     });
-
-    // TODO: implement SignalR
-    //setInterval(function () {
-    //    let grid = $("#mwBotGrid");
-    //    let sorting = grid.jsGrid("getSorting");
-    //    let filter = grid.jsGrid("getFilter");
-
-    //    sorting.field === undefined && sorting.order === undefined ?
-    //        grid.jsGrid("loadData", filter).done(() => grid.jsGrid()) :
-    //        grid.jsGrid("loadData", filter).done(() => grid.jsGrid("sort", sorting.field, sorting.order));
-    //}, 1000);
 });
