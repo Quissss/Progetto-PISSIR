@@ -26,6 +26,7 @@ public class MqttBroker : IHostedService, IDisposable
     private readonly ChargeManager _chargeManager;
     private readonly MqttServer _mqttServer;
     private readonly MqttServerOptions _options;
+
     private readonly ILogger<MqttBroker> _logger;
     private readonly IHubContext<CarHub> _carHub;
     private readonly IHubContext<MwBotHub> _botHub;
@@ -246,6 +247,8 @@ public class MqttBroker : IHostedService, IDisposable
             immediateRequest = await _chargeManager.ServeNext(mwBot);
             if (immediateRequest != null)
             {
+                _logger.LogDebug("MqttBroker: Immediate request found for MwBot {id}", mwBot.Id);
+
                 // Create a new currently charging record if a new request is assigned
                 currentlyCharging = new CurrentlyCharging
                 {

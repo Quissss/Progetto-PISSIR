@@ -13,15 +13,13 @@ async function loadCharges() {
 
         charges.forEach(charge => {
             const $row = $('<tr>').html(`
-                                <td>${charge.carPlate}</td>
-                                <td>${charge.parkingSlotId}</td>
-                                <td>${charge.startChargingTime ? new Date(charge.startChargingTime).toLocaleString() : '-'}</td>
-                                <td>${charge.endChargingTime ? new Date(charge.endChargingTime).toLocaleString() : '-'}</td>
-                                <td>${charge.totalCost}</td>
-                                <td>
-                                    ${charge.toPay ? `<button class="btn btn-success" onclick="handlePayment(${charge.id}, true)">Pay Now</button>` : ''}
-                                </td>
-                            `);
+                            <td>${charge.carPlate}</td>
+                            <td>${charge.parkingSlotId}</td>
+                            <td>${charge.startChargingTime ? new Date(charge.startChargingTime).toLocaleString() : '-'}</td>
+                            <td>${charge.endChargingTime ? new Date(charge.endChargingTime).toLocaleString() : '-'}</td>
+                            <td>${charge.totalCost}</td>
+                            <td>${charge.toPay ? `<button class="btn btn-success" onclick="handlePayment(${charge.id}, true)">Pay Now</button>` : ''}</td>
+                        `);
             $tbody.append($row);
         });
     } catch (error) {
@@ -38,15 +36,13 @@ async function loadStopovers() {
 
         stopovers.forEach(stop => {
             const $row = $('<tr>').html(`
-                                <td>${stop.carPlate}</td>
-                                <td>${stop.parkingSlotId}</td>
-                                <td>${stop.startStopoverTime ? new Date(stop.startStopoverTime).toLocaleString() : '-'}</td >
-                                <td>${stop.endStopoverTime ? new Date(stop.endStopoverTime).toLocaleString() : '-'}</td>
-                                <td>${stop.totalCost}</td>
-                                <td>
-                                    ${stop.toPay ? `<button class="btn btn-success" onclick="handlePayment(${stop.id}, false)">Pay Now</button>` : ''}
-                                </td>
-                            `);
+                            <td>${stop.carPlate}</td>
+                            <td>${stop.parkingSlotId}</td>
+                            <td>${stop.startStopoverTime ? new Date(stop.startStopoverTime).toLocaleString() : '-'}</td >
+                            <td>${stop.endStopoverTime ? new Date(stop.endStopoverTime).toLocaleString() : '-'}</td>
+                            <td>${stop.totalCost}</td>
+                            <td>${stop.toPay ? `<button class="btn btn-success" onclick="handlePayment(${stop.id}, false)">Pay Now</button>` : ''}</td>
+                        `);
             $tbody.append($row);
         });
     } catch (error) {

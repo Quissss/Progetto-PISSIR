@@ -80,31 +80,30 @@ $(function () {
 
     function generateCarCardHtml(car) {
         return `
-                            <div class="col-md-6 col-lg-4 mb-4" id="carCard-${car.plate}">
-                                <div class="card mt-4 shadow-sm">
-                                    <div class="card-body">
-                                        <h5 class="card-title">
-                                            <i class="fa-solid fa-car"></i>
-                                            Auto: <span>${car.plate}</span>
-                                        </h5>
-                                        <h6 class="card-subtitle mb-2 text-muted">
-                                            <i class="fa-solid fa-car-side"></i>
-                                            Marca: <span>${car.brand}</span>, Modello: <span>${car.model}</span>
-                                        </h6>
-                                        <p class="card-text">
-                                            <span class="badge bg-info text-dark">${getStatusName(car.status)}</span>
-                                        </p>
-                                        <div class="d-flex justify-content-around mt-3">
-                                            <button class="btn btn-primary" onclick="recharge('${car.plate}', '${car.parkingId}')">
-                                                <i class="fa-solid fa-battery-full"></i> Ricarica
-                                            </button>
-                                            <button class="btn btn-secondary" onclick="park('${car.plate}', '${car.parkingId}')">
-                                                <i class="fa-solid fa-parking"></i> Sosta
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>`;
+            <div class="col-md-6 col-lg-4 mb-4" id="carCard-${car.plate}">
+                <div class="card mt-4 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fa-solid fa-car"></i>
+                            <span>${car.brand}</span>, <span>${car.model}</span>
+                        </h5>
+                        <h6 class="card-subtitle mb-2 text-muted">
+                            <span>${car.plate}</span>
+                        </h6>
+                        <p class="card-text">
+                            <span class="badge bg-info text-dark">${getStatusName(car.status)}</span>
+                        </p>
+                        <div class="d-flex justify-content-around mt-3">
+                            <button class="btn btn-primary" onclick="recharge('${car.plate}', '${car.parkingId}')">
+                                <i class="fa-solid fa-battery-full"></i> Ricarica
+                            </button>
+                            <button class="btn btn-secondary" onclick="park('${car.plate}', '${car.parkingId}')">
+                                <i class="fa-solid fa-parking"></i> Sosta
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
     }
 
     function getStatusName(status) {

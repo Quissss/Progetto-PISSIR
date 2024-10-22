@@ -24,7 +24,7 @@ public class ChargeManager : IDisposable
 
     private Timer? _reservationCheckTimer;
     private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(1); // Check interval for reservations cleanup
-    private readonly TimeSpan _expirationTime = TimeSpan.FromMinutes(2); // Expiration time for reservations
+    private readonly TimeSpan _expirationTime = TimeSpan.FromMinutes(20); // Expiration time for reservations
 
     public ChargeManager(ILogger<ChargeManager> logger, IServiceScopeFactory serviceScopeFactory, IHubContext<CarHub> carHubContext, IHubContext<ParkingSlotHub> parkingSlotHubContext)
     {
@@ -54,7 +54,7 @@ public class ChargeManager : IDisposable
         try
         {
             // Filter outdated reservations
-            var expiredReservations = _reservations?.Where(r => r.RequestDate.HasValue && (DateTime.Now - r.RequestDate.Value) > _expirationTime).ToList();
+            var expiredReservations = _reservations?.Where(r => r.RequestDate.HasValue && (DateTime.Now - r.RequestDate.Value) > _expirationTime && !r.CarIsInside).ToList();
 
             if (expiredReservations?.Count > 0)
             {
@@ -248,21 +248,21 @@ public class ChargeManager : IDisposable
 
                 _logger.LogInformation("MwBot {mwBot}: Generating immediate request", mwBot.Id);
 
-                immediateRequest = await _immediateRequestRepository.AddAsync(
+                immediateRequest =
                     new ImmediateRequest
                     {
                         RequestDate = DateTime.Now,
                         CarPlate = nextReservation.CarPlate,
                         RequestedChargeLevel = nextReservation.RequestedChargeLevel,
                         ParkingId = mwBot.ParkingId.Value,
-                        Parking = await _parkingRepository.GetByIdAsync(mwBot.ParkingId.Value),
                         ParkingSlotId = freeSlot.Id,
-                        ParkingSlot = await _parkingSlotRepository.GetByIdAsync(freeSlot.Id),
                         UserId = nextReservation.UserId,
-                        FromReservation = true
-                    }
-                );
-                if (immediateRequest is null) return null;
+                        FromReservation = true,
+                        IsBeingHandled = false,
+                    };
+
+                var addSuccess = await _immediateRequestRepository.AddAsync(immediateRequest);
+                if (addSuccess is null) return null;
 
                 await _reservationRepository.DeleteAsync(r => r.Id == nextReservation.Id);
                 _logger.LogInformation("MwBot {mwBot}: Serving reservation from user {nextReservation?.UserId} for reservation time {nextReservation?.ReservationTime}.", mwBot.Id, nextReservation?.UserId, nextReservation?.ReservationTime);
@@ -282,6 +282,10 @@ public class ChargeManager : IDisposable
 
                 _logger.LogInformation("MwBot {mwBot}: Created immediate request for user {immediateRequest.UserId} at {immediateRequest.RequestDate}.", mwBot.Id, immediateRequest.UserId, immediateRequest.RequestDate);
             }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while serving reservation.");
         }
         finally
         {
@@ -303,6 +307,10 @@ public class ChargeManager : IDisposable
                 immediateRequest = GetNextImmediateRequest();
                 _logger.LogInformation("MwBot {mwBot}: Serving immediate request from user {immediateRequest?.UserId} at {immediateRequest?.RequestDate}.", mwBot.Id, immediateRequest?.UserId, immediateRequest?.RequestDate);
             }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while serving immediate request.");
         }
         finally
         {

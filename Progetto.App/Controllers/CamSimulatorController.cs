@@ -90,6 +90,17 @@ public class CamSimulatorController : ControllerBase
         await _carRepository.UpdateAsync(car);
         await _carHubContext.Clients.All.SendAsync("CarUpdated", car);
 
+        var reservations = await _reservationRepository.UpdateCarIsInside(request.CarPlate, request.ParkingId, true);
+        if (reservations.Any())
+        {
+            _logger.LogDebug($"Reservations found for car {request.CarPlate}, setting car is inside to true");
+            await _chargeManager.UpdateReservationsCarIsInside(request.CarPlate, request.ParkingId, true);
+
+            car.Status = CarStatus.WaitForCharge;
+            await _carRepository.UpdateAsync(car);
+            await _carHubContext.Clients.All.SendAsync("CarUpdated", car);
+        }
+
         return responseMessage;
     }
 
