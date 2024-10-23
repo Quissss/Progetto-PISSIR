@@ -149,7 +149,7 @@ public class MqttMwBotClient : IDisposable
             MwBotMessage.LatestLocation = MwBot.LatestLocation = brokerMessage.LatestLocation;
         }
 
-        _logger.LogDebug("MwBot {id}: Received message: {payload} from topic: {message.ApplicationMessage.Topic}", MwBot.Id, payload, topic);
+        //_logger.LogDebug("MwBot {id}: Received message: {payload} from topic: {message.ApplicationMessage.Topic}", MwBot.Id, payload, topic);
 
         try
         {
@@ -776,6 +776,7 @@ public class MqttMwBotClient : IDisposable
             {
                 MwBotMessage.MessageType = MessageType.DisconnectClient;
                 MwBotMessage.Status = MwBot.Status = MwBotStatus.Offline;
+                MwBotMessage.BatteryPercentage = MwBot.BatteryPercentage;
             }
 
             await PublishClientMessageAsync(MwBotMessage, _cancellationTokenSource.Token);

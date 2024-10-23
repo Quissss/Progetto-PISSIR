@@ -168,14 +168,7 @@ public class MqttBroker : IHostedService, IDisposable
         var parkingSlotRepository = scope.ServiceProvider.GetRequiredService<ParkingSlotRepository>();
         var currentlyChargingRepository = scope.ServiceProvider.GetRequiredService<CurrentlyChargingRepository>();
 
-        var mwBot = await mwBotRepository.GetByIdAsync(mwBotMessage.Id);
-        if (mwBot is null)
-        {
-            _logger.LogWarning("MwBot not found");
-            return;
-        }
-        mwBot.Status = MwBotStatus.Offline;
-        await mwBotRepository.UpdateAsync(mwBot);
+        var mwBot = await mwBotRepository.UpdateMwBotStatus(mwBotMessage.Id, MwBotStatus.Offline);
         await _botHub.Clients.All.SendAsync("MwBotUpdated", mwBot);
 
         _logger.LogDebug("MqttBroker: MwBot {id} disconnected", mwBotMessage.Id);
@@ -192,14 +185,17 @@ public class MqttBroker : IHostedService, IDisposable
             return;
         }
 
+        if (mwBot.LatestLocation != MwBotLocations.InDock)
+        {
+            mwBot = await mwBotRepository.UpdateMwBotStatus(mwBot.Id, MwBotStatus.MovingToDock);
+            await _botHub.Clients.All.SendAsync("MwBotUpdated", mwBot);
+        }
+
         mwBotMessage.MessageType = MessageType.StartRecharge;
         mwBotMessage.Id = mwBot.Id;
         mwBotMessage.Status = mwBot.Status;
         mwBotMessage.BatteryPercentage = mwBot.BatteryPercentage;
         mwBotMessage.LatestLocation = mwBot.LatestLocation;
-        mwBot.Status = MwBotStatus.MovingToDock;
-        await mwBotRepository.UpdateAsync(mwBot);
-        await _botHub.Clients.All.SendAsync("MwBotUpdated", mwBot);
 
         await PublishMessage(mwBotMessage);
         _logger.LogDebug("MqttBroker: Confirmation sent to MwBot {id} to start recharging", mwBotMessage.Id);
@@ -224,10 +220,18 @@ public class MqttBroker : IHostedService, IDisposable
         CurrentlyCharging? currentlyCharging = null;
         ImmediateRequest? immediateRequest = null;
 
-        // Check if the bot has a currently charging session
+        // Check if the bot has a currently charging session or there's a free charging session to progress
         currentlyCharging = await currentlyChargingRepository.GetActiveByMwBot(mwBot.Id);
+        currentlyCharging ??= await currentlyChargingRepository.GetActiveWithNoBot();
         if (currentlyCharging != null)
         {
+            // If the charging session is not assigned to the bot, assign it
+            if (currentlyCharging.MwBotId is null)
+            {
+                currentlyCharging.MwBotId = mwBot.Id;
+                await currentlyChargingRepository.UpdateAsync(currentlyCharging);
+            }
+
             // If there's an active charging session, get the associated immediate request
             if (currentlyCharging.ImmediateRequestId.HasValue)
             {
@@ -283,8 +287,7 @@ public class MqttBroker : IHostedService, IDisposable
         await _carHub.Clients.All.SendAsync("CarUpdated", car);
 
         // Update MwBot status
-        mwBot.Status = MwBotStatus.ChargingCar;
-        await mwBotRepository.UpdateAsync(mwBot);
+        mwBot = await mwBotRepository.UpdateMwBotStatus(mwBot.Id, MwBotStatus.ChargingCar);
         await _botHub.Clients.All.SendAsync("MwBotUpdated", mwBot);
 
         // Prepare and publish the response message
@@ -364,12 +367,12 @@ public class MqttBroker : IHostedService, IDisposable
     {
         var scope = _serviceScopeFactory.CreateScope();
         var mwBotRepository = scope.ServiceProvider.GetRequiredService<MwBotRepository>();
-        var mwBot = await mwBotRepository.GetByIdAsync(currentCharge.MwBotId);
+        var mwBot = await mwBotRepository.GetByIdAsync(currentCharge.MwBotId.Value);
 
         var mwBotMessage = new MqttClientMessage
         {
             MessageType = MessageType.StopCharging,
-            Id = currentCharge.MwBotId,
+            Id = currentCharge.MwBotId.Value,
             Status = MwBotStatus.StandBy,
             CurrentlyCharging = currentCharge,
             CarPlate = currentCharge.CarPlate,

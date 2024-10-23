@@ -215,7 +215,7 @@ namespace Progetto.App.Core.Migrations
                     b.Property<int?>("ImmediateRequestId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("MwBotId")
+                    b.Property<int?>("MwBotId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int?>("ParkingSlotId")
@@ -228,7 +228,7 @@ namespace Progetto.App.Core.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 10, 22, 0, 56, 20, 286, DateTimeKind.Local).AddTicks(8135));
+                        .HasDefaultValue(new DateTime(2024, 10, 23, 0, 44, 46, 323, DateTimeKind.Local).AddTicks(70));
 
                     b.Property<decimal?>("TargetChargePercentage")
                         .HasColumnType("decimal(5, 2)");
@@ -424,7 +424,7 @@ namespace Progetto.App.Core.Migrations
                     b.Property<DateTime>("PaymentDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 10, 22, 0, 56, 20, 289, DateTimeKind.Local).AddTicks(5939));
+                        .HasDefaultValue(new DateTime(2024, 10, 23, 0, 44, 46, 325, DateTimeKind.Local).AddTicks(4883));
 
                     b.Property<decimal?>("StartChargePercentage")
                         .HasColumnType("TEXT");
@@ -508,7 +508,7 @@ namespace Progetto.App.Core.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 10, 22, 0, 56, 20, 290, DateTimeKind.Local).AddTicks(5181));
+                        .HasDefaultValue(new DateTime(2024, 10, 23, 0, 44, 46, 326, DateTimeKind.Local).AddTicks(3079));
 
                     b.Property<bool>("ToPay")
                         .ValueGeneratedOnAdd()
@@ -690,9 +690,7 @@ namespace Progetto.App.Core.Migrations
 
                     b.HasOne("Progetto.App.Core.Models.MwBot", "MwBot")
                         .WithMany()
-                        .HasForeignKey("MwBotId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("MwBotId");
 
                     b.HasOne("Progetto.App.Core.Models.ParkingSlot", "ParkingSlot")
                         .WithMany()

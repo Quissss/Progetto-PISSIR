@@ -50,9 +50,8 @@ public class ConnectedClientsService
                 if (!connectResult) // If connection fails, set MwBot status to offline
                 {
                     _logger.LogError("Failed to connect MwBot with id {id} to MQTT server while getting connected clients", singleMwBot.Id);
-                    singleMwBot.Status = MwBotStatus.Offline;
-                    await mwBotRepository.UpdateAsync(singleMwBot);
-                    await _mwBotHubContext.Clients.All.SendAsync("MwBotUpdated", singleMwBot);
+                    var mwBot = await mwBotRepository.UpdateMwBotStatus(singleMwBot.Id, MwBotStatus.Offline);
+                    await _mwBotHubContext.Clients.All.SendAsync("MwBotUpdated", mwBot);
                 }
                 else
                 {

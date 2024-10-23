@@ -112,8 +112,7 @@ public class MwBotController : ControllerBase
                 return BadRequest("MwBot is already turned on");
             }
 
-            mwBot.Status = MwBotStatus.StandBy;
-            await _mwBotRepository.UpdateAsync(mwBot);
+            mwBot = await _mwBotRepository.UpdateMwBotStatus(mwBot.Id, MwBotStatus.StandBy);
             var connectionId = Request.Headers["X-Connection-Id"].ToString();
             await _hubContext.Clients.AllExcept(connectionId).SendAsync("MwBotUpdated", mwBot);
 
@@ -169,8 +168,6 @@ public class MwBotController : ControllerBase
 
         try
         {
-            // TODO: togliere l'affidamento della ricarica al bot spento (rimuovere mwbotid da currentlycharging e riassegnarlo quando un bot trova la ricarica non completata)
-
             _logger.LogDebug("Turning off MwBot with id {id}", mwBot.Id);
             var client = _connectedClientsService.GetConnectedClients().FirstOrDefault(c => c.MwBot?.Id == mwBot.Id);
 
@@ -181,10 +178,17 @@ public class MwBotController : ControllerBase
                 client.Dispose();
             }
 
-            mwBot.Status = MwBotStatus.Offline;
-            await _mwBotRepository.UpdateAsync(mwBot);
+            mwBot = await _mwBotRepository.UpdateMwBotStatus(mwBot.Id, MwBotStatus.Offline);
             var connectionId = Request.Headers["X-Connection-Id"].ToString();
             await _hubContext.Clients.AllExcept(connectionId).SendAsync("MwBotUpdated", mwBot);
+
+            var scope = _serviceScopeFactory.CreateScope();
+            var currentlyChargingRepository = scope.ServiceProvider.GetRequiredService<CurrentlyChargingRepository>();
+            var currentlyCharging = await currentlyChargingRepository.GetByActiveMwBotId(mwBot.Id);
+            if (currentlyCharging != null) {
+                currentlyCharging.MwBotId = null;
+                await currentlyChargingRepository.UpdateAsync(currentlyCharging);
+            }
 
             _logger.LogDebug("MwBot with id {id} turned off", mwBot.Id);
             return Ok(mwBot);
