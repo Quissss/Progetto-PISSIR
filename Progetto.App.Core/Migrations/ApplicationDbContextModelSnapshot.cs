@@ -15,7 +15,7 @@ namespace Progetto.App.Core.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.6");
+            modelBuilder.HasAnnotation("ProductVersion", "8.0.8");
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
@@ -64,70 +64,6 @@ namespace Progetto.App.Core.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("AspNetRoleClaims", (string)null);
-                });
-
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUser", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("AccessFailedCount")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Email")
-                        .HasMaxLength(256)
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("EmailConfirmed")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("LockoutEnabled")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTimeOffset?>("LockoutEnd")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("NormalizedEmail")
-                        .HasMaxLength(256)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("NormalizedUserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PasswordHash")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("PhoneNumberConfirmed")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("SecurityStamp")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("TwoFactorEnabled")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("UserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NormalizedEmail")
-                        .HasDatabaseName("EmailIndex");
-
-                    b.HasIndex("NormalizedUserName")
-                        .IsUnique()
-                        .HasDatabaseName("UserNameIndex");
-
-                    b.ToTable("AspNetUsers", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
@@ -215,7 +151,7 @@ namespace Progetto.App.Core.Migrations
 
             modelBuilder.Entity("Progetto.App.Core.Models.Car", b =>
                 {
-                    b.Property<string>("LicencePlate")
+                    b.Property<string>("Plate")
                         .HasMaxLength(10)
                         .HasColumnType("TEXT");
 
@@ -247,7 +183,7 @@ namespace Progetto.App.Core.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("LicencePlate");
+                    b.HasKey("Plate");
 
                     b.HasIndex("OwnerId");
 
@@ -279,7 +215,7 @@ namespace Progetto.App.Core.Migrations
                     b.Property<int?>("ImmediateRequestId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("MwBotId")
+                    b.Property<int?>("MwBotId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int?>("ParkingSlotId")
@@ -292,7 +228,7 @@ namespace Progetto.App.Core.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 8, 5, 17, 40, 32, 457, DateTimeKind.Local).AddTicks(8690));
+                        .HasDefaultValue(new DateTime(2024, 10, 23, 0, 44, 46, 323, DateTimeKind.Local).AddTicks(70));
 
                     b.Property<decimal?>("TargetChargePercentage")
                         .HasColumnType("decimal(5, 2)");
@@ -331,13 +267,13 @@ namespace Progetto.App.Core.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("CarLicencePlate")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("CarPlate")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("FromReservation")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsBeingHandled")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("ParkingId")
@@ -358,7 +294,7 @@ namespace Progetto.App.Core.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CarLicencePlate");
+                    b.HasIndex("CarPlate");
 
                     b.HasIndex("ParkingId");
 
@@ -378,6 +314,9 @@ namespace Progetto.App.Core.Migrations
                     b.Property<decimal>("BatteryPercentage")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("LatestLocation")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int?>("ParkingId")
                         .HasColumnType("INTEGER");
 
@@ -388,7 +327,7 @@ namespace Progetto.App.Core.Migrations
 
                     b.HasIndex("ParkingId");
 
-                    b.ToTable("MWBots", (string)null);
+                    b.ToTable("MwBots", (string)null);
                 });
 
             modelBuilder.Entity("Progetto.App.Core.Models.Parking", b =>
@@ -485,7 +424,7 @@ namespace Progetto.App.Core.Migrations
                     b.Property<DateTime>("PaymentDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 8, 5, 17, 40, 32, 460, DateTimeKind.Local).AddTicks(7498));
+                        .HasDefaultValue(new DateTime(2024, 10, 23, 0, 44, 46, 325, DateTimeKind.Local).AddTicks(4883));
 
                     b.Property<decimal?>("StartChargePercentage")
                         .HasColumnType("TEXT");
@@ -569,7 +508,7 @@ namespace Progetto.App.Core.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue(new DateTime(2024, 8, 5, 17, 40, 32, 462, DateTimeKind.Local).AddTicks(947));
+                        .HasDefaultValue(new DateTime(2024, 10, 23, 0, 44, 46, 326, DateTimeKind.Local).AddTicks(3079));
 
                     b.Property<bool>("ToPay")
                         .ValueGeneratedOnAdd()
@@ -593,6 +532,82 @@ namespace Progetto.App.Core.Migrations
                     b.ToTable("Stopover", (string)null);
                 });
 
+            modelBuilder.Entity("Progetto.App.Core.Models.Users.ApplicationUser", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsTelegramNotificationEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("TelegramChatId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("TelegramUsername")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TelegramVerificationCode")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedEmail")
+                        .HasDatabaseName("EmailIndex");
+
+                    b.HasIndex("NormalizedUserName")
+                        .IsUnique()
+                        .HasDatabaseName("UserNameIndex");
+
+                    b.ToTable("AspNetUsers", (string)null);
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -604,7 +619,7 @@ namespace Progetto.App.Core.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                    b.HasOne("Progetto.App.Core.Models.Users.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -613,7 +628,7 @@ namespace Progetto.App.Core.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                    b.HasOne("Progetto.App.Core.Models.Users.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -628,7 +643,7 @@ namespace Progetto.App.Core.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                    b.HasOne("Progetto.App.Core.Models.Users.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -637,7 +652,7 @@ namespace Progetto.App.Core.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                    b.HasOne("Progetto.App.Core.Models.Users.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -646,7 +661,7 @@ namespace Progetto.App.Core.Migrations
 
             modelBuilder.Entity("Progetto.App.Core.Models.Car", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "Owner")
+                    b.HasOne("Progetto.App.Core.Models.Users.ApplicationUser", "Owner")
                         .WithMany()
                         .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -665,7 +680,8 @@ namespace Progetto.App.Core.Migrations
                 {
                     b.HasOne("Progetto.App.Core.Models.Car", "Car")
                         .WithMany()
-                        .HasForeignKey("CarPlate");
+                        .HasForeignKey("CarPlate")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Progetto.App.Core.Models.ImmediateRequest", "ImmediateRequest")
                         .WithMany()
@@ -674,15 +690,13 @@ namespace Progetto.App.Core.Migrations
 
                     b.HasOne("Progetto.App.Core.Models.MwBot", "MwBot")
                         .WithMany()
-                        .HasForeignKey("MwBotId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("MwBotId");
 
                     b.HasOne("Progetto.App.Core.Models.ParkingSlot", "ParkingSlot")
                         .WithMany()
                         .HasForeignKey("ParkingSlotId");
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
+                    b.HasOne("Progetto.App.Core.Models.Users.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId");
 
@@ -701,7 +715,7 @@ namespace Progetto.App.Core.Migrations
                 {
                     b.HasOne("Progetto.App.Core.Models.Car", "Car")
                         .WithMany()
-                        .HasForeignKey("CarLicencePlate");
+                        .HasForeignKey("CarPlate");
 
                     b.HasOne("Progetto.App.Core.Models.Parking", "Parking")
                         .WithMany()
@@ -713,7 +727,7 @@ namespace Progetto.App.Core.Migrations
                         .WithMany()
                         .HasForeignKey("ParkingSlotId");
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
+                    b.HasOne("Progetto.App.Core.Models.Users.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -753,10 +767,10 @@ namespace Progetto.App.Core.Migrations
                     b.HasOne("Progetto.App.Core.Models.Car", "Car")
                         .WithMany()
                         .HasForeignKey("CarPlate")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
+                    b.HasOne("Progetto.App.Core.Models.Users.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -771,7 +785,8 @@ namespace Progetto.App.Core.Migrations
                 {
                     b.HasOne("Progetto.App.Core.Models.Car", "Car")
                         .WithMany()
-                        .HasForeignKey("CarPlate");
+                        .HasForeignKey("CarPlate")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("Progetto.App.Core.Models.Parking", "Parking")
                         .WithMany()
@@ -779,7 +794,7 @@ namespace Progetto.App.Core.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
+                    b.HasOne("Progetto.App.Core.Models.Users.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -796,13 +811,14 @@ namespace Progetto.App.Core.Migrations
                 {
                     b.HasOne("Progetto.App.Core.Models.Car", "Car")
                         .WithMany()
-                        .HasForeignKey("CarPlate");
+                        .HasForeignKey("CarPlate")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Progetto.App.Core.Models.ParkingSlot", "ParkingSlot")
                         .WithMany()
                         .HasForeignKey("ParkingSlotId");
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
+                    b.HasOne("Progetto.App.Core.Models.Users.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId");
 

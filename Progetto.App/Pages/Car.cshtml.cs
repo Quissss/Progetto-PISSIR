@@ -1,14 +1,15 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Progetto.App.Core.Models.Users;
 
 namespace Progetto.App.Pages;
 
 public class CarModel : PageModel
 {
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
     public string UserId { get; private set; }
 
-    public CarModel(UserManager<IdentityUser> userManager)
+    public CarModel(UserManager<ApplicationUser> userManager)
     {
         _userManager = userManager;
     }

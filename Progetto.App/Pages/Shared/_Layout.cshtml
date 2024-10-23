@@ -1,5 +1,5 @@
 ﻿@using Progetto.App.Core.Models.Users
-@inject SignInManager<IdentityUser> SignInManager
+@inject SignInManager<ApplicationUser> SignInManager
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -45,6 +45,14 @@
                                         <i class="fas fa-tachometer-alt me-2"></i> Dashboard
                                     </a>
                                 </li>
+                                if ((int)Role.User == Convert.ToInt32(role))
+                                {
+                                    <li class="nav-item">
+                                        <a class="nav-link text-dark d-flex align-items-center" asp-area="" asp-page="/Premium">
+                                            <i class="fas fa-tachometer-alt me-2"></i> Premium Sub
+                                        </a>
+                                    </li>
+                                }
 
                             }
 
@@ -109,7 +117,7 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/5.0.9/signalr.min.js"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

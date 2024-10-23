@@ -15,42 +15,100 @@ namespace Progetto.App.Core.Services.Mqtt;
 /// <summary>
 /// MwBot MQTT client (curresponds to single instance of mwbot when it's online)
 /// </summary>
-public class MqttMwBotClient
+public class MqttMwBotClient : IDisposable
 {
-    private MqttClientOptions? _options;
     private readonly IMqttClient _mqttClient;
     private readonly ILogger<MqttMwBotClient> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
-    private const int _rechargeThreshold = 5; // Battery percentage threshold for recharging
-    private readonly Timer _timer;
-    private readonly Timer _reconnectTimer;
-    private CancellationTokenSource _cancellationTokenSource;
-    private CancellationToken _cancellationToken;
-    private const int _chargeDelay = 1000;
-    private const int _rechargeDelay = 1000;
-    private MqttClientMessage _mwBotMessage { get; set; }
+
+    private MqttClientOptions? _options;
+    private MqttClientMessage MwBotMessage { get; set; } = new();
     private ImmediateRequest? HandlingRequest { get; set; }
     public MwBot? MwBot { get; set; }
+
+    private CancellationTokenSource _cancellationTokenSource = new();
+
+    // timers
+    private readonly Timer _timer = new(1000);
+    private readonly Timer _reconnectTimer = new(5000);
+
+    // flags
+    private bool _isConnecting = false;
+    private bool _isCharging = false;
+    private bool _isRecharging = false;
+
+    // counters
+    private int _chargeRequested = 0; // Number of consequent charge requests
+    private const int _maxRequestsBeforeRecharge = 3; // Number of consequent charge requests before recharging
+
+    // constants
+    private const int _rechargeThreshold = 5; // Battery percentage threshold for recharge triggering
+    private const int _maxRechargeThreshold = 80; // Maximum battery percentage threshold for recharge
+
+    // delays
+    private const int _chargeDelay = 1000;
+    private const int _rechargeDelay = 1000;
+
+    // locks and semaphores
+    private readonly object _timerLock = new();
+    private readonly object _lockMessage = new();
+    private readonly SemaphoreSlim _connectionSemaphore = new SemaphoreSlim(1, 1);
 
     public MqttMwBotClient(ILogger<MqttMwBotClient> logger, IServiceScopeFactory serviceScopeFactory)
     {
         _logger = logger;
         _serviceScopeFactory = serviceScopeFactory;
-        _cancellationTokenSource = new CancellationTokenSource();
-        _cancellationToken = _cancellationTokenSource.Token;
 
         _mqttClient = new MqttFactory().CreateMqttClient();
-        _mqttClient.ApplicationMessageReceivedAsync += async (e) => await HandleReceivedApplicationMessage(e, _cancellationToken);
+        _mqttClient.ApplicationMessageReceivedAsync += async (e) => await HandleReceivedApplicationMessage(e, _cancellationTokenSource.Token);
+        _mqttClient.DisconnectedAsync += async (e) => await HandleClientDisconnectedAsync(e);
 
-        // Set timer for processing charge requests
-        _timer = new Timer(1000);
-        _timer.Elapsed += async (sender, e) => await TimedProcessChargeRequest(sender, _cancellationToken);
+        _timer.Elapsed += async (sender, e) => await TimedProcessChargeRequest(_cancellationTokenSource.Token);
+        _reconnectTimer.Elapsed += async (sender, e) => await TimedAttemptReconnectAsync(_cancellationTokenSource.Token);
+    }
 
-        // Set timer for reconnect attempts
-        _reconnectTimer = new Timer(5000);
-        _reconnectTimer.Elapsed += async (sender, e) => await TimedAttemptReconnectAsync(_cancellationToken);
+    private bool _disposed = false;
 
-        _mwBotMessage = new MqttClientMessage();
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed)
+            return;
+
+        if (disposing)
+        {
+            _timer?.Stop();
+            _timer?.Dispose();
+
+            _reconnectTimer?.Stop();
+            _reconnectTimer?.Dispose();
+
+            _cancellationTokenSource?.Cancel();
+            _cancellationTokenSource?.Dispose();
+
+            _connectionSemaphore?.Dispose();
+
+            if (_mqttClient != null)
+            {
+                if (_mqttClient.IsConnected)
+                {
+                    _mqttClient.DisconnectAsync().Wait();
+                }
+                _mqttClient.Dispose();
+            }
+        }
+
+        _disposed = true;
+    }
+
+    ~MqttMwBotClient()
+    {
+        Dispose(false);
     }
 
     /// <summary>
@@ -81,43 +139,88 @@ public class MqttMwBotClient
             Parking = brokerMessage.Parking
         };
 
-        _mwBotMessage.Id = MwBot.Id = brokerMessage.Id;
-        _mwBotMessage.Status = MwBot.Status = brokerMessage.Status;
-        _mwBotMessage.BatteryPercentage = MwBot.BatteryPercentage = brokerMessage.BatteryPercentage;
-        _mwBotMessage.ParkingId = MwBot.ParkingId = brokerMessage.ParkingId;
-        _mwBotMessage.Parking = MwBot.Parking = brokerMessage.Parking;
+        lock (_lockMessage)
+        {
+            MwBotMessage.Id = MwBot.Id = brokerMessage.Id;
+            MwBotMessage.Status = MwBot.Status = brokerMessage.Status;
+            MwBotMessage.BatteryPercentage = MwBot.BatteryPercentage = brokerMessage.BatteryPercentage;
+            MwBotMessage.ParkingId = MwBot.ParkingId = brokerMessage.ParkingId;
+            MwBotMessage.Parking = MwBot.Parking = brokerMessage.Parking;
+            MwBotMessage.LatestLocation = MwBot.LatestLocation = brokerMessage.LatestLocation;
+        }
 
-        _logger.LogDebug("MwBot {id}: Received message: {payload} from topic: {message.ApplicationMessage.Topic}", MwBot.Id, payload, topic);
+        //_logger.LogDebug("MwBot {id}: Received message: {payload} from topic: {message.ApplicationMessage.Topic}", MwBot.Id, payload, topic);
 
         try
         {
-            if (_timer.Enabled) _timer.Stop();
             switch (brokerMessage.MessageType)
             {
                 case MessageType.StartCharging:
                     _logger.LogInformation("MwBot {id}: Received MessageType.StartCharging", MwBot.Id);
+
+                    if (_isCharging)
+                    {
+                        _logger.LogWarning("MwBot {id}: Charging process is already running. Ignoring StartCharging message.", MwBot.Id);
+                        break;
+                    }
+
                     if (brokerMessage.ImmediateRequest is null)
                     {
+                        _logger.LogDebug("MwBot {id}: No immediate request found. Changing status to StandBy", MwBot.Id);
                         await ChangeBotStatus(MwBotStatus.StandBy);
                         break;
                     }
 
-                    HandlingRequest = brokerMessage.ImmediateRequest;
-                    await SimulateMovement(MwBotStatus.MovingToSlot, cancellationToken);
-                    await SimulateChargingProcess(brokerMessage, cancellationToken);
+                    lock (_lockMessage) HandlingRequest = brokerMessage.ImmediateRequest;
+                    lock (_timerLock) if (_timer.Enabled) _timer.Stop();
+                    _isCharging = true;
+                    _chargeRequested = 0;
+
+                    if (brokerMessage.LatestLocation != MwBotLocations.InSlot)
+                        await SimulateMovement(MwBotStatus.MovingToSlot, cancellationToken);
+
+                    await ChangeBotLocation(MwBotLocations.InSlot);
+                    _ = SimulateChargingProcess(brokerMessage, cancellationToken);
                     break;
 
                 case MessageType.StartRecharge:
                     _logger.LogInformation("MwBot {id}: Received MessageType.StartRecharge", MwBot.Id);
-                    await StartRechargingAsync(cancellationToken);
+
+                    if (_isRecharging)
+                    {
+                        _logger.LogWarning("MwBot {id}: Recharging process is already running. Ignoring StartRecharge message.", MwBot.Id);
+                        break;
+                    }
+
+                    if (MwBot == null)
+                    {
+                        _logger.LogWarning("MwBot not initialized, cannot start recharging");
+                        return;
+                    }
+
+                    lock (_timerLock) if (_timer.Enabled) _timer.Stop();
+
+                    if (brokerMessage.LatestLocation != MwBotLocations.InDock)
+                        await SimulateMovement(MwBotStatus.MovingToDock, cancellationToken);
+
+                    await ChangeBotLocation(MwBotLocations.InDock);
+                    await SimulateRechargingProcessAsync(cancellationToken);
+                    _isRecharging = false;
                     break;
 
                 case MessageType.ChargeCompleted:
                     _logger.LogInformation("MwBot {id}: Received MessageType.ChargeCompleted", MwBot.Id);
+                    lock (_timerLock) if (!_timer.Enabled) _timer.Start();
+                    break;
+
+                case MessageType.StopCharging:
+                    _logger.LogInformation("MwBot {id}: Received MessageType.StopCharging", MwBot.Id);
+                    _isCharging = false;
                     break;
 
                 case MessageType.ReturnMwBot:
                     _logger.LogInformation("MwBot {id}: Received MessageType.ReturnMwBot", MwBot.Id);
+                    // Handled by default at the top of the switch
                     break;
 
                 default:
@@ -125,13 +228,18 @@ public class MqttMwBotClient
                     break;
             }
 
-            _mwBotMessage.ParkingSlotId = HandlingRequest?.ParkingSlotId;
-            _mwBotMessage.TargetBatteryPercentage = HandlingRequest?.RequestedChargeLevel;
-            _mwBotMessage.UserId = HandlingRequest?.UserId;
-            _mwBotMessage.CarPlate = HandlingRequest?.CarPlate;
-            _mwBotMessage.ImmediateRequestId = HandlingRequest?.Id;
-
-            if (!_timer.Enabled) _timer.Start();
+            lock (_lockMessage)
+            {
+                MwBotMessage.ParkingSlotId = HandlingRequest?.ParkingSlotId;
+                MwBotMessage.TargetBatteryPercentage = HandlingRequest?.RequestedChargeLevel;
+                MwBotMessage.UserId = HandlingRequest?.UserId;
+                MwBotMessage.CarPlate = HandlingRequest?.CarPlate;
+                MwBotMessage.ImmediateRequestId = HandlingRequest?.Id;
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            _logger.LogInformation("Operazione annullata.");
         }
         catch (Exception ex)
         {
@@ -160,8 +268,11 @@ public class MqttMwBotClient
         {
             await _mqttClient.SubscribeAsync($"mwbot{mwBotId}");
             await InitializeMwBot(mwBotId);
-            if (!_timer.Enabled) _timer.Start();
-            if (!_reconnectTimer.Enabled) _reconnectTimer.Start();
+            lock (_timerLock)
+            {
+                if (!_timer.Enabled) _timer.Start();
+                if (!_reconnectTimer.Enabled) _reconnectTimer.Start();
+            }
         }
         return isConnected;
     }
@@ -179,17 +290,13 @@ public class MqttMwBotClient
             return;
         }
 
-        _mwBotMessage.MessageType = MessageType.RequestMwBot;
-        _mwBotMessage.Id = mwBotId.Value;
+        lock (_lockMessage)
+        {
+            MwBotMessage.MessageType = MessageType.RequestMwBot;
+            MwBotMessage.Id = mwBotId.Value;
+        }
 
-        await PublishClientMessageAsync(_mwBotMessage, _cancellationTokenSource.Token);
-    }
-
-    private void ResetCancellationToken()
-    {
-        _cancellationTokenSource?.Cancel();
-        _cancellationTokenSource = new CancellationTokenSource();
-        _cancellationToken = _cancellationTokenSource.Token;
+        await PublishClientMessageAsync(MwBotMessage, _cancellationTokenSource.Token);
     }
 
     private async Task<bool> ChangeBotStatus(MwBotStatus status)
@@ -208,7 +315,7 @@ public class MqttMwBotClient
                 break;
             case MwBotStatus.StandBy:
                 _logger.LogInformation("MwBot {id}: Awaiting for task", MwBot.Id);
-                if (!_timer.Enabled) _timer.Start();
+                lock (_timerLock) if (!_timer.Enabled) _timer.Start();
                 break;
             case MwBotStatus.ChargingCar:
                 _logger.LogInformation("MwBot {id}: Charging car", MwBot.Id);
@@ -227,37 +334,61 @@ public class MqttMwBotClient
                 return false;
         }
 
-        _mwBotMessage.MessageType = MessageType.UpdateMwBot;
-        _mwBotMessage.Status = MwBot.Status = status;
+        lock (_lockMessage)
+        {
+            MwBotMessage.MessageType = MessageType.UpdateMwBot;
+            MwBotMessage.Status = MwBot.Status = status;
+        }
 
-        await PublishClientMessageAsync(_mwBotMessage, _cancellationTokenSource.Token);
+        await PublishClientMessageAsync(MwBotMessage, _cancellationTokenSource.Token);
 
         return true;
     }
 
-    private async Task RequestResumeChargingAsync()
+    private async Task<bool> ChangeBotLocation(MwBotLocations location)
     {
-        if (MwBot == null)
+        if (MwBot is null)
         {
-            _logger.LogWarning("MwBot not initialized, cannot request to resume charging");
-            return;
+            _logger.LogWarning("MwBot not initialized, cannot change location");
+            return false;
         }
 
-        _mwBotMessage.MessageType = MessageType.RequestCharge;
-        await PublishClientMessageAsync(_mwBotMessage, _cancellationTokenSource.Token);
+        switch (location)
+        {
+            case MwBotLocations.InDock:
+                _logger.LogInformation("MwBot {id}: In dock", MwBot.Id);
+                break;
+            case MwBotLocations.InSlot:
+                _logger.LogInformation("MwBot {id}: In parking slot", MwBot.Id);
+                break;
+            default:
+                _logger.LogWarning("MwBot {id}: Invalid location", MwBot.Id);
+                return false;
+        }
+
+        lock (_lockMessage)
+        {
+            MwBotMessage.MessageType = MessageType.UpdateMwBot;
+            MwBotMessage.LatestLocation = MwBot.LatestLocation = location;
+        }
+
+        await PublishClientMessageAsync(MwBotMessage, _cancellationTokenSource.Token);
+
+        return true;
     }
 
     private async Task TimedAttemptReconnectAsync(CancellationToken cancellationToken)
     {
-        if (_mqttClient.IsConnected)
+        if (_mqttClient.IsConnected || _isConnecting)
             return;
 
         _logger.LogInformation("MwBot {id}: Attempting to reconnect to MQTT broker...", MwBot?.Id);
         var isConnected = await ConnectAsync();
+
         if (isConnected)
         {
             _logger.LogInformation("MwBot {id}: Reconnected to MQTT broker successfully.", MwBot?.Id);
-            if (!_timer.Enabled) _timer.Start();
+            lock (_timerLock) if (!_timer.Enabled) _timer.Start();
         }
         else
         {
@@ -266,23 +397,11 @@ public class MqttMwBotClient
         }
     }
 
-    public async Task StartRechargingAsync(CancellationToken cancellationToken)
-    {
-        if (MwBot == null)
-        {
-            _logger.LogWarning("MwBot not initialized, cannot start recharging");
-            return;
-        }
-
-        await SimulateMovement(MwBotStatus.MovingToDock, cancellationToken);
-        await SimulateRechargingProcessAsync(cancellationToken);
-    }
-
     /// <summary>
     /// EVENT: What to do every _timer interval
     /// </summary>
-    /// <param name="state"></param>
-    private async Task TimedProcessChargeRequest(object? state, CancellationToken cancellationToken)
+    /// <param name="sender"></param>
+    private async Task TimedProcessChargeRequest(CancellationToken cancellationToken)
     {
         try
         {
@@ -292,20 +411,37 @@ public class MqttMwBotClient
                 return;
             }
 
+            if (!_mqttClient.IsConnected)
+            {
+                _logger.LogWarning("MwBot {id}: Disconnected. Attempting to reconnect...", MwBot.Id);
+                await WaitForReconnection(cancellationToken);
+            }
+
             if (MwBot.BatteryPercentage <= _rechargeThreshold || (MwBot.Status == MwBotStatus.Recharging || MwBot.Status == MwBotStatus.MovingToDock)) // Recharge if battery is low / resuming recharge
             {
                 _logger.LogInformation("MwBot {id} battery is low: {batteryPercentage}%", MwBot.Id, MwBot.BatteryPercentage);
-                if (_timer.Enabled) _timer.Stop();
+                lock (_timerLock) if (_timer.Enabled) _timer.Stop();
+                _chargeRequested = 0;
 
-                _mwBotMessage.MessageType = MessageType.RequestRecharge;
-                _mwBotMessage.Status = MwBotStatus.MovingToDock;
+                lock (_lockMessage)
+                {
+                    MwBotMessage.MessageType = MessageType.RequestRecharge;
+                    MwBotMessage.Status = MwBotStatus.MovingToDock;
+                }
+            }
+            else if (_chargeRequested >= _maxRequestsBeforeRecharge && MwBot.BatteryPercentage <= _maxRechargeThreshold) // If standing by for too long, request recharge
+            {
+                _logger.LogInformation("MwBot {id} has no charges to serve: requesting recharge", MwBot.Id);
+                lock (_lockMessage) MwBotMessage.MessageType = MessageType.RequestRecharge;
+                _chargeRequested = 0;
             }
             else // If nothing to do, request charge
             {
-                _mwBotMessage.MessageType = MessageType.RequestCharge;
+                lock (_lockMessage) MwBotMessage.MessageType = MessageType.RequestCharge;
+                _chargeRequested++;
             }
 
-            await PublishClientMessageAsync(_mwBotMessage, _cancellationTokenSource.Token);
+            await PublishClientMessageAsync(MwBotMessage, _cancellationTokenSource.Token);
         }
         catch (Exception ex)
         {
@@ -320,18 +456,17 @@ public class MqttMwBotClient
         int delayRange = maxDelaySeconds - minDelaySeconds;
         int delay = minDelaySeconds + (int)(delayRange * (1 - MwBot.BatteryPercentage / 100));
 
-        if (status == MwBotStatus.MovingToSlot)
+        switch(status)
         {
-            _logger.LogInformation("MwBot {id}: Simulating movement to car {delay} seconds...", MwBot.Id, delay);
-        }
-        else if (status == MwBotStatus.MovingToDock)
-        {
-            _logger.LogInformation("MwBot {id}: Simulating movement to dock {delay} seconds...", MwBot.Id, delay);
-        }
-        else
-        {
-            _logger.LogWarning("Invalid status");
-            return;
+            case MwBotStatus.MovingToSlot:
+                _logger.LogInformation("MwBot {id}: Simulating movement to car {delay} seconds...", MwBot.Id, delay);
+                break;
+            case MwBotStatus.MovingToDock:
+                _logger.LogInformation("MwBot {id}: Simulating movement to dock {delay} seconds...", MwBot.Id, delay);
+                break;
+            default:
+                _logger.LogWarning("MwBot {id}: Invalid status", MwBot.Id);
+                return;
         }
 
         var changeSuccess = await ChangeBotStatus(status);
@@ -343,6 +478,8 @@ public class MqttMwBotClient
 
     private async Task SimulateChargingProcess(MqttClientMessage mwBotMessage, CancellationToken cancellationToken)
     {
+        _logger.LogInformation("MwBot {id}: Starting SimulateChargingProcess.", MwBot?.Id);
+
         decimal chargeRate = 0.3m; // kW/s
         decimal dischargeRate = 0.5m; // kW/s
         decimal energyCostPerKw = mwBotMessage.Parking?.EnergyCostPerKw ?? 0.2m;
@@ -354,17 +491,17 @@ public class MqttMwBotClient
 
         var currentlyCharging = mwBotMessage.CurrentlyCharging;
         mwBotMessage.MessageType = MessageType.UpdateCharging;
+        mwBotMessage.LatestLocation = MwBotLocations.InSlot;
 
-        if (currentlyCharging.StartChargePercentage == 0 && currentlyCharging.CurrentChargePercentage == 0)
+        if (currentlyCharging != null && currentlyCharging.StartChargePercentage == 0 && currentlyCharging.CurrentChargePercentage == 0)
         {
             // Set random start charge percentage
-            Random random = new Random();
+            Random random = new();
             decimal minValue = 1;
             decimal maxValue = mwBotMessage.TargetBatteryPercentage ?? 50;
             decimal randomStartCharge = random.Next((int)minValue, (int)maxValue);
 
-            if (currentlyCharging.StartChargingTime is null)
-                currentlyCharging.StartChargingTime = DateTime.Now;
+            currentlyCharging.StartChargingTime ??= DateTime.Now;
             currentlyCharging.StartChargePercentage = currentlyCharging.CurrentChargePercentage = mwBotMessage.CurrentCarCharge = randomStartCharge;
 
             currentlyCharging.StartChargePercentage = Math.Round(currentlyCharging.StartChargePercentage ?? 0, 2);
@@ -374,12 +511,20 @@ public class MqttMwBotClient
         }
         else
         {
-            mwBotMessage.CurrentCarCharge = currentlyCharging.CurrentChargePercentage;
-            _logger.LogInformation("MwBot {id}: Resuming charge from {currentBattery}% to {targetBattery:F0}%", mwBotMessage.Id, currentlyCharging.CurrentChargePercentage, currentlyCharging.TargetChargePercentage);
+            mwBotMessage.CurrentCarCharge = currentlyCharging?.CurrentChargePercentage;
+            _logger.LogInformation("MwBot {id}: Resuming charge from {currentBattery}% to {targetBattery:F0}%", mwBotMessage.Id, currentlyCharging?.CurrentChargePercentage, currentlyCharging?.TargetChargePercentage);
         }
 
-        while (mwBotMessage.CurrentCarCharge < mwBotMessage.TargetBatteryPercentage && MwBot.BatteryPercentage > _rechargeThreshold)
+        while (mwBotMessage.CurrentCarCharge < mwBotMessage.TargetBatteryPercentage && MwBot.BatteryPercentage > _rechargeThreshold && _isCharging)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!_mqttClient.IsConnected)
+            {
+                _logger.LogWarning("MwBot {id}: Disconnected during charging. Waiting for reconnection...", MwBot?.Id);
+                await WaitForReconnection(cancellationToken);
+            }
+
             await Task.Delay(_chargeDelay, cancellationToken); // Simulate one second
 
             mwBotMessage.CurrentCarCharge += chargeRate;
@@ -412,16 +557,18 @@ public class MqttMwBotClient
         mwBotMessage.BatteryPercentage = MwBot.BatteryPercentage;
         await PublishClientMessageAsync(mwBotMessage, _cancellationTokenSource.Token);
 
-        if (mwBotMessage.CurrentCarCharge >= mwBotMessage.TargetBatteryPercentage)
+        if (mwBotMessage.CurrentCarCharge >= mwBotMessage.TargetBatteryPercentage || !_isCharging)
         {
-            _logger.LogInformation("MwBot {botId}: Car charged to {targetBattery}%", MwBot.Id, mwBotMessage.TargetBatteryPercentage);
+            _logger.LogInformation("MwBot {botId}: Car charged to {carCharge}%", MwBot.Id, mwBotMessage.CurrentCarCharge);
             await CompleteChargingProcess(mwBotMessage);
-            if (!_timer.Enabled) _timer.Start();
         }
         else
         {
             _logger.LogInformation("MwBot {botId}: Stopping charging process due to low battery", MwBot.Id);
         }
+
+        lock (_timerLock) if (!_timer.Enabled) _timer.Start();
+        _logger.LogInformation("MwBot {id}: Ending SimulateChargingProcess.", MwBot.Id);
     }
 
     private async Task SimulateRechargingProcessAsync(CancellationToken cancellationToken)
@@ -432,9 +579,15 @@ public class MqttMwBotClient
             return;
         }
 
+        _isRecharging = true;
         decimal rechargeRate = 2.0m; // kW/s
-        var startTime = DateTime.Now;
-        decimal initialBatteryPercentage = MwBot.BatteryPercentage;
+
+        lock (_lockMessage)
+        {
+            MwBotMessage.MessageType = MessageType.UpdateMwBot;
+            MwBotMessage.LatestLocation = MwBotLocations.InDock;
+            MwBotMessage.Status = MwBotStatus.Recharging;
+        }
 
         while (MwBot.BatteryPercentage < 100)
         {
@@ -452,12 +605,8 @@ public class MqttMwBotClient
                 MwBot.BatteryPercentage = 100;
             }
 
-            _mwBotMessage.MessageType = MessageType.UpdateMwBot;
-            _mwBotMessage.Status = MwBotStatus.Recharging;
-            _mwBotMessage.BatteryPercentage = MwBot.BatteryPercentage;
-
-            await PublishClientMessageAsync(_mwBotMessage, cancellationToken);
-
+            lock (_lockMessage) MwBotMessage.BatteryPercentage = MwBot.BatteryPercentage;
+            await PublishClientMessageAsync(MwBotMessage, cancellationToken);
             _logger.LogInformation("MwBot {id} recharging: {batteryPercentage}%", MwBot.Id, MwBot.BatteryPercentage);
         }
 
@@ -483,17 +632,18 @@ public class MqttMwBotClient
             Id = MwBot.Id,
             Status = MwBot.Status,
             BatteryPercentage = MwBot.BatteryPercentage,
-            ParkingSlotId = HandlingRequest.ParkingSlotId,
-            TargetBatteryPercentage = HandlingRequest.RequestedChargeLevel,
+            ParkingSlotId = HandlingRequest?.ParkingSlotId,
+            TargetBatteryPercentage = HandlingRequest?.RequestedChargeLevel,
             CurrentlyCharging = currentlyCharging,
-            UserId = HandlingRequest.UserId,
+            UserId = HandlingRequest?.UserId,
             ParkingId = MwBot.ParkingId,
-            ImmediateRequestId = HandlingRequest.Id,
-            CarPlate = HandlingRequest.CarPlate,
+            ImmediateRequestId = HandlingRequest?.Id,
+            CarPlate = HandlingRequest?.CarPlate,
         };
 
         await PublishClientMessageAsync(mwBotMessage, _cancellationTokenSource.Token);
-        HandlingRequest = null;
+        lock (_lockMessage) HandlingRequest = null;
+        _isCharging = false;
 
         _logger.LogInformation("MwBot {botId}: Completed charging car at parking slot {slotId}. Time: {elapsedTime} , Energy consumed: {energyConsumed:F7} kWh, Cost: {totalCost:F2} EUR",
             MwBot?.Id, mwBotMessage.ParkingSlotId, elapsedMinutes, currentlyCharging.EnergyConsumed, currentlyCharging.TotalCost);
@@ -502,11 +652,19 @@ public class MqttMwBotClient
     public async Task PublishClientMessageAsync(MqttClientMessage mwBotMessage, CancellationToken cancellationToken)
     {
         var payload = JsonSerializer.Serialize(mwBotMessage);
-        await PublishAsync(payload);
-        _logger.LogDebug("MwBot {id}: Published message {payload}", MwBot?.Id, payload);
+        var success = await PublishAsync(payload);
+
+        if(!success)
+        {
+            _logger.LogError("MwBot {id}: Error publishing message {payload}", MwBot?.Id, payload);
+        }
+        //else
+        //{
+        //    _logger.LogDebug("MwBot {id}: Published message {payload}", MwBot?.Id, payload);
+        //}
     }
 
-    public async Task PublishAsync(string payload)
+    public async Task<bool> PublishAsync(string payload)
     {
         ArgumentNullException.ThrowIfNull(payload);
 
@@ -519,37 +677,73 @@ public class MqttMwBotClient
 
             if (!_mqttClient.IsConnected)
             {
-                _logger.LogWarning("MwBot {id}: Client is not connected, cannot publish message", MwBot?.Id);
-                return;
+                _logger.LogWarning("MwBot {id}: Client is not connected, attempting to reconnect...", MwBot?.Id);
+                var isConnected = await ConnectAsync();
+
+                if (!isConnected)
+                {
+                    _logger.LogError("MwBot {id}: Unable to reconnect to MQTT broker.", MwBot?.Id);
+                    return false;
+                }
             }
 
             await _mqttClient.PublishAsync(message);
-            _logger.LogDebug("MwBot {id}: Published message {payload}", MwBot?.Id, payload);
+            return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error publishing message {payload}", payload);
+            _logger.LogError(ex, "MwBot {id}: Error publishing message {payload}", MwBot?.Id, payload);
+            return false;
         }
     }
 
     public async Task<bool> ConnectAsync()
     {
+        await _connectionSemaphore.WaitAsync();
+
         try
         {
-            _logger.BeginScope("Connecting to MQTT server");
-            await _mqttClient.ConnectAsync(_options);
-            _logger.LogInformation("Connected to MQTT server");
+            if (_isConnecting)
+            {
+                _logger.LogWarning("MwBot {id}: Already attempting to connect. Skipping duplicate connection attempt.", MwBot?.Id);
+                return false;
+            }
+
+            _isConnecting = true;
+
+            if (_mqttClient.IsConnected)
+            {
+                _logger.LogInformation("MwBot {id}: Already connected to MQTT server.", MwBot?.Id);
+                return true;
+            }
+
+            _logger.LogInformation("MwBot {id}: Connecting to MQTT server...", MwBot?.Id);
+            await _mqttClient.ConnectAsync(_options, _cancellationTokenSource.Token);
+            await _mqttClient.SubscribeAsync($"mwbot{MwBot?.Id}");
+            _logger.LogInformation("MwBot {id}: Connected to MQTT server", MwBot?.Id);
+
+            lock (_timerLock)
+            {
+                if (_reconnectTimer.Enabled) _reconnectTimer.Stop();
+                if (!_timer.Enabled) _timer.Start();
+            }
+
             return true;
         }
         catch (OperationCanceledException)
         {
-            _logger.LogWarning("Timeout while connecting.");
+            _logger.LogWarning("MwBot {id}: Connection attempt was canceled.", MwBot?.Id);
             return false;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error connecting to MQTT server");
+            _logger.LogError(ex, "MwBot {id}: Error connecting to MQTT server", MwBot?.Id);
             return false;
+        }
+        finally
+        {
+            _isConnecting = false;
+            _connectionSemaphore.Release();
         }
     }
 
@@ -570,22 +764,70 @@ public class MqttMwBotClient
         try
         {
             _logger.BeginScope("MwBot {id}: Disconnecting from MQTT server", MwBot.Id);
-            if (_timer.Enabled) _timer.Stop();
-            if (_reconnectTimer.Enabled) _reconnectTimer.Stop();
-            ResetCancellationToken();
+            lock (_timerLock)
+            {
+                if (_timer.Enabled) _timer.Stop();
+                if (_reconnectTimer.Enabled) _reconnectTimer.Stop();
+            }
 
-            _mwBotMessage.MessageType = MessageType.DisconnectClient;
-            _mwBotMessage.Status = MwBot.Status = MwBotStatus.Offline;
+            _cancellationTokenSource.Cancel();
 
-            await PublishClientMessageAsync(_mwBotMessage, _cancellationTokenSource.Token);
+            lock (_lockMessage)
+            {
+                MwBotMessage.MessageType = MessageType.DisconnectClient;
+                MwBotMessage.Status = MwBot.Status = MwBotStatus.Offline;
+                MwBotMessage.BatteryPercentage = MwBot.BatteryPercentage;
+            }
+
+            await PublishClientMessageAsync(MwBotMessage, _cancellationTokenSource.Token);
             await _mqttClient.DisconnectAsync();
             _logger.LogInformation("MwBot {id}: Disconnected from MQTT server", MwBot.Id);
+
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error disconnecting from MQTT server");
+            _logger.LogError(ex, "MwBot {id}: Error disconnecting from MQTT server", MwBot.Id);
             return false;
+        }
+    }
+
+    private async Task HandleClientDisconnectedAsync(MqttClientDisconnectedEventArgs e)
+    {
+        _logger.LogWarning("MwBot {id}: Disconnected from MQTT broker. Reason: {reason}", MwBot?.Id, e.ReasonString);
+
+        lock (_timerLock) if (_timer.Enabled) _timer.Stop();
+
+        if (!_isConnecting)
+        {
+            _logger.LogInformation("MwBot {id}: Starting reconnection attempts.", MwBot?.Id);
+            await WaitForReconnection(_cancellationTokenSource.Token);
+        }
+        else
+        {
+            _logger.LogInformation("MwBot {id}: Reconnection already in progress.", MwBot?.Id);
+        }
+    }
+
+    private async Task WaitForReconnection(CancellationToken cancellationToken)
+    {
+        while (!_mqttClient.IsConnected)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            _logger.LogInformation("MwBot {id}: Attempting to reconnect...", MwBot?.Id);
+            var isConnected = await ConnectAsync();
+
+            if (isConnected)
+            {
+                _logger.LogInformation("MwBot {id}: Reconnected successfully.", MwBot?.Id);
+                return;
+            }
+            else
+            {
+                _logger.LogWarning("MwBot {id}: Reconnection attempt failed. Retrying in 5 seconds...", MwBot?.Id);
+                await Task.Delay(5000, cancellationToken);
+            }
         }
     }
 }

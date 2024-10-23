@@ -1,9 +1,11 @@
 ﻿using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Security;
+using Progetto.App.Core.Services.SignalR.Hubs;
 using Progetto.App.Core.Validators;
 
 namespace Progetto.App.Controllers;
@@ -16,11 +18,13 @@ namespace Progetto.App.Controllers;
 public class ParkingController : ControllerBase
 {
     private readonly ILogger<ParkingController> _logger;
+    private readonly IHubContext<ParkingHub> _hubContext;
     private readonly ParkingRepository _parkingRepository;
 
-    public ParkingController(ILogger<ParkingController> logger, ParkingRepository repository)
+    public ParkingController(ILogger<ParkingController> logger, IHubContext<ParkingHub> hubContext, ParkingRepository repository)
     {
         _logger = logger;
+        _hubContext = hubContext;
         _parkingRepository = repository;
     }
 
@@ -50,6 +54,8 @@ public class ParkingController : ControllerBase
             }
 
             await _parkingRepository.AddAsync(parking);
+            var connectionId = Request.Headers["X-Connection-Id"].ToString();
+            await _hubContext.Clients.AllExcept(connectionId).SendAsync("ParkingAdded", parking);
 
             _logger.LogDebug("Parking with {name} created", parking.Name);
             return Ok(parking);
@@ -77,6 +83,8 @@ public class ParkingController : ControllerBase
             _logger.LogDebug("Deleting parking with id {id}", parking.Id);
 
             await _parkingRepository.DeleteAsync(p => p.Id == parking.Id);
+            var connectionId = Request.Headers["X-Connection-Id"].ToString();
+            await _hubContext.Clients.AllExcept(connectionId).SendAsync("ParkingDeleted", parking.Id);
 
             _logger.LogDebug("Parking with id {id} deleted", parking.Id);
             return Ok(parking);
@@ -87,7 +95,6 @@ public class ParkingController : ControllerBase
             return StatusCode(500, "Internal server error");
         }
     }
-
 
     [HttpPut]
     [Authorize(Policy = PolicyNames.IsAdmin)]
@@ -107,27 +114,18 @@ public class ParkingController : ControllerBase
         {
             _logger.LogDebug("Updating parking with id {id}", parking.Id);
 
-            var existingParking = await _parkingRepository.GetByIdAsync(parking.Id);
-            if (existingParking == null)
+            if (!(await _parkingRepository.CheckEntityExists(parking)))
             {
                 _logger.LogWarning("Parking with id {id} not found", parking.Id);
-                return NotFound();
+                return NotFound(parking);
             }
 
-            existingParking.EnergyCostPerKw = parking.EnergyCostPerKw;
-            existingParking.StopCostPerMinute = parking.StopCostPerMinute;
-            existingParking.Name = parking.Name;
-            existingParking.Address = parking.Address;
-            existingParking.City = parking.City;
-            existingParking.Province = parking.Province;
-            existingParking.PostalCode = parking.PostalCode;
-            existingParking.Country = parking.Country;
-            existingParking.ParkingSlots = parking.ParkingSlots;
-
-            await _parkingRepository.UpdateAsync(existingParking);
+            await _parkingRepository.UpdateAsync(parking);
+            var connectionId = Request.Headers["X-Connection-Id"].ToString();
+            await _hubContext.Clients.AllExcept(connectionId).SendAsync("ParkingUpdated", parking);
 
             _logger.LogDebug("Parking with id {id} updated", parking.Id);
-            return Ok(existingParking);
+            return Ok(parking);
         }
         catch (Exception ex)
         {
@@ -151,18 +149,12 @@ public class ParkingController : ControllerBase
             }
 
             if (name is not null)
-            {
                 parkings = parkings.Where(p => p.Name.Contains(name, StringComparison.InvariantCultureIgnoreCase)).ToList();
-            }
             else if (city is not null)
-            {
                 parkings = parkings.Where(p => p.City.Contains(city, StringComparison.InvariantCultureIgnoreCase)).ToList();
-            }
             else if (address is not null)
-            {
                 parkings = parkings.Where(p => p.Address.Contains(address, StringComparison.InvariantCultureIgnoreCase)).ToList();
-            }
-
+            
             _logger.LogDebug("Returning {count} parkings", parkings.Count());
             return Ok(parkings);
         }

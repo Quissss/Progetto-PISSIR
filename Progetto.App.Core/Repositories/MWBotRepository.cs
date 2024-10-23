@@ -23,6 +23,14 @@ public class MwBotRepository : GenericRepository<MwBot>
         await _context.SaveChangesAsync();
     }
 
+    public async Task<MwBot?> UpdateMwBotStatus(int mwBotId, MwBotStatus status)
+    {
+        var mwBot = await _context.MwBots.FindAsync(mwBotId);
+        mwBot.Status = status;
+        await UpdateAsync(mwBot);
+        return mwBot;
+    }
+
     public async Task<IEnumerable<MwBot>> GetOnlineMwBots()
     {
         return await _context.MwBots.Where(m => m.Status != MwBotStatus.Offline).ToListAsync();

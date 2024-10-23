@@ -12,8 +12,8 @@ public class CarConfiguration : IEntityTypeConfiguration<Car>
     public void Configure(EntityTypeBuilder<Car> builder)
     {
         builder.ToTable("Cars");
-        builder.HasKey(c => c.LicencePlate);
-        builder.Property(c => c.LicencePlate).HasMaxLength(10).IsRequired();
+        builder.HasKey(c => c.Plate);
+        builder.Property(c => c.Plate).HasMaxLength(10).IsRequired();
         builder.Property(c => c.Brand).HasMaxLength(50);
         builder.Property(c => c.Model).HasMaxLength(50);
         builder.Property(c => c.IsElectric).HasDefaultValue(true).IsRequired();

@@ -17,52 +17,35 @@ public class CurrentlyChargingRepository : GenericRepository<CurrentlyCharging>
         _context = context;
     }
 
-    public async Task<CurrentlyCharging?> GetActiveByImmediateRequest(int immediateRequestId)
+    public async Task<CurrentlyCharging?> GetByActiveMwBotId(int mwBotId)
     {
         return await _context.CurrentlyCharging
-            .Where(c => c.ImmediateRequestId == immediateRequestId && c.EndChargingTime == null && !c.ToPay && c.CurrentChargePercentage < c.TargetChargePercentage)
+            .Where(c => c.MwBotId == mwBotId && c.EndChargingTime == null && !c.ToPay && c.CurrentChargePercentage <= c.TargetChargePercentage && c.ImmediateRequestId != null)
+            .OrderBy(c => c.StartChargingTime)
             .FirstOrDefaultAsync();
     }
 
-    public async Task<CurrentlyCharging?> GetByMwBotId(int mwBotId)
+    public async Task<CurrentlyCharging?> GetChargingByCarPlate(string carPlate)
     {
         return await _context.CurrentlyCharging
-            .Where(c => c.MwBotId == mwBotId)
+            .Where(c => c.CarPlate == carPlate && c.EndChargingTime == null && !c.ToPay && c.CurrentChargePercentage <= c.TargetChargePercentage && c.ImmediateRequestId != null)
+            .OrderBy(c => c.StartChargingTime)
             .FirstOrDefaultAsync();
     }
 
-    public async Task<CurrentlyCharging?> GetCurrentlyChargingByCarId(string carPlate)
+    public async Task<CurrentlyCharging?> GetActiveWithNoBot()
     {
         return await _context.CurrentlyCharging
-            .Where(c => c.CarPlate == carPlate)
+            .Where(c => c.MwBotId == null && c.EndChargingTime == null && !c.ToPay && c.CurrentChargePercentage <= c.TargetChargePercentage && c.ImmediateRequestId != null)
+            .OrderBy(c => c.StartChargingTime)
             .FirstOrDefaultAsync();
     }
 
     public async Task<CurrentlyCharging?> GetActiveByMwBot(int mwBotId)
     {
         return await _context.CurrentlyCharging
-            .Where(c => c.MwBotId == mwBotId && c.EndChargingTime == null && !c.ToPay && c.CurrentChargePercentage < c.TargetChargePercentage)
-            .FirstOrDefaultAsync();
-    }
-
-    public async Task<IEnumerable<CurrentlyCharging?>> GetAllActiveByMwBot(int mwBotId)
-    {
-        return await _context.CurrentlyCharging
-            .Where(c => c.MwBotId == mwBotId && c.EndChargingTime == null && !c.ToPay && c.CurrentChargePercentage < c.TargetChargePercentage)
-            .ToListAsync();
-    }
-
-    public async Task<CurrentlyCharging?> GetChargingCars()
-    {
-        return await _context.CurrentlyCharging
-            .Where(c => !string.IsNullOrEmpty(c.CarPlate) && c.ParkingSlotId != 0 && !string.IsNullOrEmpty(c.UserId))
-            .FirstOrDefaultAsync();
-    }
-
-    public async Task<CurrentlyCharging?> GetChargingBots()
-    {
-        return await _context.CurrentlyCharging
-            .Where(c => string.IsNullOrEmpty(c.CarPlate))
+            .Where(c => c.MwBotId == mwBotId && c.EndChargingTime == null && !c.ToPay && c.CurrentChargePercentage <= c.TargetChargePercentage && c.ImmediateRequestId != null)
+            .OrderBy(c => c.StartChargingTime)
             .FirstOrDefaultAsync();
     }
 
@@ -71,20 +54,4 @@ public class CurrentlyChargingRepository : GenericRepository<CurrentlyCharging>
         return await _context.CurrentlyCharging
             .Where(c => c.UserId == userId).ToListAsync();
     }
-
-    public async Task<CurrentlyCharging?> GetByImmediateRequestId(int immediateRequestId)
-    {
-        return await _context.CurrentlyCharging
-            .Where(c => c.ImmediateRequestId == immediateRequestId)
-            .FirstOrDefaultAsync();
-    }
-
-    public async Task<List<CurrentlyCharging>> GetPaymentsWithinDateRange(DateTime startDate, DateTime endDate)
-    {
-        return await _context.CurrentlyCharging
-            .Where(c => c.StartChargingTime >= startDate && c.EndChargingTime <= endDate)
-            .OrderBy(c => c.StartChargingTime)
-            .ToListAsync();
-    }
-
 }

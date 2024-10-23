@@ -1,8 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Progetto.App.Core.Models;
+using Progetto.App.Core.Models.Users;
 using Progetto.App.Core.Repositories;
+using Telegram.Bot.Requests;
+using Telegram.Bot.Types;
+using Progetto.App.Core.Services.SignalR.Hubs;
 
 namespace Progetto.App.Controllers;
 
@@ -15,23 +20,29 @@ public class CamSimulatorController : ControllerBase
     private readonly ParkingSlotRepository _parkingSlotRepository;
     private readonly StopoverRepository _stopoverRepository;
     private ChargeManager _chargeManager { get; set; }
+    private readonly IHubContext<CarHub> _carHubContext;
+    private readonly IHubContext<ParkingSlotHub> _parkingSlotHubContext;
     private readonly ILogger<CamSimulatorController> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
 
     public CamSimulatorController(
         CarRepository carRepository,
+        IHubContext<CarHub> hubContext,
+        IHubContext<ParkingSlotHub> parkingSlotHubContext,
         ILogger<CamSimulatorController> logger,
         IServiceScopeFactory serviceScopeFactory,
         ReservationRepository reservationRepository,
         ChargeManager chargeManager,
         ParkingSlotRepository parkingSlotRepository,
         StopoverRepository stopoverRepository,
-        UserManager<IdentityUser> userManager)
+        UserManager<ApplicationUser> userManager)
     {
         _carRepository = carRepository;
         _reservationRepository = reservationRepository;
         _logger = logger;
+        _carHubContext = hubContext;
+        _parkingSlotHubContext = parkingSlotHubContext;
         _serviceScopeFactory = serviceScopeFactory;
         _chargeManager = chargeManager;
         _parkingSlotRepository = parkingSlotRepository;
@@ -42,74 +53,93 @@ public class CamSimulatorController : ControllerBase
     [HttpPost("detect")]
     public async Task<IActionResult> Detect([FromBody] Request request)
     {
-        if (request == null || string.IsNullOrWhiteSpace(request.LicencePlate))
+        if (request == null || string.IsNullOrWhiteSpace(request.CarPlate))
         {
             return BadRequest("Targa non valida");
         }
 
         // Simulazione dell'elaborazione della targa
-        string responseMessage = $"Targa rilevata: {request.LicencePlate} sul parcheggio n.{request.ParkingId}";
-        var car = await _carRepository.GetCarByLicencePlate(request.LicencePlate);
+        string responseMessage = $"Targa rilevata: {request.CarPlate} sul parcheggio n.{request.ParkingId}";
+        var car = await _carRepository.GetCarByPlate(request.CarPlate);
 
         if (car == null)
         {
-            _logger.LogInformation("Carplate {plate} not found", request.LicencePlate);
+            _logger.LogInformation("Carplate {plate} not found", request.CarPlate);
             return NotFound(responseMessage);
         }
 
         if (car.Status == CarStatus.OutOfParking)
         {
-            await CarEntering(request, car);
+            responseMessage = await CarEntering(request, car);
         }
         else
         {
-            await CarDeparting(request, car);
+            responseMessage = await CarDeparting(request, car);
         }
 
         return Ok(responseMessage);
     }
 
-    private async Task CarEntering(Request request, Car car)
+    private async Task<string> CarEntering(Request request, Car car)
     {
-        _logger.LogInformation("Detected carplate {plate} on arrival", request.LicencePlate);
+        var responseMessage = $"Detected carplate {request.CarPlate} on arrival";
+        _logger.LogInformation(responseMessage);
 
         car.Status = CarStatus.Waiting;
         car.ParkingId = request.ParkingId;
         await _carRepository.UpdateAsync(car);
-    }
+        await _carHubContext.Clients.All.SendAsync("CarUpdated", car);
 
-    private async Task CarDeparting(Request request, Car car)
-    {
-        if (car.ParkingId != request.ParkingId)
+        var reservations = await _reservationRepository.UpdateCarIsInside(request.CarPlate, request.ParkingId, true);
+        if (reservations.Any())
         {
-            // TODO: return message to CamSimulator
-            _logger.LogWarning("Carplate {plate} is not in parking {parkingId}", request.LicencePlate, request.ParkingId);
-            return;
+            _logger.LogDebug($"Reservations found for car {request.CarPlate}, setting car is inside to true");
+            await _chargeManager.UpdateReservationsCarIsInside(request.CarPlate, request.ParkingId, true);
+
+            car.Status = CarStatus.WaitForCharge;
+            await _carRepository.UpdateAsync(car);
+            await _carHubContext.Clients.All.SendAsync("CarUpdated", car);
         }
 
-        _logger.LogInformation("Detected carplate {plate} on departure", request.LicencePlate);
+        return responseMessage;
+    }
+
+    private async Task<string> CarDeparting(Request request, Car car)
+    {
+        var responseMessage = $"Detected carplate {request.CarPlate} on departure";
+
+        if (car.ParkingId != request.ParkingId)
+        {
+            responseMessage = $"Carplate {request.CarPlate} is not in parking {request.ParkingId}";
+            _logger.LogWarning(responseMessage);
+            return responseMessage;
+        }
+
+        _logger.LogInformation("Detected carplate {plate} on departure", request.CarPlate);
 
         // Remove related requests
         var scope = _serviceScopeFactory.CreateScope();
         var _immediateRequestRepository = scope.ServiceProvider.GetRequiredService<ImmediateRequestRepository>();
-        await _immediateRequestRepository.DeleteByCarPlate(request.LicencePlate);
-        await _chargeManager.RemoveImmediateRequestByCarPlate(request.LicencePlate);
+        await _immediateRequestRepository.DeleteByCarPlate(request.CarPlate);
+        await _chargeManager.RemoveImmediateRequestByCarPlate(request.CarPlate);
 
         if (car.ParkingSlotId != null)
         {
             var parkingSlot = await _parkingSlotRepository.GetByIdAsync(car.ParkingSlotId.Value);
             parkingSlot.Status = ParkingSlotStatus.Free;
             await _parkingSlotRepository.UpdateAsync(parkingSlot);
+            await _parkingSlotHubContext.Clients.All.SendAsync("ParkingSlotUpdated", parkingSlot);
         }
 
         car.Status = CarStatus.OutOfParking;
         car.ParkingId = null;
         car.ParkingSlotId = null;
         await _carRepository.UpdateAsync(car);
+        await _carHubContext.Clients.All.SendAsync("CarUpdated", car);
 
-        var reservations = await _reservationRepository.UpdateCarIsInside(request.LicencePlate, request.ParkingId, false);
+        var reservations = await _reservationRepository.UpdateCarIsInside(request.CarPlate, request.ParkingId, false);
 
-        var stopover = await _stopoverRepository.GetFirstByCarPlate(request.LicencePlate);
+        var stopover = await _stopoverRepository.GetFirstByCarPlate(request.CarPlate);
         if (stopover != null)
         {
             var _parkingRepository = scope.ServiceProvider.GetRequiredService<ParkingRepository>();
@@ -125,19 +155,21 @@ public class CamSimulatorController : ControllerBase
             stopover.ToPay = true;
             await _stopoverRepository.UpdateAsync(stopover);
         }
+
+        return responseMessage;
     }
 
     [HttpPost("park")]
     [Authorize]
     public async Task<IActionResult> Parcheggio([FromBody] Request request)
     {
-        if (request == null || string.IsNullOrWhiteSpace(request.LicencePlate))
+        if (request == null || string.IsNullOrWhiteSpace(request.CarPlate))
         {
             return BadRequest("Targa non valida");
         }
 
         var userId = (await _userManager.GetUserAsync(User))?.Id.ToString();
-        _logger.LogInformation("L'utente {user} richiede parcheggio per la targa {LicencePlate}", userId, request.LicencePlate);
+        _logger.LogInformation("L'utente {user} richiede parcheggio per la targa {Plate}", userId, request.CarPlate);
 
         var scope = _serviceScopeFactory.CreateScope();
         var _stopoverRepository = scope.ServiceProvider.GetRequiredService<StopoverRepository>();
@@ -149,8 +181,9 @@ public class CamSimulatorController : ControllerBase
         }
         freeSlot.Status = ParkingSlotStatus.Occupied;
         await _parkingSlotRepository.UpdateAsync(freeSlot);
+        await _parkingSlotHubContext.Clients.All.SendAsync("ParkingSlotUpdated", freeSlot);
 
-        var car = await _carRepository.GetCarByLicencePlate(request.LicencePlate);
+        var car = await _carRepository.GetCarByPlate(request.CarPlate);
         if (car is null)
         {
             return NotFound("Auto non trovata");
@@ -158,12 +191,13 @@ public class CamSimulatorController : ControllerBase
         car.ParkingSlotId = freeSlot.Id;
         car.Status = CarStatus.WaitForParking;
         await _carRepository.UpdateAsync(car);
+        await _carHubContext.Clients.All.SendAsync("CarUpdated", car);
 
         var stopover = new Stopover
         {
             StartStopoverTime = DateTime.Now,
             UserId = userId,
-            CarPlate = request.LicencePlate,
+            CarPlate = request.CarPlate,
             ParkingSlotId = freeSlot?.Id,
             TotalCost = 0,
             ToPay = false,
@@ -171,8 +205,8 @@ public class CamSimulatorController : ControllerBase
         await _stopoverRepository.AddAsync(stopover);
         stopover.ParkingSlot = freeSlot;
 
-        // TODO: implement update elsewhere
-        await _carRepository.UpdateCarStatus(request.LicencePlate, CarStatus.Parked);
+        await _carRepository.UpdateCarStatus(request.CarPlate, CarStatus.Parked);
+        await _carHubContext.Clients.All.SendAsync("CarUpdated", car);
 
         return Ok("Selezionata sosta. Riservato posto numero: " + stopover.ParkingSlot.Number);
     }
@@ -181,31 +215,33 @@ public class CamSimulatorController : ControllerBase
     [Authorize]
     public async Task<IActionResult> Ricarica([FromBody] Request request)
     {
-        if (request == null || string.IsNullOrWhiteSpace(request.LicencePlate))
+        if (request == null || string.IsNullOrWhiteSpace(request.CarPlate))
         {
             return BadRequest("Targa non valida");
         }
 
         var userId = (await _userManager.GetUserAsync(User))?.Id.ToString();
-        _logger.LogInformation("L'utente {user} richiede ricarica per la targa {LicencePlate}", userId, request.LicencePlate);
+        _logger.LogInformation("User {user} requests recharge for car {plate}", userId, request.CarPlate);
 
-        var reservations = await _reservationRepository.UpdateCarIsInside(request.LicencePlate, request.ParkingId, true);
-        await _chargeManager.UpdateReservationsCarIsInside(request.LicencePlate, request.ParkingId, true);
+        var reservations = await _reservationRepository.UpdateCarIsInside(request.CarPlate, request.ParkingId, true);
+        await _chargeManager.UpdateReservationsCarIsInside(request.CarPlate, request.ParkingId, true);
+
         if (!reservations.Any())
         {
             var scope = _serviceScopeFactory.CreateScope();
             var parkingRepository = scope.ServiceProvider.GetRequiredService<ParkingRepository>();
             var immediateRequestRepository = scope.ServiceProvider.GetRequiredService<ImmediateRequestRepository>();
 
-            _logger.LogDebug("No reservation found for car {car}, proceding to create ImmediateRequest", request.LicencePlate);
+            _logger.LogDebug("No reservation found for car {car}, proceding to create ImmediateRequest", request.CarPlate);
 
-            var existingRequest = await immediateRequestRepository.GetByCarPlate(request.LicencePlate);
+            var existingRequest = await immediateRequestRepository.GetByCarPlate(request.CarPlate);
             if (existingRequest is not null)
             {
                 return BadRequest("Richiesta già in corso");
             }
 
-            await _carRepository.UpdateCarStatus(request.LicencePlate, CarStatus.WaitForCharge);
+            var car = await _carRepository.UpdateCarStatus(request.CarPlate, CarStatus.WaitForCharge);
+            await _carHubContext.Clients.All.SendAsync("CarUpdated", car);
 
             var immediateRequest = new ImmediateRequest
             {
@@ -213,14 +249,15 @@ public class CamSimulatorController : ControllerBase
                 RequestedChargeLevel = request.ChargeLevel ?? 100,
                 ParkingId = request.ParkingId,
                 Parking = await parkingRepository.GetByIdAsync(request.ParkingId),
-                CarPlate = request.LicencePlate,
+                CarPlate = request.CarPlate,
                 UserId = userId,
                 FromReservation = false,
             };
             await immediateRequestRepository.AddAsync(immediateRequest);
             var chargeIR = await _chargeManager.AddImmediateRequest(immediateRequest, request.ParkingId);
 
-            return Ok(immediateRequest);
+            var personInQueue = reservations.Count(r => r.RequestDate < immediateRequest.RequestDate);
+            return Ok(personInQueue + 1);
         }
 
         return Ok(reservations);
@@ -229,7 +266,7 @@ public class CamSimulatorController : ControllerBase
 
 public class Request
 {
-    public string LicencePlate { get; set; }
+    public string CarPlate { get; set; }
     public int ParkingId { get; set; }
     public decimal? ChargeLevel { get; set; }
 }

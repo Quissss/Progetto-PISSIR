@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Progetto.App.Core.Models.Users;
 
 namespace Progetto.App.Core.Models;
 
@@ -16,6 +17,6 @@ public class Reservation
     public int ParkingId { get; set; }
     public Parking? Parking { get; set; }
     public string UserId { get; set; }
-    public IdentityUser? User { get; set; }
+    public ApplicationUser? User { get; set; }
     public bool CarIsInside { get; set; }
 }

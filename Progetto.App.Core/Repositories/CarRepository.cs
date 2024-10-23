@@ -17,9 +17,9 @@ public class CarRepository : GenericRepository<Car>
         _context = context;
     }
 
-    public async Task<Car?> GetCarByLicencePlate(string licencePlate)
+    public async Task<Car?> GetCarByPlate(string plate)
     {
-        return await _context.Cars.Where(c => c.LicencePlate == licencePlate).FirstOrDefaultAsync();
+        return await _context.Cars.Where(c => c.Plate == plate).FirstOrDefaultAsync();
     }
 
     public async Task<IEnumerable<Car?>> GetCarsByOwner(string ownerId)
@@ -27,9 +27,9 @@ public class CarRepository : GenericRepository<Car>
         return await _context.Cars.Where(c => c.OwnerId == ownerId).ToListAsync();
     }
 
-    public async Task<Car> UpdateCarStatus(string licencePlate, CarStatus status, int? parkingSlotId = null)
+    public async Task<Car> UpdateCarStatus(string plate, CarStatus status, int? parkingSlotId = null)
     {
-        var car = await _context.Cars.Where(c => c.LicencePlate == licencePlate).FirstAsync();
+        var car = await _context.Cars.Where(c => c.Plate == plate).FirstAsync();
         car.Status = status;
         if (status == CarStatus.InCharge)
         {

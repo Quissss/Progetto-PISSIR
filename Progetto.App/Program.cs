@@ -6,10 +6,13 @@ using PayPal.REST.Client;
 using PayPal.REST.Models;
 using Progetto.App.Core.Data;
 using Progetto.App.Core.Models;
+using Progetto.App.Core.Models.Users;
 using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Security;
 using Progetto.App.Core.Security.Policies;
 using Progetto.App.Core.Services.Mqtt;
+using Progetto.App.Core.Services.SignalR.Hubs;
+using Progetto.App.Core.Services.Telegram;
 using Progetto.App.Core.Validators;
 using Serilog;
 
@@ -48,9 +51,12 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 services.AddDbContext<ApplicationDbContext>();
 services.AddDatabaseDeveloperPageExceptionFilter();
 
-services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders();
+
 services.AddRazorPages();
+services.AddSignalR();
 
 services.AddAuthorization(option =>
 {
@@ -58,10 +64,11 @@ services.AddAuthorization(option =>
     option.AddPolicy(PolicyNames.IsPremiumUser, policy => policy.AddRequirements(new IsPremiumUser()));
 });
 
-// Validators
+#region Validators
 services.AddValidatorsFromAssemblyContaining<CarValidator>();
+#endregion
 
-#region Scoped repositories
+#region Repositories
 services.AddScoped<CarRepository>();
 services.AddScoped<MwBotRepository>();
 services.AddScoped<ParkingRepository>();
@@ -73,14 +80,24 @@ services.AddScoped<StopoverRepository>();
 services.AddScoped<PaymentHistoryRepository>();
 #endregion
 
-// Authorization handlers
 services.AddSingleton<ChargeManager>();
+#region Authorization handlers
 services.AddSingleton<IAuthorizationHandler, IsAdminAuthorizationHandler>();
 services.AddSingleton<IAuthorizationHandler, IsPremiumUserAuthorizationHandler>();
+#endregion
 
-// Mqtt
-services.AddHostedService<MqttBroker>();
+#region Mqtt
+services.AddSingleton<MqttBroker>(); // For TelegramService to get the MqttBroker instance
+services.AddHostedService(provider => provider.GetRequiredService<MqttBroker>());
 services.AddTransient<MqttMwBotClient>();
+#endregion
+
+#region Telegram
+services.AddSingleton<TelegramService>();
+#endregion
+
+services.AddEndpointsApiExplorer();
+services.AddSwaggerGen();
 
 services.AddSingleton<ConnectedClientsService>();
 
@@ -98,6 +115,15 @@ else
     app.UseHsts();
 }
 
+var telegramService = app.Services.GetRequiredService<TelegramService>();
+telegramService.StartReceivingUpdates();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
@@ -105,6 +131,14 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapRazorPages();
+
+#region SignalR
+app.MapHub<CarHub>("/carHub");
+app.MapHub<MwBotHub>("/mwBotHub");
+app.MapHub<ParkingHub>("/parkingHub");
+app.MapHub<RechargeHub>("/rechargeHub");
+app.MapHub<ParkingSlotHub>("/parkingSlotHub");
+#endregion
 
 // Ensure the MQTT broker is started before initializing clients
 app.Lifetime.ApplicationStarted.Register(async () =>

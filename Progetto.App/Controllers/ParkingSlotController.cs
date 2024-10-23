@@ -1,9 +1,11 @@
 ﻿using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Progetto.App.Core.Models;
 using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Security;
+using Progetto.App.Core.Services.SignalR.Hubs;
 using Progetto.App.Core.Validators;
 
 namespace Progetto.App.Controllers;
@@ -14,18 +16,134 @@ namespace Progetto.App.Controllers;
 /// </summary>
 [Route("api/[controller]")]
 [ApiController]
-[Authorize]
 public class ParkingSlotController : ControllerBase
 {
+    private readonly IHubContext<ParkingSlotHub> _hubContext;
     private readonly ILogger<ParkingSlotController> _logger;
-    private readonly ParkingSlotRepository _parkingSlotRepository;
     private readonly IServiceScopeFactory _serviceScopeFactory;
+    private readonly ParkingSlotRepository _parkingSlotRepository;
 
-    public ParkingSlotController(ILogger<ParkingSlotController> logger, ParkingSlotRepository repository, IServiceScopeFactory serviceScopeFactory)
+    public ParkingSlotController(IHubContext<ParkingSlotHub> hubContext, ILogger<ParkingSlotController> logger, ParkingSlotRepository repository, IServiceScopeFactory serviceScopeFactory)
     {
         _logger = logger;
+        _hubContext = hubContext;
         _parkingSlotRepository = repository;
         _serviceScopeFactory = serviceScopeFactory;
+    }
+
+    [HttpPost]
+    [Authorize(Policy = PolicyNames.IsAdmin)]
+    public async Task<ActionResult<ParkingSlot>> AddParkingSlot([FromBody] ParkingSlot parkingSlot)
+    {
+        var validator = new ParkingSlotValidator();
+        var result = validator.Validate(parkingSlot);
+        result.AddToModelState(ModelState);
+
+        if (!ModelState.IsValid)
+        {
+            _logger.LogWarning("Invalid model state while creating parking slot with id {id}", parkingSlot.Id);
+            return BadRequest();
+        }
+
+        try
+        {
+            _logger.LogDebug("Creating parking slot with id {id}", parkingSlot.Id);
+
+            var existingParkingSlot = await _parkingSlotRepository.GetByIdAsync(parkingSlot.Id);
+            if (existingParkingSlot != null)
+            {
+                _logger.LogWarning("Parking slot with id {id} already exists", parkingSlot.Id);
+                return BadRequest();
+            }
+
+            await _parkingSlotRepository.AddAsync(parkingSlot);
+            var connectionId = Request.Headers["X-Connection-Id"].ToString();
+            await _hubContext.Clients.AllExcept(connectionId).SendAsync("ParkingSlotAdded", parkingSlot);
+
+            _logger.LogDebug("Parking slot created with {id}", parkingSlot.Id);
+            return Ok(parkingSlot);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while creating parking slot with id {id}", parkingSlot.Id);
+        }
+
+        return BadRequest();
+    }
+
+    [HttpDelete]
+    [Authorize(Policy = PolicyNames.IsAdmin)]
+    public async Task<ActionResult> DeleteParkingSlot([FromBody] ParkingSlot parkingSlot)
+    {
+        if (parkingSlot.Id <= 0)
+        {
+            _logger.LogWarning("Invalid id while deleting parking slot with id {id}", parkingSlot.Id);
+            return BadRequest();
+        }
+
+        try
+        {
+            _logger.LogDebug("Deleting parking slot with id {id}", parkingSlot.Id);
+
+            var existingParkingSlot = await _parkingSlotRepository.GetByIdAsync(parkingSlot.Id);
+            if (existingParkingSlot == null)
+            {
+                _logger.LogWarning("Parking slot with id {id} does not exist", parkingSlot.Id);
+                return NotFound();
+            }
+
+            await _parkingSlotRepository.DeleteAsync(p => p.Id == parkingSlot.Id);
+            var connectionId = Request.Headers["X-Connection-Id"].ToString();
+            await _hubContext.Clients.AllExcept(connectionId).SendAsync("ParkingSlotDeleted", parkingSlot.Id);
+
+            _logger.LogDebug("Parking slot with id {id} deleted", parkingSlot.Id);
+            return Ok(parkingSlot);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while deleting parking slot with id {id}", parkingSlot.Id);
+        }
+
+        return BadRequest();
+    }
+
+    [HttpPut]
+    [Authorize(Policy = PolicyNames.IsAdmin)]
+    public async Task<ActionResult<ParkingSlot>> UpdateParkingSlot([FromBody] ParkingSlot parkingSlot)
+    {
+        var validator = new ParkingSlotValidator();
+        var result = validator.Validate(parkingSlot);
+        result.AddToModelState(ModelState);
+
+        if (!ModelState.IsValid)
+        {
+            _logger.LogWarning("Invalid model state while updating parking slot with id {id}", parkingSlot.Id);
+            return BadRequest();
+        }
+
+        try
+        {
+            _logger.LogDebug("Updating parking slot with id {id}", parkingSlot.Id);
+
+            if (!await _parkingSlotRepository.CheckEntityExists(parkingSlot))
+            {
+                _logger.LogWarning("Parking slot with id {id} does not exist", parkingSlot.Id);
+                return NotFound();
+            }
+
+            await _parkingSlotRepository.UpdateAsync(parkingSlot);
+            var connectionId = Request.Headers["X-Connection-Id"].ToString();
+            await _hubContext.Clients.AllExcept(connectionId).SendAsync("ParkingSlotUpdated", parkingSlot);
+
+            _logger.LogDebug("Parking slot with id {id} updated", parkingSlot.Id);
+            return Ok(parkingSlot);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while updating parking slot with id {id}", parkingSlot.Id);
+        }
+
+        return BadRequest();
     }
 
     [HttpGet]
@@ -69,115 +187,6 @@ public class ParkingSlotController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error while getting all parking slots");
-        }
-
-        return BadRequest();
-    }
-
-    [HttpPost]
-    [Authorize(Policy = PolicyNames.IsAdmin)]
-    public async Task<ActionResult<ParkingSlot>> AddParkingSlot([FromBody] ParkingSlot parkingSlot)
-    {
-        var validator = new ParkingSlotValidator();
-        var result = validator.Validate(parkingSlot);
-        result.AddToModelState(ModelState);
-
-        if (!ModelState.IsValid)
-        {
-            _logger.LogWarning("Invalid model state while creating parking slot with id {id}", parkingSlot.Id);
-            return BadRequest();
-        }
-
-        try
-        {
-            _logger.LogDebug("Creating parking slot with id {id}", parkingSlot.Id);
-
-            var existingParkingSlot = await _parkingSlotRepository.GetByIdAsync(parkingSlot.Id);
-            if (existingParkingSlot != null)
-            {
-                _logger.LogWarning("Parking slot with id {id} already exists", parkingSlot.Id);
-                return BadRequest();
-            }
-
-            await _parkingSlotRepository.AddAsync(parkingSlot);
-
-            _logger.LogDebug("Parking slot created with {id}", parkingSlot.Id);
-            return Ok(parkingSlot);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error while creating parking slot with id {id}", parkingSlot.Id);
-        }
-
-        return BadRequest();
-    }
-
-    [HttpDelete]
-    [Authorize(Policy = PolicyNames.IsAdmin)]
-    public async Task<ActionResult> DeleteParkingSlot([FromBody] ParkingSlot parkingSlot)
-    {
-        if (parkingSlot.Id <= 0)
-        {
-            _logger.LogWarning("Invalid id while deleting parking slot with id {id}", parkingSlot.Id);
-            return BadRequest();
-        }
-
-        try
-        {
-            _logger.LogDebug("Deleting parking slot with id {id}", parkingSlot.Id);
-
-            var existingParkingSlot = await _parkingSlotRepository.GetByIdAsync(parkingSlot.Id);
-            if (existingParkingSlot == null)
-            {
-                _logger.LogWarning("Parking slot with id {id} does not exist", parkingSlot.Id);
-                return NotFound();
-            }
-            await _parkingSlotRepository.DeleteAsync(p => p.Id == parkingSlot.Id);
-
-            _logger.LogDebug("Parking slot with id {id} deleted", parkingSlot.Id);
-            return Ok(parkingSlot);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error while deleting parking slot with id {id}", parkingSlot.Id);
-        }
-
-        return BadRequest();
-    }
-
-    [HttpPut]
-    [Authorize(Policy = PolicyNames.IsAdmin)]
-    public async Task<ActionResult<ParkingSlot>> UpdateParkingSlot([FromBody] ParkingSlot parkingSlot)
-    {
-        var validator = new ParkingSlotValidator();
-        var result = validator.Validate(parkingSlot);
-        result.AddToModelState(ModelState);
-
-        if (!ModelState.IsValid)
-        {
-            _logger.LogWarning("Invalid model state while updating parking slot with id {id}", parkingSlot.Id);
-            return BadRequest();
-        }
-
-        try
-        {
-            _logger.LogDebug("Updating parking slot with id {id}", parkingSlot.Id);
-
-            var existingParkingSlot = await _parkingSlotRepository.GetByIdAsync(parkingSlot.Id);
-            if (existingParkingSlot == null)
-            {
-                _logger.LogWarning("Parking slot with id {id} does not exist", parkingSlot.Id);
-                return NotFound();
-            }
-
-            await _parkingSlotRepository.UpdateAsync(parkingSlot);
-
-            _logger.LogDebug("Parking slot with id {id} updated", parkingSlot.Id);
-            return Ok(parkingSlot);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error while updating parking slot with id {id}", parkingSlot.Id);
         }
 
         return BadRequest();
