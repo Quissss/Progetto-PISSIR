@@ -33,10 +33,11 @@ public class CurrentlyChargingRepository : GenericRepository<CurrentlyCharging>
             .FirstOrDefaultAsync();
     }
 
-    public async Task<CurrentlyCharging?> GetActiveWithNoBot()
+    public async Task<CurrentlyCharging?> GetActiveWithNoBotByParking(int parkingId)
     {
         return await _context.CurrentlyCharging
-            .Where(c => c.MwBotId == null && c.EndChargingTime == null && !c.ToPay && c.CurrentChargePercentage <= c.TargetChargePercentage && c.ImmediateRequestId != null)
+            .Include(cc => cc.ParkingSlot)
+            .Where(c => c.MwBotId == null && c.EndChargingTime == null && !c.ToPay && c.CurrentChargePercentage <= c.TargetChargePercentage && c.ImmediateRequestId != null && c.ParkingSlot.ParkingId == parkingId)
             .OrderBy(c => c.StartChargingTime)
             .FirstOrDefaultAsync();
     }

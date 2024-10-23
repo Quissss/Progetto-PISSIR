@@ -222,7 +222,7 @@ public class MqttBroker : IHostedService, IDisposable
 
         // Check if the bot has a currently charging session or there's a free charging session to progress
         currentlyCharging = await currentlyChargingRepository.GetActiveByMwBot(mwBot.Id);
-        currentlyCharging ??= await currentlyChargingRepository.GetActiveWithNoBot();
+        currentlyCharging ??= await currentlyChargingRepository.GetActiveWithNoBotByParking(mwBot.ParkingId.Value);
         if (currentlyCharging != null)
         {
             // If the charging session is not assigned to the bot, assign it

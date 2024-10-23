@@ -212,12 +212,18 @@ public class ChargeManager : IDisposable
         return null;
     }
 
-    private ImmediateRequest? GetNextImmediateRequest()
+    private ImmediateRequest? GetNextImmediateRequest(int parkingId)
     {
-        if (_immediateRequests?.Count > 0)
+        var immediateRequestsList = _immediateRequests.ToList();
+        var immediateRequest = immediateRequestsList.FirstOrDefault(ir => ir.ParkingId == parkingId);
+
+        if (immediateRequest != null)
         {
-            return _immediateRequests.Dequeue();
+            var updatedQueue = new Queue<ImmediateRequest>(_immediateRequests.Where(ir => ir.Id != immediateRequest.Id));
+            _immediateRequests = updatedQueue;
+            return immediateRequest;
         }
+
         return null;
     }
 
@@ -304,7 +310,7 @@ public class ChargeManager : IDisposable
 
             if (immediateRequests?.Count() > 0)
             {
-                immediateRequest = GetNextImmediateRequest();
+                immediateRequest = GetNextImmediateRequest(mwBot.ParkingId.Value);
                 _logger.LogInformation("MwBot {mwBot}: Serving immediate request from user {immediateRequest?.UserId} at {immediateRequest?.RequestDate}.", mwBot.Id, immediateRequest?.UserId, immediateRequest?.RequestDate);
             }
         }
