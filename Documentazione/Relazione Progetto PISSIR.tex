@@ -1,0 +1,122 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{babel}[italian]
+\usepackage{float}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdfpagemode=FullScreen,
+    }
+
+\title{Relazione per il progetto di Progettazione e Implementazione dei Sistemi Software in Rete}
+\author{
+  Luca Benetti\\
+  20043903
+  \and
+  Anton Borislavov Iliev\\
+  20035170
+  \and
+  Linda Monfermoso\\
+  20028464
+}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduzione}
+Come previsto dal progetto presentato durante il corso, abbiamo creato un applicativo web pensato per gestire le ricariche di automobili elettriche, in più parcheggi, tramite robot autonomi.
+\section{Specifica}
+\subsection{Casi d'uso e requisiti}
+Il diagramma dei casi d'uso è disponibile nel \href{run:./casi d'uso.pdf}{file PDF apposito}.
+\subsubsection{Descrizione casi d'uso e requisiti funzionali}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|p{3cm}|p{7cm}|}
+        \hline
+         1 & Login & L'utente si autentica alla piattaforma \\
+         \hline
+         2 & Creazione utente & Viene creato un utente nella piattaforma \\
+         \hline
+         3 & Aggiorna dati utente & L'utente aggiorna i propri dati \\
+         \hline
+         4 & Effettua pagamento & L'utente effettua un pagamento in seguito a una ricarica \\
+         \hline
+         5 & Visualizza pagamento & L'utente visualizza il pagamento da effettuare \\
+         \hline
+         6 & Creazione pagamento & Viene creato un pagamento in seguito a una ricarica finita \\
+         \hline
+         7 & Crea prenotazione & L'utente premium crea una prenotazione \\
+         \hline
+         8 & Elimina prenotazione & L'utente premium elimina una prenotazione \\
+         \hline
+         9 & Modifica prenotazione & L'utente premium modifica una prenotazione \\
+         \hline
+         10 & Elenco prenotazioni & L'amministratore visualizza elenco delle prenotazioni \\
+         \hline
+         11 & Invio messaggio utente & Il sistema invia un messaggio (via Telegram) all'utente \\
+         \hline
+         12 & Invio messaggio robot & Il sistema invia un messaggio (via MQTT) all'utente \\
+         \hline
+         13 & Aggiunta/rimozione robot & L'amministratore aggiunge o rimuove un MWbot \\
+         \hline
+         14 & Monitoraggio occupazione & Il sistema monitora le macchine in entrata e uscita per determinare occupazione dei posti \\
+         \hline
+         15 & Aggiunta/rimozione auto & L'utente rimuove o aggiunge un'automobile \\
+         \hline
+         16 & Aggiungi/rimuovi macchina coda ricariche & Il sistema aggiorna lo stato delle macchine in coda per ricarica \\
+         \hline
+         17 & Elenco coda ricariche & L'amministratore visualizza l'elenco delle ricariche in coda \\
+         \hline
+         18 & Aggiornamento costi ricarica & L'amministratore aggiorna i costi delle ricariche \\
+         \hline
+         20 & Elenco pagamenti & L'amministratore visualizza l'elenco dei pagamenti \\
+         \hline
+         21 & Rimozione utente & L'amministratore rimuove un utente dalla piattaforma \\
+         \hline
+         22 & Elenco posteggi & L'amministratore visualizza un elenco dei posteggi di un parcheggio \\
+         \hline
+         23 & Elenco auto & L'amministratore visualizza un elenco delle auto registrate alla piattaforma \\
+         \hline
+         24 & Ricerca utente & L'amministratore ricerca un utente registrato \\
+         \hline
+         25 & Ricerca parcheggio & L'amministratore ricerca un parcheggio \\
+         \hline
+    \end{tabular}
+\end{table}
+\subsubsection{Requisiti non funzionali}
+\begin{itemize}
+    \item L'interfaccia è grafica e realizzata con Razor Pages
+    \item Il database è realizzato con SQLite
+    \item Le specifiche di progettazione sono realizzate con diagrammi UML
+    \item Il sistema è implementato in .NET e EntityFramework
+    \item La password è lunga 8 caratteri, con maiusole, minuscole e numero
+    \item Le date sono memorizzate nel formato standard UTC
+    \item Lo scambio di messaggi con MWbot avviene tramite MQTT
+    \item Lo scambio di messaggi tra sistema di prenotazione e ricariche e utente avviene tramite Telegram
+    \item Il pagamento avviene tramite PayPal
+    \item La registrazione e l'autenticazione sono gestite dalla libreria Identity
+    \item Il rilevamento dei posti occupati è gestito da un sensore posto all'entrata del parcheggio
+\end{itemize}
+\subsection{Diagramma delle classi di dominio}
+Il diagramma delle classi di dominio è disponibile nel \href{run:./dominio.pdf}{file PDF apposito}.
+\section{Progettazione}
+\subsection{Diagramma delle classi}
+
+\subsection{Documentazione API}
+Per documentare le API abbiamo utilizzato \href{https://swagger.io}{Swagger}. La lista di API utilizzate nel progetto è visibile alla pagina \url{https://localhost:7237/swagger/index.html} quando questo è in esecuzione.
+\subsection{MQTT}
+La gestione e comunicazione con i robot MWbot è stata implementata mediante il protocollo MQTT. All'avvio, l'applicativo verifica gli MwBot che sono attualmente online e li istanzia come client, connettendoli al broker ed effettuando l'inizializzazione dei parametri.
+
+Come da protocollo, la nostra implementazione prevede la presenza di un broker e di più client, che rappresentano gli MWbot. In particolare, il broker è responsabile della ricezione e distribuzione di messaggi tra client MWbot e ne gestisce le richieste. Il client, invece, comunica con il broker pubblicando sui topic pertinenti.
+
+
+\section{Implementazione}
+\subsection{Istruzioni di installazione}
+
+\subsection{Suddivisione compiti}
+
+\end{document}
