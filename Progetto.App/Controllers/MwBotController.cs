@@ -29,6 +29,16 @@ public class MwBotController : ControllerBase
     private readonly MwBotRepository _mwBotRepository;
     private readonly ConnectedClientsService _connectedClientsService;
 
+    /// <summary>
+    /// Controller per la gestione dei MwBot (operazioni CRUD)
+    /// Richiede l'autenticazione come admin
+    /// </summary>
+    /// <param name="mwBotRespository">Repository per gestire le informazioni sui MwBot</param>
+    /// <param name="hubContext">Contesto SignalR per inviare aggiornamenti ai client connessi</param>
+    /// <param name="loggerFactory">Factory per la creazione di loggers</param>
+    /// <param name="logger">Interfaccia per la gestione del logging</param>
+    /// <param name="serviceScopeFactory">Fornisce contesti per eseguire servizi all'interno di uno scope</param>
+    /// <param name="connectedClientsService">Servizio per gestire i client connessi</param>
     public MwBotController(
         MwBotRepository mwBotRespository,
         IHubContext<MwBotHub> hubContext,
@@ -47,6 +57,11 @@ public class MwBotController : ControllerBase
         _mwBotRepository = provider.GetRequiredService<MwBotRepository>();
     }
 
+    /// <summary>
+    /// Aggiunge un nuovo MwBot
+    /// </summary>
+    /// <param name="mwBot">Dati del MwBot da aggiungere</param>
+    /// <returns>Il MwBot appena creato o un errore in caso di fallimento</returns>
     [HttpPost]
     public async Task<ActionResult<MwBot>> AddMwBot([FromBody] MwBot mwBot)
     {
@@ -80,6 +95,11 @@ public class MwBotController : ControllerBase
         return BadRequest();
     }
 
+    /// <summary>
+    /// Accende un MwBot esistente
+    /// </summary>
+    /// <param name="mwBot">Dati del MwBot da accendere</param>
+    /// <returns>Il MwBot aggiornato allo stato di StandBy o un errore in caso di fallimento</returns>
     [HttpPut("on")]
     public async Task<ActionResult<MwBot>> TurnOn([FromBody] MwBot mwBot)
     {
@@ -147,6 +167,11 @@ public class MwBotController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Spegne un MwBot esistente
+    /// </summary>
+    /// <param name="mwBot">Dati del MwBot da spegnere</param>
+    /// <returns>Il MwBot aggiornato allo stato Offline o un errore in caso di fallimento</returns>
     [HttpPut("off")]
     public async Task<ActionResult<MwBot>> TurnOff([FromBody] MwBot mwBot)
     {
@@ -200,6 +225,11 @@ public class MwBotController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Elimina un MwBot esistente
+    /// </summary>
+    /// <param name="mwBot">Dati del MwBot da eliminare</param>
+    /// <returns>Conferma dell'eliminazione o un errore in caso di fallimento</returns>
     [HttpDelete]
     public async Task<ActionResult> DeleteMwBot([FromBody] MwBot mwBot)
     {
@@ -222,6 +252,11 @@ public class MwBotController : ControllerBase
         return BadRequest();
     }
 
+    /// <summary>
+    /// Aggiorna i dati di un MwBot esistente
+    /// </summary>
+    /// <param name="mwBot">Dati aggiornati del MwBot</param>
+    /// <returns>Il MwBot aggiornato o un errore in caso di fallimento</returns>
     [HttpPut]
     public async Task<ActionResult<MwBot>> UpdateMwBot([FromBody] MwBot mwBot)
     {
@@ -254,6 +289,12 @@ public class MwBotController : ControllerBase
         return BadRequest();
     }
 
+    /// <summary>
+    /// Ottiene una lista di MwBot, con opzioni di filtraggio per stato o parkingId
+    /// </summary>
+    /// <param name="status">Stato del MwBot (online/offline)</param>
+    /// <param name="parkingId">Id del parcheggio per filtrare i MwBot associati</param>
+    /// <returns>La lista dei MwBot filtrati</returns>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<MwBot>>> GetMwBots([FromQuery] int? status, [FromQuery] int? parkingId)
     {
@@ -285,6 +326,11 @@ public class MwBotController : ControllerBase
         return BadRequest();
     }
 
+    /// <summary>
+    /// Ottiene i dettagli di un MwBot specifico tramite il suo id
+    /// </summary>
+    /// <param name="id">Id del MwBot da recuperare</param>
+    /// <returns>Il MwBot corrispondente o un errore se non trovato</returns>
     [HttpGet("{id}")]
     public async Task<ActionResult<MwBot>> GetMwBot(int id)
     {

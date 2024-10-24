@@ -11,8 +11,11 @@ using Progetto.App.Core.Validators;
 namespace Progetto.App.Controllers;
 
 /// <summary>
-/// Controller for managing parkings (endpoints for CRUD operations)
+/// Controller per la gestione dei parcheggi (operazioni CRUD)
 /// </summary>
+/// <param name="logger">Interfaccia per la gestione del logging</param>
+/// <param name="hubContext">Contesto SignalR per inviare aggiornamenti ai client connessi</param>
+/// <param name="repository">Repository per la gestione dei dati dei parcheggi</param>
 [Route("api/[controller]")]
 [ApiController]
 public class ParkingController : ControllerBase
@@ -28,6 +31,11 @@ public class ParkingController : ControllerBase
         _parkingRepository = repository;
     }
 
+    /// <summary>
+    /// Aggiunge un nuovo parcheggio
+    /// </summary>
+    /// <param name="parking">Dati del parcheggio da aggiungere</param>
+    /// <returns>Il parcheggio creato o un errore in caso di fallimento</returns>
     [HttpPost]
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<Parking>> AddParking([FromBody] Parking parking)
@@ -68,6 +76,11 @@ public class ParkingController : ControllerBase
         return BadRequest();
     }
 
+    /// <summary>
+    /// Elimina un parcheggio esistente
+    /// </summary>
+    /// <param name="parking">Dati del parcheggio da eliminare</param>
+    /// <returns>Conferma dell'eliminazione o un errore in caso di fallimento</returns>
     [HttpDelete]
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult> DeleteParking([FromBody] Parking parking)
@@ -96,6 +109,11 @@ public class ParkingController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Aggiorna i dati di un parcheggio esistente
+    /// </summary>
+    /// <param name="parking">Dati aggiornati del parcheggio</param>
+    /// <returns>Il parcheggio aggiornato o un errore in caso di fallimento</returns>
     [HttpPut]
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult> UpdateParking([FromBody] Parking parking)
@@ -134,6 +152,13 @@ public class ParkingController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Ottiene una lista di tutti i parcheggi con opzioni di filtraggio per nome, città o indirizzo
+    /// </summary>
+    /// <param name="name">Nome del parcheggio</param>
+    /// <param name="city">Città del parcheggio</param>
+    /// <param name="address">Indirizzo del parcheggio</param>
+    /// <returns>La lista dei parcheggi filtrati o un errore in caso di fallimento</returns>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Parking>>> GetAllParkings([FromQuery] string? name, [FromQuery] string? city, [FromQuery] string? address)
     {
@@ -166,6 +191,11 @@ public class ParkingController : ControllerBase
         return BadRequest();
     }
 
+    /// <summary>
+    /// Ottiene i dettagli di un parcheggio tramite il nome
+    /// </summary>
+    /// <param name="name">Nome del parcheggio da recuperare</param>
+    /// <returns>Il parcheggio corrispondente o un errore se non trovato</returns>
     [HttpGet("{name}")]
     public async Task<ActionResult<Parking>> GetParkingByName(string name)
     {

@@ -23,6 +23,14 @@ public class ParkingSlotController : ControllerBase
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly ParkingSlotRepository _parkingSlotRepository;
 
+    /// <summary>
+    /// Controller per la gestione delle operazioni sui posti auto (operazioni CRUD).
+    /// Richiede autenticazione.
+    /// </summary>
+    /// <param name="logger">Interfaccia per il logging</param>
+    /// <param name="hubContext">Contesto SignalR per notificare i client connessi</param>
+    /// <param name="repository">Repository per la gestione dei dati sui posti auto</param>
+    /// <param name="serviceScopeFactory">Factory per la gestione degli scope dei servizi</param>
     public ParkingSlotController(IHubContext<ParkingSlotHub> hubContext, ILogger<ParkingSlotController> logger, ParkingSlotRepository repository, IServiceScopeFactory serviceScopeFactory)
     {
         _logger = logger;
@@ -31,6 +39,11 @@ public class ParkingSlotController : ControllerBase
         _serviceScopeFactory = serviceScopeFactory;
     }
 
+    /// <summary>
+    /// Aggiunge un nuovo posto auto
+    /// </summary>
+    /// <param name="parkingSlot">Dati del posto auto da aggiungere</param>
+    /// <returns>Il posto auto creato o un errore in caso di fallimento</returns>
     [HttpPost]
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<ParkingSlot>> AddParkingSlot([FromBody] ParkingSlot parkingSlot)
@@ -71,6 +84,11 @@ public class ParkingSlotController : ControllerBase
         return BadRequest();
     }
 
+    /// <summary>
+    /// Elimina un posto auto esistente
+    /// </summary>
+    /// <param name="parkingSlot">Dati del posto auto da eliminare</param>
+    /// <returns>Conferma dell'eliminazione o un errore in caso di fallimento</returns>
     [HttpDelete]
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult> DeleteParkingSlot([FromBody] ParkingSlot parkingSlot)
@@ -107,6 +125,11 @@ public class ParkingSlotController : ControllerBase
         return BadRequest();
     }
 
+    /// <summary>
+    /// Aggiorna i dati di un posto auto esistente
+    /// </summary>
+    /// <param name="parkingSlot">Dati aggiornati del posto auto</param>
+    /// <returns>Il posto auto aggiornato o un errore in caso di fallimento</returns>
     [HttpPut]
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<ParkingSlot>> UpdateParkingSlot([FromBody] ParkingSlot parkingSlot)
@@ -146,6 +169,13 @@ public class ParkingSlotController : ControllerBase
         return BadRequest();
     }
 
+    /// <summary>
+    /// Ottiene una lista di tutti i posti auto con opzioni di filtraggio per numero, id del parcheggio o stato
+    /// </summary>
+    /// <param name="number">Numero del posto auto</param>
+    /// <param name="parkingId">ID del parcheggio associato</param>
+    /// <param name="status">Stato del posto auto</param>
+    /// <returns>La lista dei posti auto filtrati o un errore in caso di fallimento</returns>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ParkingSlot>>> GetParkingSlots([FromQuery] int? number, int? parkingId, ParkingSlotStatus? status)
     {
@@ -192,6 +222,11 @@ public class ParkingSlotController : ControllerBase
         return BadRequest();
     }
 
+    /// <summary>
+    /// Ottiene i dettagli di un posto auto tramite l'id
+    /// </summary>
+    /// <param name="id">ID del posto auto da recuperare</param>
+    /// <returns>Il posto auto corrispondente o un errore se non trovato</returns>
     [HttpGet("{id}")]
     public async Task<ActionResult<ParkingSlot>> GetParkingSlot(int id)
     {
@@ -223,6 +258,10 @@ public class ParkingSlotController : ControllerBase
         return BadRequest();
     }
 
+    /// <summary>
+    /// Ottiene tutti gli stati possibili per i posti auto
+    /// </summary>
+    /// <returns>La lista degli stati dei posti auto</returns>
     [HttpGet("statuses")]
     public IActionResult GetStatuses()
     {

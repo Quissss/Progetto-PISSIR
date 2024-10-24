@@ -19,6 +19,15 @@ public class CurrentlyChargingController : ControllerBase
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly ILogger<CurrentlyChargingController> _logger;
 
+    /// <summary>
+    /// Controller per gestire le sessioni di ricarica attualmente in corso e le fermate.
+    /// Richiede l'autenticazione.
+    /// </summary>
+    /// <param name="logger">Interfaccia per la gestione del logging.</param>
+    /// <param name="userManager">Gestore utenti per operazioni di autenticazione e autorizzazione.</param>
+    /// <param name="currentlyChargingRepository">Repository per gestire le informazioni sulle ricariche in corso.</param>
+    /// <param name="stopoverRepository">Repository per gestire le fermate durante il viaggio.</param>
+    /// <param name="serviceScopeFactory">Fornisce un contesto per eseguire servizi all'interno di uno scope.</param>
     public CurrentlyChargingController(
         ILogger<CurrentlyChargingController> logger,
         UserManager<ApplicationUser> userManager,
@@ -33,6 +42,11 @@ public class CurrentlyChargingController : ControllerBase
         _serviceScopeFactory = serviceScopeFactory;
     }
 
+    /// <summary>
+    /// Ottiene la lista delle sessioni di ricarica in corso per l'utente autenticato o per tutti gli utenti, se l'utente è un amministratore.
+    /// </summary>
+    /// <param name="carPlate">Opzionale: targa dell'auto per filtrare le sessioni di ricarica.</param>
+    /// <returns>La lista delle sessioni di ricarica filtrata per targa, se fornita.</returns>
     [HttpGet("recharges")]
     public async Task<IActionResult> GetRecharges([FromQuery] string? carPlate)
     {
@@ -52,6 +66,11 @@ public class CurrentlyChargingController : ControllerBase
         return Ok(recharges);
     }
 
+    /// <summary>
+    /// Ottiene la lista delle fermate per l'utente autenticato o per tutti gli utenti, se l'utente è un amministratore.
+    /// </summary>
+    /// <param name="carPlate">Opzionale: targa dell'auto per filtrare le fermate.</param>
+    /// <returns>La lista delle fermate filtrata per targa, se fornita.</returns>
     [HttpGet("stopovers")]
     public async Task<IActionResult> GetStopovers([FromQuery] string? carPlate)
     {

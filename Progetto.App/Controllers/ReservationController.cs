@@ -21,6 +21,13 @@ public class ReservationController : ControllerBase
     private readonly ReservationRepository _reservationRepository;
     private readonly ChargeManager _chargeManager;
 
+    /// <summary>
+    /// Controller per la gestione delle prenotazioni (CRUD operations).
+    /// Richiede autenticazione.
+    /// </summary>
+    /// <param name="logger">Logger per tracciare le operazioni</param>
+    /// <param name="repository">Repository delle prenotazioni</param>
+    /// <param name="chargeManager">Gestore delle ricariche</param>
     public ReservationController(ILogger<ReservationController> logger, ReservationRepository repository, ChargeManager chargeManager)
     {
         _logger = logger;
@@ -28,7 +35,12 @@ public class ReservationController : ControllerBase
         _chargeManager = chargeManager;
     }
 
-
+    /// <summary>
+    /// Crea una prenotazione per l'utente autenticato.
+    /// Disponibile solo per utenti Premium.
+    /// </summary>
+    /// <param name="reservation">Oggetto prenotazione</param>
+    /// <returns>Ritorna un codice 200 se la prenotazione è stata creata con successo, altrimenti un errore</returns>
     [HttpPost]
     [Authorize(Policy = PolicyNames.IsPremiumUser)]
     public async Task<ActionResult<Reservation>> CreateReservationForUser([FromForm] Reservation reservation)
@@ -63,6 +75,12 @@ public class ReservationController : ControllerBase
 
     }
 
+    /// <summary>
+    /// Elimina una prenotazione.
+    /// Disponibile solo per amministratori.
+    /// </summary>
+    /// <param name="id">ID della prenotazione da eliminare</param>
+    /// <returns>Ritorna un codice 200 se la prenotazione è stata eliminata con successo, altrimenti un errore</returns>
     [HttpDelete]
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<Reservation>> DeleteReservation(int id)
@@ -91,6 +109,12 @@ public class ReservationController : ControllerBase
         return BadRequest();
     }
 
+    /// <summary>
+    /// Aggiorna una prenotazione esistente.
+    /// Disponibile solo per amministratori.
+    /// </summary>
+    /// <param name="reservation">Oggetto prenotazione aggiornato</param>
+    /// <returns>Ritorna un codice 200 se la prenotazione è stata aggiornata con successo, altrimenti un errore</returns>
     [HttpPut]
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<Reservation>> UpdateReservation([FromBody] Reservation reservation)
@@ -130,6 +154,11 @@ public class ReservationController : ControllerBase
         return BadRequest();
     }
 
+    /// <summary>
+    /// Ottiene tutte le prenotazioni esistenti.
+    /// Disponibile solo per amministratori.
+    /// </summary>
+    /// <returns>Ritorna la lista di tutte le prenotazioni</returns>
     [HttpGet]
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<IEnumerable<Reservation>>> GetAllReservations()
@@ -156,6 +185,12 @@ public class ReservationController : ControllerBase
         return BadRequest();
     }
 
+    /// <summary>
+    /// Ottiene una prenotazione specifica in base all'ID.
+    /// Disponibile solo per amministratori.
+    /// </summary>
+    /// <param name="id">ID della prenotazione</param>
+    /// <returns>Ritorna la prenotazione se trovata, altrimenti un errore</returns>
     [HttpGet("{id}")]
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<Reservation>> GetReservationById(int id)
@@ -184,6 +219,12 @@ public class ReservationController : ControllerBase
         return BadRequest();
     }
 
+    /// <summary>
+    /// Ottiene tutte le prenotazioni di un utente specifico.
+    /// Disponibile solo per amministratori.
+    /// </summary>
+    /// <param name="userId">ID dell'utente</param>
+    /// <returns>Ritorna la lista di prenotazioni dell'utente</returns>
     [HttpGet("user/{userId}")]
     [Authorize(Policy = PolicyNames.IsAdmin)]
     public async Task<ActionResult<IEnumerable<Reservation>>> GetReservationsByUser(string userId)
@@ -213,6 +254,10 @@ public class ReservationController : ControllerBase
         return BadRequest();
     }
 
+    /// <summary>
+    /// Ottiene tutte le prenotazioni dell'utente autenticato.
+    /// </summary>
+    /// <returns>Ritorna la lista di prenotazioni dell'utente autenticato</returns>
     [HttpGet("my-reservations")]
     public async Task<ActionResult<IEnumerable<Reservation>>> GetMyReservations()
     {
@@ -241,6 +286,11 @@ public class ReservationController : ControllerBase
         return BadRequest();
     }
 
+    /// <summary>
+    /// Ottiene una prenotazione specifica dell'utente autenticato.
+    /// </summary>
+    /// <param name="id">ID della prenotazione</param>
+    /// <returns>Ritorna la prenotazione se trovata, altrimenti un errore</returns>
     [HttpGet("my-reservation/{id}")]
     public async Task<ActionResult<IEnumerable<Reservation>>> GetMyReservation(int id)
     {
