@@ -85,13 +85,13 @@ $(function () {
 
     $("#mwBotGrid").jsGrid({
         width: "100%",
-        height: "400px",
         editing: true,
         autoload: true,
         filtering: true,
         inserting: true,
         sorting: true,
         paging: true,
+        pageSize: 10,
 
         controller: {
             loadData: filter => ajax(filter, "GET", false),
