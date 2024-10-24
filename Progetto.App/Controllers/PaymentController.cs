@@ -22,6 +22,13 @@ public class PaymentController : ControllerBase
     private readonly IPayPalClient _payPalClient;
     private readonly IServiceScopeFactory _serviceScopeFactory;
 
+    /// <summary>
+    /// Controller per la gestione dei pagamenti, inclusi i pagamenti con PayPal.
+    /// Richiede autenticazione, eccetto per la conferma e il completamento dei pagamenti.
+    /// </summary>
+    /// <param name="paymentHistoryRepository">Repository per lo storico dei pagamenti</param>
+    /// <param name="serviceScopeFactory">Factory per creare scope dei servizi</param>
+    /// <param name="payPalClient">Client per l'interazione con l'API di PayPal</param>
     public PaymentController(PaymentHistoryRepository paymentHistoryRepository, IServiceScopeFactory serviceScopeFactory, IPayPalClient payPalClient)
     {
         _paymentHistoryRepository = paymentHistoryRepository;
@@ -29,6 +36,11 @@ public class PaymentController : ControllerBase
         _payPalClient = payPalClient;
     }
 
+    /// <summary>
+    /// Avvia il processo di pagamento con PayPal per una ricarica o una sosta.
+    /// </summary>
+    /// <param name="body">Oggetto dinamico che contiene l'id della ricarica o della sosta e il tipo di pagamento</param>
+    /// <returns>URL per completare il pagamento su PayPal</returns>
     [HttpPost("checkout")]
     public async Task<ActionResult> Checkout([FromBody] dynamic body)
     {
@@ -150,6 +162,13 @@ public class PaymentController : ControllerBase
         return Ok(new { Url = checkoutUrl.Href });
     }
 
+    /// <summary>
+    /// Completa un pagamento dopo la conferma su PayPal.
+    /// </summary>
+    /// <param name="id">ID della ricarica o della sosta</param>
+    /// <param name="token">Token PayPal per il pagamento</param>
+    /// <param name="payerId">ID del pagatore PayPal</param>
+    /// <returns>Redirezione alla pagina di conferma del pagamento o errore</returns>
     [AllowAnonymous]
     [HttpGet("complete")]
     public async Task<ActionResult> Complete(int id, string token, string payerId)
@@ -207,6 +226,12 @@ public class PaymentController : ControllerBase
         return RedirectToPage("/payments");
     }
 
+    /// <summary>
+    /// Gestisce l'annullamento del pagamento su PayPal.
+    /// </summary>
+    /// <param name="token">Token PayPal per il pagamento</param>
+    /// <param name="payerId">ID del pagatore PayPal</param>
+    /// <returns>Risposta di conferma dell'annullamento</returns>
     [AllowAnonymous]
     [HttpGet("cancel")]
     public async Task<ActionResult> Cancel(string token, string payerId)
@@ -214,6 +239,13 @@ public class PaymentController : ControllerBase
         return Ok();
     }
 
+    /// <summary>
+    /// Ottiene lo storico dei pagamenti per un intervallo di date e un tipo di pagamento specifico.
+    /// </summary>
+    /// <param name="startDate">Data di inizio dell'intervallo</param>
+    /// <param name="endDate">Data di fine dell'intervallo</param>
+    /// <param name="chargeType">Indica se filtrare per ricariche (true) o soste (false)</param>
+    /// <returns>Storico dei pagamenti nel periodo e con il tipo specificato</returns>
     [HttpGet("payments")]
     public async Task<ActionResult> GetPayments([FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] bool? chargeType)
     {

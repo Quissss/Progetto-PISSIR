@@ -26,6 +26,17 @@ public class CamSimulatorController : ControllerBase
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly UserManager<ApplicationUser> _userManager;
 
+    /// <summary>
+    /// Costruttore del CamSimulatorController.
+    /// </summary>
+    /// <param name="carRepository">Repository per la gestione delle auto.</param>
+    /// <param name="logger">Logger per la gestione del log.</param>
+    /// <param name="serviceScopeFactory">Factory per gestire gli scope di servizio.</param>
+    /// <param name="reservationRepository">Repository per la gestione delle prenotazioni.</param>
+    /// <param name="chargeManager">Gestore delle ricariche delle auto.</param>
+    /// <param name="parkingSlotRepository">Repository per la gestione dei posti auto.</param>
+    /// <param name="stopoverRepository">Repository per la gestione delle soste.</param>
+    /// <param name="userManager">Gestore degli utenti.</param>
     public CamSimulatorController(
         CarRepository carRepository,
         IHubContext<CarHub> hubContext,
@@ -50,6 +61,11 @@ public class CamSimulatorController : ControllerBase
         _stopoverRepository = stopoverRepository;
     }
 
+    /// <summary>
+    /// Rileva l'auto nel sistema in base alla targa.
+    /// </summary>
+    /// <param name="request">Oggetto che contiene i dati della richiesta, inclusa la targa e l'ID del parcheggio.</param>
+    /// <returns>Risposta HTTP che indica lo stato dell'auto rilevata.</returns>
     [HttpPost("detect")]
     public async Task<IActionResult> Detect([FromBody] Request request)
     {
@@ -80,6 +96,12 @@ public class CamSimulatorController : ControllerBase
         return Ok(responseMessage);
     }
 
+    /// <summary>
+    /// Rileva un'auto in entrata.
+    /// </summary>
+    /// <param name="request">Oggetto che contiene i dati della richiesta, inclusa la targa e l'ID del parcheggio.</param>
+    /// <param name="car">Oggetto che fa riferimento all'auto in entrata</param>
+    /// <returns>Risposta HTTP che indica lo stato dell'auto rilevata.</returns>
     private async Task<string> CarEntering(Request request, Car car)
     {
         var responseMessage = $"Detected carplate {request.CarPlate} on arrival";
@@ -104,6 +126,11 @@ public class CamSimulatorController : ControllerBase
         return responseMessage;
     }
 
+    /// <summary>
+    /// Richiede un parcheggio per l'auto identificata dalla targa.
+    /// </summary>
+    /// <param name="request">Dati della richiesta, inclusa la targa e l'ID del parcheggio.</param>
+    /// <returns>Messaggio che conferma la prenotazione del posto auto o che informa della disponibilità.</returns>
     private async Task<string> CarDeparting(Request request, Car car)
     {
         var responseMessage = $"Detected carplate {request.CarPlate} on departure";
@@ -159,6 +186,11 @@ public class CamSimulatorController : ControllerBase
         return responseMessage;
     }
 
+    /// <summary>
+    /// Riserva un posto nel parcheggio per una determinata auto.
+    /// </summary>
+    /// <param name="request">Dati della richiesta, inclusa la targa e l'ID del parcheggio.</param>
+    /// <returns>Risposta HTTP che indica lo stato del parcheggio.</returns>
     [HttpPost("park")]
     [Authorize]
     public async Task<IActionResult> Parcheggio([FromBody] Request request)
@@ -211,6 +243,11 @@ public class CamSimulatorController : ControllerBase
         return Ok("Selezionata sosta. Riservato posto numero: " + stopover.ParkingSlot.Number);
     }
 
+    /// <summary>
+    /// Richiede la ricarica dell'auto identificata dalla targa.
+    /// </summary>
+    /// <param name="request">Dati della richiesta, inclusa la targa e l'ID del parcheggio.</param>
+    /// <returns>Numero di persone in coda o conferma della richiesta di ricarica.</returns>
     [HttpPost("recharge")]
     [Authorize]
     public async Task<IActionResult> Ricarica([FromBody] Request request)
@@ -264,6 +301,9 @@ public class CamSimulatorController : ControllerBase
     }
 }
 
+/// <summary>
+/// Modello che rappresenta una richiesta da parte dell'utente.
+/// </summary>
 public class Request
 {
     public string CarPlate { get; set; }
