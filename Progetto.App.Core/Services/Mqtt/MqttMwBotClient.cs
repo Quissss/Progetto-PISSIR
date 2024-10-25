@@ -54,6 +54,12 @@ public class MqttMwBotClient : IDisposable
     private readonly object _lockMessage = new();
     private readonly SemaphoreSlim _connectionSemaphore = new SemaphoreSlim(1, 1);
 
+    // for hue lights
+    private static readonly string baseUrl = "http://localhost:8000";
+    private static readonly string username = "newdeveloper";
+    private static readonly string lightsUrl = $"{baseUrl}/api/{username}/lights/";
+    private static readonly HttpClient httpClient = new HttpClient();
+
     public MqttMwBotClient(ILogger<MqttMwBotClient> logger, IServiceScopeFactory serviceScopeFactory)
     {
         _logger = logger;
@@ -311,26 +317,33 @@ public class MqttMwBotClient : IDisposable
         {
             case MwBotStatus.Offline:
                 _logger.LogInformation("MwBot {id}: Disconnecting from MQTT server", MwBot.Id);
+                await ChangeLightState(MwBot.Id.ToString(), "{ \"on\": false }");
                 await DisconnectAsync();
                 break;
             case MwBotStatus.StandBy:
                 _logger.LogInformation("MwBot {id}: Awaiting for task", MwBot.Id);
+                await ChangeLightState(MwBot.Id.ToString(), "{\"on\":true,\"sat\":0,\"bri\":254,\"hue\":0}");
                 lock (_timerLock) if (!_timer.Enabled) _timer.Start();
                 break;
             case MwBotStatus.ChargingCar:
                 _logger.LogInformation("MwBot {id}: Charging car", MwBot.Id);
+                await ChangeLightState(MwBot.Id.ToString(), "{\"on\":true,\"sat\":254,\"bri\":254,\"hue\":25500}");
                 break;
             case MwBotStatus.Recharging:
                 _logger.LogInformation("MwBot {id}: Recharging", MwBot.Id);
+                await ChangeLightState(MwBot.Id.ToString(), "{\"on\":true,\"sat\":254,\"bri\":254,\"hue\":46920}");
                 break;
             case MwBotStatus.MovingToSlot:
                 _logger.LogInformation("MwBot {id}: Going to charge car on parking slot {parkingSlot}", MwBot.Id, HandlingRequest?.ParkingSlotId);
+                await ChangeLightState(MwBot.Id.ToString(), "{\"on\":true,\"sat\":0,\"bri\":154,\"hue\":25500}");
                 break;
-            case MwBotStatus.MovingToDock:
+            case MwBotStatus.MovingToDock: 
                 _logger.LogInformation("MwBot {id}: Going to dock for recharge", MwBot.Id);
+                await ChangeLightState(MwBot.Id.ToString(), "{\"on\":true,\"sat\":0,\"bri\":154,\"hue\":46920}");
                 break;
             default:
                 _logger.LogWarning("MwBot {id}: Invalid status", MwBot.Id);
+                await ChangeLightState(MwBot.Id.ToString(), "{\"on\":true,\"sat\":254,\"bri\":254,\"hue\":0}");
                 return false;
         }
 
@@ -830,4 +843,12 @@ public class MqttMwBotClient : IDisposable
             }
         }
     }
+
+    private static async Task ChangeLightState(string lightId, string requestBody)
+    {
+        var url = $"{lightsUrl}{lightId}/state";
+        var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+        await httpClient.PutAsync(url, content);
+    }
+
 }
