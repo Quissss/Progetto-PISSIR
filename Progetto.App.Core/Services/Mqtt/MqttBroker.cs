@@ -12,6 +12,8 @@ using Progetto.App.Core.Models.Users;
 using Progetto.App.Core.Repositories;
 using Progetto.App.Core.Services.SignalR.Hubs;
 using Progetto.App.Core.Services.Telegram;
+using System.Configuration;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 
@@ -33,28 +35,80 @@ public class MqttBroker : IHostedService, IDisposable
     private readonly IHubContext<RechargeHub> _rechargeHub;
     private readonly IHubContext<ParkingSlotHub> _parkingSlotHub;
     private readonly IServiceScopeFactory _serviceScopeFactory;
+    private readonly IConfiguration _configuration;
+    private readonly HttpClient _httpClient = new();
 
     public MqttBroker(TelegramService telegramService, ChargeManager chargeManager, ILogger<MqttBroker> logger, IHubContext<CarHub> carHub, IHubContext<MwBotHub> botHubContext, IHubContext<RechargeHub> rechargeHubContext, IHubContext<ParkingSlotHub> parkingSlotHubContext, IServiceScopeFactory serviceScopeFactory, IConfiguration configuration)
     {
         _options = new MqttServerOptionsBuilder()
             .WithDefaultEndpoint()
-            .WithDefaultEndpointPort(configuration.GetValue<int>("MqttPort"))
+            .WithDefaultEndpointPort(configuration.GetValue<int>("Mqtt:Port"))
             .WithKeepAlive()
             .Build();
 
         _logger = logger;
         _carHub = carHub;
         _botHub = botHubContext;
+        _configuration = configuration;
         _rechargeHub = rechargeHubContext;
         _parkingSlotHub = parkingSlotHubContext;
         _serviceScopeFactory = serviceScopeFactory;
         _telegramService = telegramService;
         _chargeManager = chargeManager;
+
         _mqttServer = new MqttFactory().CreateMqttServer(_options);
 
         _mqttServer.ClientConnectedAsync += MqttServer_ClientConnectedAsync;
         _mqttServer.ClientDisconnectedAsync += MqttServer_ClientDisconnectedAsync;
         _mqttServer.InterceptingPublishAsync += MqttServer_InterceptingPublishAsync;
+    }
+
+    /// <summary>
+    /// Changes hue light state
+    /// </summary>
+    /// <param name="lightId"></param>
+    /// <param name="requestBody"></param>
+    /// <returns></returns>
+    private async Task ChangeLightState(string lightId, string requestBody)
+    {
+        string? baseUrl = _configuration.GetValue<string>("BaseUrl") + ":" + _configuration.GetValue<int>("Hue:Port") 
+                            ?? throw new ConfigurationErrorsException("Hue base URL not found");
+        string? username = _configuration.GetValue<string>("Hue:Username") 
+                            ?? throw new ConfigurationErrorsException("Hue username not found");
+
+        string lightsUrl = $"{baseUrl}/api/{username}/lights/";
+
+        var url = $"{lightsUrl}{lightId}/state";
+        var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+        await _httpClient.PutAsync(url, content);
+    }
+
+    private async Task HandleHueLights(MqttClientMessage mwBotMessage)
+    {
+        switch (mwBotMessage.Status)
+        {
+            case MwBotStatus.Offline:
+                await ChangeLightState(mwBotMessage.Id.ToString(), "{ \"on\": false }");
+                break;
+            case MwBotStatus.StandBy:
+                await ChangeLightState(mwBotMessage.Id.ToString(), "{\"on\":true,\"sat\":0,\"bri\":254,\"hue\":0}");
+                break;
+            case MwBotStatus.ChargingCar:
+                await ChangeLightState(mwBotMessage.Id.ToString(), "{\"on\":true,\"sat\":254,\"bri\":254,\"hue\":25500}");
+                break;
+            case MwBotStatus.Recharging:
+                await ChangeLightState(mwBotMessage.Id.ToString(), "{\"on\":true,\"sat\":254,\"bri\":254,\"hue\":46920}");
+                break;
+            case MwBotStatus.MovingToSlot:
+                await ChangeLightState(mwBotMessage.Id.ToString(), "{\"on\":true,\"sat\":0,\"bri\":154,\"hue\":25500}");
+                break;
+            case MwBotStatus.MovingToDock:
+                await ChangeLightState(mwBotMessage.Id.ToString(), "{\"on\":true,\"sat\":0,\"bri\":154,\"hue\":46920}");
+                break;
+            default:
+                await ChangeLightState(mwBotMessage.Id.ToString(), "{\"on\":true,\"sat\":254,\"bri\":254,\"hue\":0}");
+                break;
+        }
     }
 
     /// <summary>
@@ -84,6 +138,7 @@ public class MqttBroker : IHostedService, IDisposable
                 return;
             }
 
+            await HandleHueLights(mwBotMessage);
             switch (mwBotMessage.MessageType)
             {
                 case MessageType.RequestCharge:

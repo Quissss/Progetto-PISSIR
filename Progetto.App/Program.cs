@@ -105,7 +105,6 @@ builder.Services.AddSwaggerGen(c =>
     c.IncludeXmlComments(xmlPath);
 });
 
-
 services.AddSingleton<ConnectedClientsService>();
 
 var app = builder.Build();
