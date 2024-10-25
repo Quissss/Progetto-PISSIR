@@ -68,13 +68,13 @@ $(function () {
     $.getJSON("/api/ParkingSlot/statuses", function (statuses) {
         $("#parkingSlotGrid").jsGrid({
             width: "100%",
-            height: "400px",
             autoload: true,
             filtering: true,
             inserting: true,
             editing: false,
             sorting: true,
             paging: true,
+            pageSize: 10,
 
             controller: {
                 loadData: filter => ajax(filter, "GET", false),
