@@ -57,13 +57,13 @@
 
     $("#parkingGrid").jsGrid({
         width: "100%",
-        height: "400px",
         autoload: true,
         filtering: true,
         inserting: true,
         editing: true,
         sorting: true,
         paging: true,
+        pageSize: 10,
 
         controller: {
             loadData: filter => ajax(filter, "GET", false),
@@ -80,8 +80,26 @@
             { name: "province", type: "text", width: 100, title: "Province", filtering: false },
             { name: "postalCode", type: "text", width: 100, title: "Postal Code", filtering: false },
             { name: "country", type: "text", width: 100, title: "Country", filtering: false },
-            { name: "energyCostPerKw", type: "number", width: 100, title: "Energy Cost/Min", filtering: false },
-            { name: "stopCostPerMinute", type: "number", width: 100, title: "Stop Cost Per Minute", filtering: false },
+            {
+                name: "energyCostPerKw",
+                type: "number",
+                width: 100,
+                title: "Energy Cost/Min",
+                filtering: false,
+                itemTemplate: value => value.toFixed(2),
+                insertTemplate: () => $("<input>").attr("type", "number").attr("step", "0.01"),
+                editTemplate: value => $("<input>").attr("type", "number").attr("step", "0.01").val(value),
+            },
+            {
+                name: "stopCostPerMinute",
+                type: "number",
+                width: 100,
+                title: "Stop Cost Per Minute",
+                filtering: false,
+                itemTemplate: value => value.toFixed(2),
+                insertTemplate: () => $("<input>").attr("type", "number").attr("step", "0.01"),
+                editTemplate: value => $("<input>").attr("type", "number").attr("step", "0.01").val(value),
+            },
             { type: "control", editButton: true, deleteButton: true, sorting: false },
         ],
 

@@ -57,12 +57,12 @@ $(function () {
 
     $("#jsGridRecharge").jsGrid({
         width: "100%",
-        height: "400px",
         autoload: true,
         sorting: true,
         filtering: true,
         sorting: true,
         paging: true,
+        pageSize: 10,
 
         controller: {
             loadData: filter => ajax(filter, "GET", false),
@@ -73,8 +73,8 @@ $(function () {
 
         fields: [
             { name: "carPlate", type: "text", title: "Car Plate", filtering: true },
-            { name: "startChargingTime", type: "text", title: "Start Time", width: 150, filtering: false, itemTemplate: (value) => formatDate(value) },
-            { name: "endChargingTime", type: "text", title: "End Time", width: 150, filtering: false, itemTemplate: (value) => formatDate(value) },
+            { name: "startChargingTime", type: "text", title: "Start Time", width: 130, filtering: false, itemTemplate: (value) => formatDate(value) },
+            { name: "endChargingTime", type: "text", title: "End Time", width: 130, filtering: false, itemTemplate: (value) => formatDate(value) },
             { name: "startChargePercentage", type: "number", title: "Start %", filtering: false, itemTemplate: (value) => value + " %" },
             { name: "currentChargePercentage", type: "number", title: "Current %", filtering: false, itemTemplate: (value) => value + " %" },
             { name: "targetChargePercentage", type: "number", title: "Target %", filtering: false, itemTemplate: (value) => value + " %" },
