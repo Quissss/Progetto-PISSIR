@@ -15,6 +15,7 @@ using Progetto.App.Core.Services.SignalR.Hubs;
 using Progetto.App.Core.Services.Telegram;
 using Progetto.App.Core.Validators;
 using Serilog;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -97,7 +98,13 @@ services.AddSingleton<TelegramService>();
 #endregion
 
 services.AddEndpointsApiExplorer();
-services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    c.IncludeXmlComments(xmlPath);
+});
+
 
 services.AddSingleton<ConnectedClientsService>();
 
