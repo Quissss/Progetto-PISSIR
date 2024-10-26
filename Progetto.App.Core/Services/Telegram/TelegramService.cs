@@ -12,6 +12,10 @@ using Progetto.App.Core.Services.Mqtt;
 
 namespace Progetto.App.Core.Services.Telegram;
 
+/// <summary>
+/// Provides a service for interacting with the Telegram Bot API, including sending messages
+/// and handling user commands for account verification, status checks, and stopping charges.
+/// </summary>
 public class TelegramService
 {
     private readonly string _botToken;
@@ -19,6 +23,13 @@ public class TelegramService
     private readonly IServiceProvider _serviceProvider;
     private readonly IServiceScopeFactory _serviceScopeFactory;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TelegramService"/> class with configuration, 
+    /// service scope factory, and service provider dependencies.
+    /// </summary>
+    /// <param name="configuration">The configuration interface to retrieve settings.</param>
+    /// <param name="serviceScopeFactory">Factory for creating service scopes.</param>
+    /// <param name="serviceProvider">Provides access to service instances.</param>
     public TelegramService(IConfiguration configuration, IServiceScopeFactory serviceScopeFactory, IServiceProvider serviceProvider)
     {
         _botToken = configuration["Telegram:BotToken"];
@@ -27,6 +38,12 @@ public class TelegramService
         _serviceProvider = serviceProvider;
     }
 
+    /// <summary>
+    /// Sends a message to a specified chat in Telegram.
+    /// </summary>
+    /// <param name="chatId">The unique ID of the Telegram chat.</param>
+    /// <param name="message">The message text to send.</param>
+    /// <exception cref="ArgumentException">Thrown when chatId or message is invalid.</exception>
     public async Task SendMessageAsync(long chatId, string message)
     {
         if (chatId == 0 || string.IsNullOrWhiteSpace(message))
@@ -37,6 +54,9 @@ public class TelegramService
         await _botClient.SendTextMessageAsync(chatId, message);
     }
 
+    /// <summary>
+    /// Starts receiving updates from Telegram, listening for messages and commands.
+    /// </summary>
     public void StartReceivingUpdates()
     {
         var receiverOptions = new ReceiverOptions
@@ -51,6 +71,12 @@ public class TelegramService
         );
     }
 
+    /// <summary>
+    /// Processes incoming messages, handling commands like /start, /status, /stop, and verification codes.
+    /// </summary>
+    /// <param name="botClient">The Telegram bot client.</param>
+    /// <param name="update">The update object containing the message or command data.</param>
+    /// <param name="cancellationToken">Token for cancelling the operation.</param>
     private async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
         if (update == null || update.Message == null)
@@ -86,6 +112,11 @@ public class TelegramService
         }
     }
 
+    /// <summary>
+    /// Handles the /stop command, which stops the charging process for a specified car.
+    /// </summary>
+    /// <param name="chatId">The chat ID where the command was received.</param>
+    /// <param name="messageText">The command text including the car plate number.</param>
     private async Task HandleStopCommandAsync(long chatId, string messageText)
     {
         var carPlate = messageText.Split(" ").Skip(1).FirstOrDefault();
@@ -127,6 +158,11 @@ public class TelegramService
         await mqttBroker.SendStopChargeToBot(currentlyCharging);
     }
 
+    /// <summary>
+    /// Handles the /status command, which checks the charging status of a specified car.
+    /// </summary>
+    /// <param name="chatId">The chat ID where the command was received.</param>
+    /// <param name="messageText">The command text including the car plate number.</param>
     private async Task HandleStatusCommandAsync(long chatId, string messageText)
     {
         var carPlate = messageText.Split(" ").Skip(1).FirstOrDefault();
@@ -158,6 +194,11 @@ public class TelegramService
         await SendMessageAsync(chatId, responseMessage);
     }
 
+    /// <summary>
+    /// Handles account verification by processing a verification code.
+    /// </summary>
+    /// <param name="chatId">The chat ID of the user attempting verification.</param>
+    /// <param name="verificationCode">The code provided by the user for verification.</param>
     private async Task HandleVerificationCodeAsync(long chatId, string verificationCode)
     {
         using var scope = _serviceScopeFactory.CreateScope();
@@ -179,6 +220,12 @@ public class TelegramService
         }
     }
 
+    /// <summary>
+    /// Handles errors that occur while receiving updates.
+    /// </summary>
+    /// <param name="botClient">The Telegram bot client.</param>
+    /// <param name="exception">The exception that was raised.</param>
+    /// <param name="cancellationToken">Token for cancelling the operation.</param>
     private Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
         Console.WriteLine($"Bot error: {exception.Message}");
