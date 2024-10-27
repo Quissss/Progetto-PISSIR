@@ -1,8 +1,29 @@
 \documentclass{article}
 \usepackage{graphicx}
-\usepackage{babel}[italian]
+\usepackage[italian]{babel}
 \usepackage{float}
 \usepackage{hyperref}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{longtable}
+
+\definecolor{bluekeywords}{rgb}{0.13,0.13,1}
+\definecolor{greencomments}{rgb}{0,0.5,0}
+\definecolor{redstrings}{rgb}{0.9,0,0}
+
+\usepackage{listings}
+\lstset{language=[Sharp]C,
+showspaces=false,
+showtabs=false,
+breaklines=true,
+showstringspaces=false,
+breakatwhitespace=true,
+escapeinside={(*@}{@*)},
+commentstyle=\color{greencomments},
+keywordstyle=\color{bluekeywords}\bfseries,
+stringstyle=\color{redstrings},
+basicstyle=\ttfamily
+}
 \hypersetup{
     colorlinks=true,
     linkcolor=blue,
@@ -29,13 +50,16 @@
 
 \section{Introduzione}
 Come previsto dal progetto presentato durante il corso, abbiamo creato un applicativo web pensato per gestire le ricariche di automobili elettriche, in più parcheggi, tramite robot autonomi.
+
+Il progetto è stato realizzato in \href{https://dotnet.microsoft.com/en-us/apps/aspnet}{ASP.NET Core} (linguaggio C\#), su \href{https://dotnet.microsoft.com/en-us/download/dotnet/8.0}{.NET Core 8} e \href{https://learn.microsoft.com/en-us/aspnet/entity-framework}{Entity Framework}. Per l'interfaccia grafica è stato utilizzato \href{https://learn.microsoft.com/en-us/aspnet/core/razor-pages/?view=aspnetcore-8.0&tabs=visual-studio}{Razor}, mentre per il database \href{https://www.sqlite.org/index.html}{Sqlite} (con Entity Framework Core) e \href{https://learn.microsoft.com/en-us/dotnet/csharp/linq/}{LinQ}.
+
+I programmi CamSimulator e MonitorSimulator sono stati realizzati tramite \href{https://learn.microsoft.com/en-us/visualstudio/ide/create-csharp-winform-visual-studio?view=vs-2022}{Windows Form}, e le funzionalità dei MwBot sono state implementate tramite protocollo MQTT, grazie alla libreria \href{https://github.com/dotnet/MQTTnet}{MQTTnet}.
 \section{Specifica}
 \subsection{Casi d'uso e requisiti}
 Il diagramma dei casi d'uso è disponibile nel \href{run:./casi d'uso.pdf}{file PDF apposito}.
 \subsubsection{Descrizione casi d'uso e requisiti funzionali}
-\begin{table}[H]
-    \centering
-    \begin{tabular}{|c|p{3cm}|p{7cm}|}
+
+    \begin{longtable}{|c|p{3cm}|p{7cm}|}
         \hline
          1 & Login & L'utente si autentica alla piattaforma \\
          \hline
@@ -85,8 +109,7 @@ Il diagramma dei casi d'uso è disponibile nel \href{run:./casi d'uso.pdf}{file 
          \hline
          25 & Ricerca parcheggio & L'amministratore ricerca un parcheggio \\
          \hline
-    \end{tabular}
-\end{table}
+    \end{longtable}
 \subsubsection{Requisiti non funzionali}
 \begin{itemize}
     \item L'interfaccia è grafica e realizzata con Razor Pages
@@ -105,18 +128,59 @@ Il diagramma dei casi d'uso è disponibile nel \href{run:./casi d'uso.pdf}{file 
 Il diagramma delle classi di dominio è disponibile nel \href{run:./dominio.pdf}{file PDF apposito}.
 \section{Progettazione}
 \subsection{Diagramma delle classi}
-
+I diagrammi di tutte le classi rilevanti per il progetto sono presenti nella cartella \texttt{Diagrammi Classe}. 
 \subsection{Documentazione API}
-Per documentare le API abbiamo utilizzato \href{https://swagger.io}{Swagger}. La lista di API utilizzate nel progetto è visibile alla pagina \url{https://localhost:7237/swagger/index.html} quando questo è in esecuzione.
+Per documentare le API abbiamo utilizzato \href{https://swagger.io}{Swagger}. La lista di API utilizzate nel progetto è visibile alla pagina \url{https://localhost:7237/swagger/index.html} quando questo è in esecuzione. È anche presente un documento in formato PDF (\href{run:./api-documentation.pdf}{api-documentation}) qualora non fosse possibile visualizzare la pagina online.
 \subsection{MQTT}
 La gestione e comunicazione con i robot MWbot è stata implementata mediante il protocollo MQTT. All'avvio, l'applicativo verifica gli MwBot che sono attualmente online e li istanzia come client, connettendoli al broker ed effettuando l'inizializzazione dei parametri.
 
 Come da protocollo, la nostra implementazione prevede la presenza di un broker e di più client, che rappresentano gli MWbot. In particolare, il broker è responsabile della ricezione e distribuzione di messaggi tra client MWbot e ne gestisce le richieste. Il client, invece, comunica con il broker pubblicando sui topic pertinenti.
 
-
+\subsubsection{Struttura messaggi MQTT}
+Classe rappresentante un messaggio MQTT:
+\begin{lstlisting}[language=csh]
+    public class MqttClientMessage : MwBot
+{
+    public MessageType MessageType { get; set; }
+    public int? ParkingSlotId { get; set; }
+    public ParkingSlot? ParkingSlot { get; set; }
+    public decimal? CurrentCarCharge { get; set; }
+    public decimal? TargetBatteryPercentage { get; set; }
+    public string? UserId { get; set; }
+    public string? CarPlate { get; set; }
+    public CurrentlyCharging? CurrentlyCharging { get; set; }
+    public int? ImmediateRequestId { get; set; }
+    public ImmediateRequest? ImmediateRequest { get; set; }
+}
+\end{lstlisting}
 \section{Implementazione}
 \subsection{Istruzioni di installazione}
+Si consiglia l'utilizzo del programma Visual Studio per avviare l'applicativo web e i due programmi che permettono di emulare l'entrata delle auto nel parcheggio (CamSimulator) e l'occupazione dei posti auto (MonitorSimulator).
 
-\subsection{Suddivisione compiti}
+Una volta aperta la soluzione con Visual Studio, è necessario aggiungere i segreti utente. Per farlo, cliccare su \texttt{Progetto.App}, selezionare \texttt{Gestione segreti utente}, e aggiungere il codice presente nel file \href{run:./segreti.json}{segreti.json}.
 
+Aggiunti i segreti, è sufficiente fare click destro su \texttt{Solution Pissir.Progetto} nella schermata \texttt{Solution Explorer}, selezionare \texttt{Configure startp projects...}, selezionare tutti i progetti e premere su \texttt{Start} nella schermata principale.
+
+Avviata la soluzione, è possibile utilizzare l'applicativo web recandosi all'indirizzo \url{https://localhost:7237}, emulare l'entrata/uscita delle auto tramite CamSimulator e visionare lo stato di occupazione dei posteggi tramite MonitorSimulator.
+\subsection{Progetto.App}
+Progetto.App implementa l'applicativo web. Contiene configurazione all'avvio, log, controller con i vari endpoint con cui interfacciarsi per le richieste e le pagine front-end di interfaccia.
+
+Sono presenti tre tipi di utente:
+\begin{itemize}
+    \item Utente base: può visionare i parcheggi disponibili, il loro stato d'occupazione ed effettuare ricariche e/o soste scegliendo dal menù “Dashboard $>$ Services” quando la sua auto viene rilevata dalla telecamera in entrata;
+    \item Utente premium: come utente base, ma può prenotare una ricarica tramite il menù
+    “Dashboard $>$ Reservation”;
+    \item Utente amministratore: ha il controllo completo sui parcheggi; può quindi effettuare alcune operazioni CRUD non-critical tramite i vari menù, accendere / spegnere i robot, filtrare i pagamenti effettuati.
+\end{itemize}
+\subsection{Progetto.App.Core}
+Progetto.App Core (domain + application) contiene la configurazione del database, i modelli utilizzati dall'applicativo web, le migration, i validator dei modelli, le repository per interfacciarsi con il database e i servizi.
+\subsection{CamSimulator}
+CamSimulator è un'applicazione di tipo Windows Form che rappresenta la telecamera con
+rilevamento targa presente all'entrata di uno specifico parcheggio (da selezionare).
+Rileva targhe in entrata / uscita: in seguito all'entrata, viene richiesto all'utente sulla pagina Dashboard/Servizi se effettuare una sosta o una ricarica. Si interfaccia con l'applicazione web tramite Post e Get a due endpoint ApiRest presenti in un
+controller dedicato.
+\subsection{MonitorSimulator}
+Monitor Simulator è un'applicazione di tipo Windows Form che rappresenta i sensori presenti nei posti auto. Tramite essa è possibile controllare l'occupazione dei posti auto in vari parcheggi.
+\subsection{PayPal.REST}
+Implementa la logica dei pagamenti tramite PayPal.
 \end{document}
