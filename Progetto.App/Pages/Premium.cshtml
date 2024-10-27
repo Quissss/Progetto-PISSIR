@@ -1,7 +1,9 @@
 ﻿@page
+@model Progetto.App.Pages.PremiumModel
 @{
     ViewData["Title"] = "Abbonati a Premium";
 }
+
 <div class="row justify-content-center mt-5">
     <div class="col-md-8 subscription-container p-5 shadow-lg rounded bg-light">
         <h2 class="text-center mb-4 font-weight-bold text-primary display-4">
@@ -16,7 +18,7 @@
             </div>
         }
 
-        <form method="post" action="/api/bohnonricordolaroute">
+        <form method="post" asp-page-handler="Pay">
             <div class="form-group">
                 <label class="font-weight-bold h4">Seleziona un piano: </label>
                 <div class="row text-center">
@@ -74,15 +76,15 @@
     }
 
     input[type="radio"]:checked + .plan-option {
-        border: 2px solid #007bff; 
+        border: 2px solid #007bff;
         box-shadow: 0 0 20px rgba(0, 123, 255, 0.5);
-        background-color: #e7f3ff; 
+        background-color: #e7f3ff;
     }
 
 
     .plan-option input[type="radio"]:checked + .plan-option {
-        background-color: #e7f3ff; 
-        border: 2px solid #007bff; 
+        background-color: #e7f3ff;
+        border: 2px solid #007bff;
         box-shadow: 0 0 20px rgba(0, 123, 255, 0.5);
     }
 
