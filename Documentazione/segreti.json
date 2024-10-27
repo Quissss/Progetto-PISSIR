@@ -1,0 +1,18 @@
+{
+    "Authentication": {
+        "Google": {
+            "ClientId": "1082077482823-p7glcb1gtpugk634nnoe6rj2pb7m7v2a.apps.googleusercontent.com",
+            "ClientSecret": "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"
+        }
+    },
+    "Payment": {
+        "PayPal": {
+            "ClientId": "AROVoR-Y1HM7lnk5bhMFweoW2wGWHlcVn-AZJjA6m3OFstcKzMSJHF9HMzTHp1F2HW1ejn9TLDLLWoBY",
+            "ClientSecret": "EA4lVFNbTfUKPUiJuVCrFaZBh8az5VvamfqWlcLj9Z69xxUN5apWGjeNxnyozOevW_SpQjzAiMHrMBQC",
+            "Url": "https://api.sandbox.paypal.com/"
+        }
+    },
+    "Telegram": {
+        "BotToken": "7745869780:AAG1lTU9qWNMa2RErpCbgQdeo85YoA40--I"
+    }
+}
