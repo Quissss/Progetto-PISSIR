@@ -48,7 +48,7 @@ public class UserController : ControllerBase
     /// Implementazione di un sistema di pagamento con PayPal da completare.
     /// </summary>
     /// <returns>Ritorna un messaggio di successo se l'utente è stato aggiornato a Premium, altrimenti un errore.</returns>
-    [HttpPost("upgrade-to-premium")]
+    [HttpPost("upgrade")]
     public async Task<IActionResult> UpgradeToPremium()
     {
         // TODO: Implement paypal payment
@@ -59,17 +59,20 @@ public class UserController : ControllerBase
         }
 
         var currentClaims = await _userManager.GetClaimsAsync(user);
-        var premiumClaim = currentClaims.FirstOrDefault(c => c.Type == "IsPremium");
+        var premiumClaim = currentClaims.FirstOrDefault(c => c.Type == ClaimName.Role);
 
         if (premiumClaim == null)
         {
-            await _userManager.AddClaimAsync(user, new Claim("IsPremium", "1"));
+            await _userManager.AddClaimAsync(user, new Claim(ClaimName.Role, Role.PremiumUser.ToString()));
         }
         else
         {
             await _userManager.RemoveClaimAsync(user, premiumClaim);
-            await _userManager.AddClaimAsync(user, new Claim("IsPremium", "1"));
+            await _userManager.AddClaimAsync(user, new Claim(ClaimName.Role, Role.PremiumUser.ToString()));
+
         }
+        User.AddIdentity(new([new Claim(ClaimName.Role, Role.PremiumUser.ToString())]));
+        _ = User.Identities;
 
         return Ok(new { message = "Utente aggiornato a Premium con successo!" });
     }
