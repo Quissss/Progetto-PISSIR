@@ -299,6 +299,11 @@ public class MqttMwBotClient : IDisposable
         await PublishClientMessageAsync(MwBotMessage, _cancellationTokenSource.Token);
     }
 
+    /// <summary>
+    /// Modifica lo stato del bot e pubblica un aggiornamento dello stato tramite MQTT.
+    /// </summary>
+    /// <param name="newStatus">Nuovo stato del bot da impostare.</param>
+    /// <returns>Un'attività asincrona completata una volta aggiornato lo stato.</returns>
     private async Task<bool> ChangeBotStatus(MwBotStatus status)
     {
         if (MwBot is null)
@@ -326,7 +331,7 @@ public class MqttMwBotClient : IDisposable
             case MwBotStatus.MovingToSlot:
                 _logger.LogInformation("MwBot {id}: Going to charge car on parking slot {parkingSlot}", MwBot.Id, HandlingRequest?.ParkingSlotId);
                 break;
-            case MwBotStatus.MovingToDock: 
+            case MwBotStatus.MovingToDock:
                 _logger.LogInformation("MwBot {id}: Going to dock for recharge", MwBot.Id);
                 break;
             default:
@@ -345,6 +350,11 @@ public class MqttMwBotClient : IDisposable
         return true;
     }
 
+    /// <summary>
+    /// Cambia la posizione del bot MwBot e pubblica un aggiornamento tramite MQTT.
+    /// </summary>
+    /// <param name="location">Nuova posizione del bot, definita come valore enum di MwBotLocations.</param>
+    /// <returns>True se il cambio di posizione è stato effettuato correttamente, altrimenti false.</returns>
     private async Task<bool> ChangeBotLocation(MwBotLocations location)
     {
         if (MwBot is null)
@@ -377,6 +387,10 @@ public class MqttMwBotClient : IDisposable
         return true;
     }
 
+    /// <summary>
+    /// Esegue un tentativo di riconnessione periodica al broker MQTT in caso di disconnessione.
+    /// </summary>
+    /// <param name="cancellationToken">Token per annullare il tentativo di riconnessione.</param>
     private async Task TimedAttemptReconnectAsync(CancellationToken cancellationToken)
     {
         if (_mqttClient.IsConnected || _isConnecting)
@@ -398,9 +412,9 @@ public class MqttMwBotClient : IDisposable
     }
 
     /// <summary>
-    /// EVENT: What to do every _timer interval
+    /// Evento da eseguire a ogni intervallo del timer, che gestisce la richiesta di carica per il bot MwBot.
     /// </summary>
-    /// <param name="sender"></param>
+    /// <param name="cancellationToken">Token per annullare il processo di richiesta di carica.</param>
     private async Task TimedProcessChargeRequest(CancellationToken cancellationToken)
     {
         try
@@ -449,6 +463,11 @@ public class MqttMwBotClient : IDisposable
         }
     }
 
+    /// <summary>
+    /// Simula il movimento del bot verso una posizione specifica (dock o slot), impostando il tempo di attesa in base alla percentuale della batteria.
+    /// </summary>
+    /// <param name="status">Stato di destinazione del bot, come MovingToSlot o MovingToDock.</param>
+    /// <param name="cancellationToken">Token per annullare la simulazione del movimento.</param>
     private async Task SimulateMovement(MwBotStatus status, CancellationToken cancellationToken)
     {
         int minDelaySeconds = 5; // minimum seconds
@@ -456,7 +475,7 @@ public class MqttMwBotClient : IDisposable
         int delayRange = maxDelaySeconds - minDelaySeconds;
         int delay = minDelaySeconds + (int)(delayRange * (1 - MwBot.BatteryPercentage / 100));
 
-        switch(status)
+        switch (status)
         {
             case MwBotStatus.MovingToSlot:
                 _logger.LogInformation("MwBot {id}: Simulating movement to car {delay} seconds...", MwBot.Id, delay);
@@ -476,6 +495,11 @@ public class MqttMwBotClient : IDisposable
         await Task.Delay(TimeSpan.FromSeconds(delay), cancellationToken);
     }
 
+    /// <summary>
+    /// Simula il processo di carica di un veicolo elettrico, aggiornando lo stato di carica e il consumo energetico in base al tempo.
+    /// </summary>
+    /// <param name="mwBotMessage">Messaggio MQTT con i dati di ricarica e il target di carica.</param>
+    /// <param name="cancellationToken">Token per annullare la simulazione della ricarica.</param>
     private async Task SimulateChargingProcess(MqttClientMessage mwBotMessage, CancellationToken cancellationToken)
     {
         _logger.LogInformation("MwBot {id}: Starting SimulateChargingProcess.", MwBot?.Id);
@@ -571,6 +595,10 @@ public class MqttMwBotClient : IDisposable
         _logger.LogInformation("MwBot {id}: Ending SimulateChargingProcess.", MwBot.Id);
     }
 
+    /// <summary>
+    /// Simula il processo di ricarica della batteria del bot MwBot fino a raggiungere il 100%.
+    /// </summary>
+    /// <param name="cancellationToken">Token per annullare la simulazione della ricarica del bot.</param>
     private async Task SimulateRechargingProcessAsync(CancellationToken cancellationToken)
     {
         if (MwBot == null)
@@ -616,6 +644,12 @@ public class MqttMwBotClient : IDisposable
         await ChangeBotStatus(MwBotStatus.StandBy);
     }
 
+    /// <summary>
+    /// Completa il processo di ricarica dell'auto, aggiornando i dati sul tempo trascorso, l'energia consumata e il costo totale.
+    /// Invia un messaggio di completamento della ricarica tramite MQTT e reimposta la variabile di richiesta corrente.
+    /// </summary>
+    /// <param name="mwBotMessage">Messaggio MQTT contenente i dettagli sulla ricarica e sul bot.</param>
+    /// <returns>Un'attività asincrona completata una volta terminato il processo di ricarica.</returns>
     private async Task CompleteChargingProcess(MqttClientMessage mwBotMessage)
     {
         var endTime = DateTime.Now;
@@ -649,12 +683,18 @@ public class MqttMwBotClient : IDisposable
             MwBot?.Id, mwBotMessage.ParkingSlotId, elapsedMinutes, currentlyCharging.EnergyConsumed, currentlyCharging.TotalCost);
     }
 
+    /// <summary>
+    /// Pubblica un messaggio MQTT serializzato, rappresentato dal parametro <paramref name="mwBotMessage" />, al server MQTT.
+    /// Se la pubblicazione fallisce, viene registrato un errore.
+    /// </summary>
+    /// <param name="mwBotMessage">Messaggio MQTT da pubblicare, contenente informazioni aggiornate sullo stato del bot.</param>
+    /// <param name="cancellationToken">Token per gestire la cancellazione dell'operazione.</param>
     public async Task PublishClientMessageAsync(MqttClientMessage mwBotMessage, CancellationToken cancellationToken)
     {
         var payload = JsonSerializer.Serialize(mwBotMessage);
         var success = await PublishAsync(payload);
 
-        if(!success)
+        if (!success)
         {
             _logger.LogError("MwBot {id}: Error publishing message {payload}", MwBot?.Id, payload);
         }
@@ -664,6 +704,12 @@ public class MqttMwBotClient : IDisposable
         //}
     }
 
+    /// <summary>
+    /// Pubblica un payload JSON serializzato sul broker MQTT. Gestisce la riconnessione al server in caso di disconnessione.
+    /// </summary>
+    /// <param name="payload">Payload JSON serializzato da pubblicare.</param>
+    /// <returns>True se la pubblicazione ha avuto successo, altrimenti false.</returns>
+    /// <exception cref="ArgumentNullException">Viene sollevata se il payload è nullo.</exception>
     public async Task<bool> PublishAsync(string payload)
     {
         ArgumentNullException.ThrowIfNull(payload);
@@ -697,6 +743,10 @@ public class MqttMwBotClient : IDisposable
         }
     }
 
+    /// <summary>
+    /// Stabilisce una connessione al broker MQTT se non già connesso. Gestisce le eccezioni e ripristina il timer per riconnessioni.
+    /// </summary>
+    /// <returns>True se la connessione è riuscita, altrimenti false.</returns>
     public async Task<bool> ConnectAsync()
     {
         await _connectionSemaphore.WaitAsync();
@@ -747,6 +797,10 @@ public class MqttMwBotClient : IDisposable
         }
     }
 
+    /// <summary>
+    /// Disconnette il bot dal broker MQTT, aggiornando lo stato del bot e interrompendo i timer associati.
+    /// </summary>
+    /// <returns>True se la disconnessione è riuscita, altrimenti false.</returns>
     public async Task<bool> DisconnectAsync()
     {
         if (MwBot is null)
@@ -792,6 +846,10 @@ public class MqttMwBotClient : IDisposable
         }
     }
 
+    /// <summary>
+    /// Gestisce l'evento di disconnessione dal broker MQTT. Ferma il timer e avvia una sequenza di riconnessione se necessaria.
+    /// </summary>
+    /// <param name="e">Argomenti dell'evento di disconnessione, inclusa la motivazione.</param>
     private async Task HandleClientDisconnectedAsync(MqttClientDisconnectedEventArgs e)
     {
         _logger.LogWarning("MwBot {id}: Disconnected from MQTT broker. Reason: {reason}", MwBot?.Id, e.ReasonString);
@@ -809,6 +867,10 @@ public class MqttMwBotClient : IDisposable
         }
     }
 
+    /// <summary>
+    /// Avvia un ciclo di tentativi per riconnettersi al broker MQTT fino al successo o alla cancellazione.
+    /// </summary>
+    /// <param name="cancellationToken">Token per gestire la cancellazione dell'operazione di riconnessione.</param>
     private async Task WaitForReconnection(CancellationToken cancellationToken)
     {
         while (!_mqttClient.IsConnected)
