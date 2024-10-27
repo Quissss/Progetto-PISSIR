@@ -83,6 +83,10 @@ public class MqttBroker : IHostedService, IDisposable
         await _httpClient.PutAsync(url, content);
     }
 
+    /// <summary>
+    /// Handles the hue lights.
+    /// </summary>
+    /// <param name="mwBotMessage">The mw bot message.</param>
     private async Task HandleHueLights(MqttClientMessage mwBotMessage)
     {
         switch (mwBotMessage.Status)
@@ -201,6 +205,10 @@ public class MqttBroker : IHostedService, IDisposable
         await Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Handles the request mw bot message asynchronous.
+    /// </summary>
+    /// <param name="mwBot">The mw bot.</param>
     private async Task HandleRequestMwBotMessageAsync(MwBot mwBot)
     {
         var responseMessage = new MqttClientMessage
@@ -217,6 +225,11 @@ public class MqttBroker : IHostedService, IDisposable
         await PublishMessage(responseMessage);
     }
 
+    /// <summary>
+    /// Handles the disconnect message asynchronous.
+    /// </summary>
+    /// <param name="mwBotMessage">The mw bot message.</param>
+    /// <param name="mwBotRepository">The mw bot repository.</param>
     private async Task HandleDisconnectMessageAsync(MqttClientMessage mwBotMessage, MwBotRepository mwBotRepository)
     {
         using var scope = _serviceScopeFactory.CreateScope();
@@ -229,6 +242,11 @@ public class MqttBroker : IHostedService, IDisposable
         _logger.LogDebug("MqttBroker: MwBot {id} disconnected", mwBotMessage.Id);
     }
 
+    /// <summary>
+    /// Handles the recharge request message asynchronous.
+    /// </summary>
+    /// <param name="mwBotMessage">The mw bot message.</param>
+    /// <param name="mwBotRepository">The mw bot repository.</param>
     private async Task HandleRechargeRequestMessageAsync(MqttClientMessage mwBotMessage, MwBotRepository mwBotRepository)
     {
         _logger.LogDebug("MqttBroker: MwBot {id} is requesting recharge", mwBotMessage.Id);
@@ -256,6 +274,10 @@ public class MqttBroker : IHostedService, IDisposable
         _logger.LogDebug("MqttBroker: Confirmation sent to MwBot {id} to start recharging", mwBotMessage.Id);
     }
 
+    /// <summary>
+    /// Handles the charge request message asynchronous.
+    /// </summary>
+    /// <param name="mwBotMessage">The mw bot message.</param>
     private async Task HandleChargeRequestMessageAsync(MqttClientMessage mwBotMessage)
     {
         using var scope = _serviceScopeFactory.CreateScope();
@@ -361,6 +383,10 @@ public class MqttBroker : IHostedService, IDisposable
         await PublishMessage(mwBotMessage);
     }
 
+    /// <summary>
+    /// Handles the completed charge message asynchronous.
+    /// </summary>
+    /// <param name="mwBotMessage">The mw bot message.</param>
     private async Task HandleCompletedChargeMessageAsync(MqttClientMessage mwBotMessage)
     {
 
@@ -400,6 +426,10 @@ public class MqttBroker : IHostedService, IDisposable
         await PublishMessage(mwBotMessage);
     }
 
+    /// <summary>
+    /// Publishes the message.
+    /// </summary>
+    /// <param name="message">The message.</param>
     public async Task PublishMessage(MqttClientMessage message)
     {
         try
@@ -418,6 +448,10 @@ public class MqttBroker : IHostedService, IDisposable
         }
     }
 
+    /// <summary>
+    /// Sends the stop charge to bot.
+    /// </summary>
+    /// <param name="currentCharge">The current charge.</param>
     public async Task SendStopChargeToBot(CurrentlyCharging currentCharge)
     {
         var scope = _serviceScopeFactory.CreateScope();
