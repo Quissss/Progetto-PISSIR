@@ -51,9 +51,11 @@ basicstyle=\ttfamily
 \section{Introduzione}
 Come previsto dal progetto presentato durante il corso, abbiamo creato un applicativo web pensato per gestire le ricariche di automobili elettriche, in più parcheggi, tramite robot autonomi.
 
-Il progetto è stato realizzato in \href{https://dotnet.microsoft.com/en-us/apps/aspnet}{ASP.NET Core} (linguaggio C\#), su \href{https://dotnet.microsoft.com/en-us/download/dotnet/8.0}{.NET Core 8} e \href{https://learn.microsoft.com/en-us/aspnet/entity-framework}{Entity Framework}. Per l'interfaccia grafica è stato utilizzato \href{https://learn.microsoft.com/en-us/aspnet/core/razor-pages/?view=aspnetcore-8.0&tabs=visual-studio}{Razor}, mentre per il database \href{https://www.sqlite.org/index.html}{Sqlite} (con Entity Framework Core) e \href{https://learn.microsoft.com/en-us/dotnet/csharp/linq/}{LinQ}.
+Il progetto è stato realizzato in \href{https://dotnet.microsoft.com/en-us/apps/aspnet}{ASP.NET Core} (linguaggio C\#), su \href{https://dotnet.microsoft.com/en-us/download/dotnet/8.0}{.NET Core 8} e \href{https://learn.microsoft.com/en-us/aspnet/entity-framework}{Entity Framework}. Per l'interfaccia grafica è stato utilizzato \href{https://learn.microsoft.com/en-us/aspnet/core/razor-pages/?view=aspnetcore-8.0&tabs=visual-studio}{Razor}, mentre per il database \href{https://www.sqlite.org/index.html}{Sqlite} (con Entity Framework Core) e \href{https://learn.microsoft.com/en-us/dotnet/csharp/linq/}{LinQ}. La comunicazione con il database da parte delle varie funzioni e servizi avviene tramite \href{https://learn.microsoft.com/it-it/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/infrastructure-persistence-layer-design}{repository pattern}.
 
 I programmi CamSimulator e MonitorSimulator sono stati realizzati tramite \href{https://learn.microsoft.com/en-us/visualstudio/ide/create-csharp-winform-visual-studio?view=vs-2022}{Windows Form}, e le funzionalità dei MwBot sono state implementate tramite protocollo MQTT, grazie alla libreria \href{https://github.com/dotnet/MQTTnet}{MQTTnet}.
+
+Per comunicare con gli utenti è stata utilizzata l'API di \href{https://github.com/TelegramBots/Telegram.Bot}{Telegram}.
 \section{Specifica}
 \subsection{Casi d'uso e requisiti}
 Il diagramma dei casi d'uso è disponibile nel \href{run:./casi d'uso.pdf}{file PDF apposito}.
@@ -153,6 +155,25 @@ Classe rappresentante un messaggio MQTT:
     public ImmediateRequest? ImmediateRequest { get; set; }
 }
 \end{lstlisting}
+Tipi di messaggi MQTT da client a broker:
+\begin{itemize}
+    \item RequestCharge: il MwBot chiede al broker di ricaricare un'auto
+    \item CompleteCharge: il MwBot riferisce al broker che l'auto è completamente carica
+    \item UpdateCharging: il MwBot riferisce al broker la sua percentuale di carica
+    \item UpdateMwBot: il MwBot riferisce al broker il suo stato (StandBy, MovingToSlot, MovingToDock, Offline, ChargingCar, Recharging)
+    \item RequestRecharge: il MwBot richiede al broker di ricaricarsi al dock
+    \item DisconnectClient: il MwBot chiede di essere disconnesso
+    \item RequestMwBot: connette client a MwBot
+\end{itemize}
+Tipi di messaggi MQTT da broker a client:
+\begin{itemize}
+    \item StartCharging: indica al MwBot di iniziare la ricarica di un'auto
+    \item StartRecharge: indica al MwBot di iniziare la ricarica della propria batteria al dock
+    \item ChargeCompleted: indica al MwBot che la ricarica dell'auto è completa, in quanto percentuale specificata dall'utente
+    \item ReturnMwBot: indica al MwBot di ritornare al dock
+    \item StopCharging: indica al MwBot di interrompere il processo di ricarica
+\end{itemize}
+L'emulazione del movimento, della ricarica delle auto e della ricarica degli MwBot è simulato nella classe \texttt{MqttMwBotClient}, nelle funzioni \texttt{SimulateMovement}, \texttt{SimulateChargingProcess} e \texttt{SimulateRechargingProcess}.
 \section{Implementazione}
 \subsection{Istruzioni di installazione}
 Si consiglia l'utilizzo del programma Visual Studio per avviare l'applicativo web e i due programmi che permettono di emulare l'entrata delle auto nel parcheggio (CamSimulator) e l'occupazione dei posti auto (MonitorSimulator).
@@ -162,6 +183,13 @@ Una volta aperta la soluzione con Visual Studio, è necessario aggiungere i segr
 Aggiunti i segreti, è sufficiente fare click destro su \texttt{Solution Pissir.Progetto} nella schermata \texttt{Solution Explorer}, selezionare \texttt{Configure startp projects...}, selezionare tutti i progetti e premere su \texttt{Start} nella schermata principale.
 
 Avviata la soluzione, è possibile utilizzare l'applicativo web recandosi all'indirizzo \url{https://localhost:7237}, emulare l'entrata/uscita delle auto tramite CamSimulator e visionare lo stato di occupazione dei posteggi tramite MonitorSimulator.
+
+Utenze:
+\begin{itemize}
+    \item admin@admin.it - Admin1234\$ 
+    \item utente01@utente.com - bHw2Hs3!4bzq-aQ
+    \item utentepremium01@upremium.com - SgRE5GZp\_rj6s2E
+\end{itemize}
 \subsection{Progetto.App}
 Progetto.App implementa l'applicativo web. Contiene configurazione all'avvio, log, controller con i vari endpoint con cui interfacciarsi per le richieste e le pagine front-end di interfaccia.
 
@@ -182,5 +210,5 @@ controller dedicato.
 \subsection{MonitorSimulator}
 Monitor Simulator è un'applicazione di tipo Windows Form che rappresenta i sensori presenti nei posti auto. Tramite essa è possibile controllare l'occupazione dei posti auto in vari parcheggi.
 \subsection{PayPal.REST}
-Implementa la logica dei pagamenti tramite PayPal.
+Implementa la logica dei pagamenti tramite PayPal. È una API di tipo REST.
 \end{document}
