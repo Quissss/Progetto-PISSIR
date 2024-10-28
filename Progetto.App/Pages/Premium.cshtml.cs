@@ -1,9 +1,13 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using PayPal.REST.Client;
 using PayPal.REST.Models.Orders;
 using PayPal.REST.Models.PaymentSources;
+using Progetto.App.Core.Models.Users;
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Progetto.App.Pages
 {
@@ -11,11 +15,15 @@ namespace Progetto.App.Pages
     {
         private readonly ILogger<PremiumModel> _logger;
         private readonly IPayPalClient _payPalClient;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
 
-        public PremiumModel(ILogger<PremiumModel> logger, IPayPalClient payPalClient)
+        public PremiumModel(ILogger<PremiumModel> logger, IPayPalClient payPalClient, SignInManager<ApplicationUser> signInManager)
         {
             _logger = logger;
             _payPalClient = payPalClient;
+            _userManager = signInManager.UserManager;
+            _signInManager = signInManager;
         }
 
         public void OnGet()
@@ -27,8 +35,11 @@ namespace Progetto.App.Pages
         {
             //Success
             await _payPalClient.CapturePayment(token);
-            using var client = new HttpClient { BaseAddress = new("https://localhost:7237") };
-            var res = await client.SendAsync(new HttpRequestMessage(HttpMethod.Post, "/api/user/upgrade"));
+            using var client = new HttpClient() { BaseAddress = new("https://localhost:7237") };
+            var user = await _userManager.GetUserAsync(User);
+            var res = await client.SendAsync(new HttpRequestMessage(HttpMethod.Post, $"/api/user/upgrade?value={user.Id}"));
+
+            await _signInManager.RefreshSignInAsync(user);
         }
 
         public async Task OnGetCancel(string token, string? payerId)
