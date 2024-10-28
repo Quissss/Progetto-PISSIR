@@ -71,16 +71,23 @@ public class MqttBroker : IHostedService, IDisposable
     /// <returns></returns>
     private async Task ChangeLightState(string lightId, string requestBody)
     {
-        string? baseUrl = _configuration.GetValue<string>("BaseUrl") + ":" + _configuration.GetValue<int>("Hue:Port") 
-                            ?? throw new ConfigurationErrorsException("Hue base URL not found");
-        string? username = _configuration.GetValue<string>("Hue:Username") 
-                            ?? throw new ConfigurationErrorsException("Hue username not found");
+        try
+        {
+            string? baseUrl = _configuration.GetValue<string>("BaseUrl") + ":" + _configuration.GetValue<int>("Hue:Port")
+                                ?? throw new ConfigurationErrorsException("Hue base URL not found");
+            string? username = _configuration.GetValue<string>("Hue:Username")
+                                ?? throw new ConfigurationErrorsException("Hue username not found");
 
-        string lightsUrl = $"{baseUrl}/api/{username}/lights/";
+            string lightsUrl = $"{baseUrl}/api/{username}/lights/";
 
-        var url = $"{lightsUrl}{lightId}/state";
-        var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
-        await _httpClient.PutAsync(url, content);
+            var url = $"{lightsUrl}{lightId}/state";
+            var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+            await _httpClient.PutAsync(url, content);
+        }
+        catch(Exception ex)
+        {
+            _logger.LogWarning(ex, "Change light state error: {message}", ex.Message);
+        }
     }
 
     /// <summary>
